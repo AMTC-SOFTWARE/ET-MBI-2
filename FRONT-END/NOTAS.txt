@@ -1,0 +1,24 @@
+copiar carpeta "frontend" en:
+C:\xampp\htdocs
+
+después abrir navegador e ir a:
+localhost/frontend
+
+
+(o el nombre que hayas asignado a la carpeta)
+
+
+crear carpeta "modules" e "ILX" para almacenar la información cargada al sitio web
+en C:\Users\"tu usuario"\"carpeta de proyectos"\EVTA-MBI\API
+
+
+
+en el manager en la clase modelo, debes cambiar la IP a:
+
+class Model (object):
+
+        self.server = "127.0.0.1:5000"   #"192.168.1.10:5000"
+
+
+
+para correr localmente, la otra dirección es la de la estación
