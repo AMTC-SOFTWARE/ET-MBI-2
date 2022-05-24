@@ -81,10 +81,10 @@
             </div>
             <ul>
               <!-- <li><a href="home.html">Home</a></li> -->
-              <li><a id="comentariosHeader" href="comentarios.html" class="cool-link" style="display: none;">Comentarios</a></li>
+              <!-- <li><a id="comentariosHeader" href="comentarios.html" class="cool-link" style="display: none;">Comentarios</a></li> -->
               <li><a href="monitoreo.html" class="cool-link">Monitoreo</a></li>
               <!-- <li><a href="maquina.html">Disponibilidad de Máquina</a></li> -->
-              <li><a href="historial - interior.html" class="cool-link">Historial</a></li>
+              <!-- <li><a href="historial - interior.html" class="cool-link">Historial</a></li> -->
               <li><a href="index.html" class="cool-link">Gestión de Datos</a></li>
               <li><button id="iniciarsesion" data-toggle="modal" data-target="#login_modal" style="width:auto;" class="login">Iniciar Sesión</button></li>
               <li><button id="cerrarsesion" onclick="cerrar()" class="login" style="display: none;">Cerrar Sesión</button></li>
@@ -158,7 +158,7 @@
             <span aria-hidden="true" style="float: right;">&times;</span>
           </button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body" style="overflow-y:unset; max-height:inherit !important">
           <img src="static/content/admin.png" alt="Avatar" class="img-centro">
           <div id="alerta" style="display: none;"></div>
 
@@ -199,6 +199,7 @@
   =            BOTONES PARA ELEGIR ACCIÓN            =
   =================================================-->
   <div class="container" align="center" style="margin-top: 10px;">
+    <button type="button" class="btn btn-azul btn-xs" id="trazabilidadcheck" style="margin: 10px" onclick="location.href='trazabilidadcheck.html'">Trazabilidad Consulta</button>
     <button type="button" class="btn btn-success btn-lg disabled" id="botonusuario" style="margin: 10px" onclick="formusuariomostrar()">Usuarios</button>
     <button type="button" class="btn btn-success btn-lg disabled" id="botonparte" style="margin: 10px" onclick="form_numeros_mostrar()">Números de Parte</button>
     <button type="button" class="btn btn-cafe btn-xs" id="dbbkup" style="margin: 10px;display: none;" onclick="dbbkup()">Respaldo de Base de Datos</button>

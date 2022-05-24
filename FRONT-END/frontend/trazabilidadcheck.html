@@ -25,7 +25,6 @@
     <link rel="stylesheet" type="text/css" href="static/content/jquery.dataTables.min.css" />
     <link rel="stylesheet" type="text/css" href="static/content/responsive.dataTables.min.css" />
     <link rel="stylesheet" type="text/css" href="static/fonts/css/all.min.css" />
-    <link rel="stylesheet" type="text/css" href="static/content/botones.css" />
     <!-- End Include All CSS -->
     <!-- Favicon Icon -->
     <link rel="icon" type="image/png" href="static/content/faviconfuji.png">
@@ -206,7 +205,7 @@
             <i class="fa fa-angle-right"></i>
             <a href="index.html">Gestión de Datos</a>
             <i class="fa fa-angle-right"></i>
-            <a href="definiciones.html">Definiciones Especiales</a>
+            <a href="trazabilidadcheck.html">Trazabilidad Check</a>
           </div>
         </div>
       </div>
@@ -214,74 +213,29 @@
   </section>
   <!--====  End of BREADCRUMB  ====-->
 
+
   <!--==============================================
   =            TABLA CON REGISTROS DE ORDENES            =
   ===============================================-->
   <div id="registros" class="container" align="left" style="display: block;">
-    <div><button type="button" class="btn btn-primary" id="mostrar" data-toggle="modal" data-target="#modal_variantes" style="display: none;"></div>
-    <div><button type="button" class="btn btn-primary" id="mostrar_variantes" data-toggle="modal" data-target="#modal_variantes_edit" style="display: none;"></div>
+    <div><button type="button" class="btn btn-primary" id="mostrar" data-toggle="modal" data-target="#modal_info" style="display: none;"></div>
+    <div><button type="button" class="btn btn-primary" id="mostrar_qr" data-toggle="modal" data-target="#modal_qr" style="display: none;"></div>
     <div>
       <br>
-      <h3>Definiciones Especiales EVENTO <span id="tituloEvento"</h3>
+      <h3>Trazabilidad</h3>
       <hr>
-      <label>Agregue módulos para determinar el tipo de caja PDC-R que llevarán la modularidades.
-    </div>
-    <!--================================================
-    =            BOTONES PARA ELEGIR ACCIÓN            =
-    =================================================-->
-    <!-- <div class="container" align="center" style="margin-top: 10px;">
-        <button type="button" class="btn btn-info btn-lg" id="botonusuario" style="margin: 10px" onclick="variantesPDCR()">Variantes PDC-R</button>
-        <button type="button" class="btn btn-info btn-lg disabled" id="botonparte" style="margin: 10px" onclick="modulos_torque()">Otros</button>
-        <button type="button" class="btn btn-primary" id="mostrar" data-toggle="modal" data-target="#modal_elim" style="display: none;">
-    </div> -->
-    <!--====  End of BOTONES PARA ELEGIR ACCIÓN  ====-->
-    <!--======================================
-    =            VARIANTES PDC-R            =
-    =======================================-->
-    <div class="container" align="center" id="form_pdcr">
-        <button type="button" class="btn btn-info btn-lg" id="agregar_pdcr" style="margin: 10px" onclick="variantesPDCR_add()">Agregar</button>
-        <button type="button" class="btn btn-info btn-lg" id="modificar_pdcr" style="margin: 10px" onclick="variantesPDCR_edit()">Modificar</button>
-    </div>
-    <!--====  End of VARIANTES PDC-R  ====-->
-    
-    <!--======================================
-    =   AGREGAR MODULOS DETERMINANTES PDC-R   =
-    =======================================-->
-    <div class="container" align="center" id="form_add_variante" style="display: none;">
-      <form id="agregarusuario" style="margin-top: 10px">
-            <div class="contenedoragregar">
-                <label for="usuario"><b>Módulo</b></label>
-                <input type="text" placeholder="Ingrese el nombre del módulo" id="modulo" name="modulo" oninput="mayuscula(this);get_valid_modulo()" required>
-                <br>
-                <label>Activo: </label> <input type="checkbox" id="activo" onchange="comprobaractivo(this)" checked="true">
-                <br>
-                <label>Caja:</label><br>
-                <select id="variante">
-                    <option id="PDC-R" value="PDC-R">PDC-R</option>
-                    <option id="PDC-RMID" value="PDC-RMID">PDC-RMID</option>
-                    <option id="PDC-RS" value="PDC-RS">PDC-RS</option>
-                </select>
-                <br>
-                <button type="button" class="btn btn-success btn-lg" onclick="agregarVariante()" style="display: inline-block; margin: 10px;">Agregar Módulo Determinante</button>
-            </div>
-      </form>
-      <div class="container alert alert-success alert-dismissible" id="alertaadd" style="display: none;">
-                <button type="button" class="close" data-hide="alert" aria-hidden="true">&times;</button>
-                <strong id="alerta_variante"></strong>
+      <div align="center">
+        <button type="button" class="btn btn-info btn-lg" id="lista_all" style="margin: 10px" onclick="famx2_registros_all()">Registros de FAMX2 (Todos)</button>
+        <button type="button" class="btn btn-info btn-lg" id="lista_interior" style="margin: 10px" onclick="famx2_registros_interior()">Registros de FAMX2 (Interior)</button>
       </div>
-      <div class="container alert alert-danger alert-dismissible" id="alertaadd_fail" style="display: none;">
-                <button type="button" class="close" data-hide="alert" aria-hidden="true">&times;</button>
-                <strong id="alerta_variante_fail"></strong>
-      </div>
+      <br>
     </div>
-    <!--====  End of AGREGAR MODULOS DETERMINANTES PDC-R  ====-->
-    <div id="tabla">
-    </div>
+    <div id="tabla"></div>
   </div>
   <div id="alertasesion" style="display: none;"></div>
   <!--====  End of TABLA CON REGISTROS DE ORDENES  ====-->
 
-  <div class="modal fade" id="modal_variantes" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+  <div class="modal fade" id="modal_qr" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
       <div class="modal-content">
         <div class="modal-header">
@@ -300,42 +254,123 @@
   <!--====================================================
   =            POP-UP PARA EDITAR LOS PEDIDOS            =
   =====================================================-->
-  <div class="modal fade" id="modal_variantes_edit" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+  <div class="modal fade" id="modal_info" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h3 class="modal-title" id="exampleModalCenterTitle"><span id="modulo_edit_title"></span></h3>
+          <h3 class="modal-title" id="exampleModalCenterTitle"><span id="pedidoedit"></span></h3>
           <button type="button" id="cerrar" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true" style="float: right;">&times;</span>
           </button>
         </div>
         <div class="modal-body">
-          <div align="center" id="formusuario">
-            <form id="" style="margin-top: 10px">
-                <div class="contenedoragregar">
-                    <label for="modulo"><b>Módulo</b></label>
-                    <input type="text" placeholder="Ingrese el nombre del módulo" id="modulo_edit" name="modulo" oninput="mayuscula(this);get_valid_modulo_edit()" required>
-                    <br>
-                    <label>Activo: </label> <input type="checkbox" id="activo_edit" onchange="comprobaractivo_edit(this)" checked="true">
-                    <br>
-                    <label>Variante PDC-R:</label><br>
-                    <select id="variante_edit">
-                        <option id="PDC-R" value="PDC-R">PDC-R</option>
-                        <option id="PDC-RMID" value="PDC-RMID">PDC-RMID</option>
-                        <option id="PDC-RS" value="PDC-RS">PDC-RS</option>
-                    </select>
-                </div>
-                </form>
-                <div class="container alert alert-success alert-dismissible" id="alertaadd" style="display: none;">
-                    <button type="button" class="close" data-hide="alert" aria-hidden="true">&times;</button>
-                    <strong id="alerta_variante"></strong>
-                </div>
-                <div class="container alert alert-danger alert-dismissible" id="alertaadd_fail" style="display: none;">
-                    <button type="button" class="close" data-hide="alert" aria-hidden="true">&times;</button>
-                    <strong id="alerta_variante_fail"></strong>
-                </div>
-            <div id="alertaadd"></div>
+          <div class="panel-heading">
+            <h4 class="panel-title">
+              <a data-toggle="collapse" data-parent="#accordion" href="#num_parte"> NÚMERO DE PARTE <hr></a>
+            </h4>
+          </div>      
+          <div id="num_parte" class="panel-collapse collapse">
+            <div class="panel-body">
+              <div>
+                <label for="pedidoeditar" style="margin-left: 16%">Número de parte: </label>
+                <input type="text" id="pedidoeditar" name="pedidoeditar" oninput="mayuscula(this);get_valid_pedido_1()" onkeypress = "return get_valid_pedido(event);" style="width: 30%;margin-right: 20px">
+                Activo: <input type="checkbox" id="activo" onchange="comprobaractivo(this)">
+                <div id="alert_get_historial"></div>
+              </div>
+            </div>
+          </div>     
+          <!-- Sección de los códigos QR -->
+          <div class="panel-heading">
+            <h4 class="panel-title">
+              <a data-toggle="collapse" data-parent="#accordion" href="#qr_cajas">QR DE LAS CAJAS <hr></a>
+            </h4>
           </div>
+          <div id="qr_cajas" class="panel-collapse collapse">
+            <div class="panel-body" style="margin-left: 15%">
+              <img id="pdcr_image_t" src="static/content/cajas/interior/pdcr2/pdcr2.jpg" alt="" width="120">
+              <h4 style="display: inline-block; margin-right: 20px"> PDC-R</h4>                  
+              <input type="text" class="qr" name="qrPDC-R" id="PDC-R" placeholder="Escanee el código QR" oninput="mayuscula(this)" style="width: 30%; margin: 20px; display: none;">                 
+              Checkbox: <input type="checkbox" class="myCheck" id="myCheckPDC-R" onchange="comprobarpdcr(this)">
+              <br>
+              <img id="pdcr_mid_image_t" src="static/content/cajas/interior/pdcr_1/pdcr_1.jpg" alt="" width="120">
+              <h4 style="display: inline-block; margin-right: 20px"> PDC-RMID</h4>
+              <input type="text" class="qr" name="qrPDC-RMID" id="PDC-RMID" placeholder="Escanee el código QR" oninput="mayuscula(this)" style="width: 30%; margin: 20px; display: none;">
+              Checkbox: <input type="checkbox" class="myCheck" id="myCheckPDC-RMID" onchange="comprobarpdcrmid(this)">
+              <br>
+              <img id="pdcd_image_t" src="static/content/cajas/interior/pdcd2/pdcd2.jpg" alt="" width="120">
+              <h4 style="display: inline-block; margin-right: 20px"> PDC-D</h4>
+              <input type="text" class="qr" name="qrPDC-D" id="PDC-D" placeholder="Escanee el código QR" oninput="mayuscula(this)" style="width: 30%; margin: 20px; display: none;">
+              Checkbox: <input type="checkbox" class="myCheck" id="myCheckPDC-D" onchange="comprobarpdcd(this)">
+              <br>
+              <img id="mfbp1_image_t" src="static/content/cajas/interior/mfbp1/mfbp1.jpg" alt="" width="120">
+              <h4 style="display: inline-block; margin-right: 20px"> MFB-P1 </h4>
+              <input type="text" class="qr" name="qrMFB-P1" id="MFB-P1" placeholder="Escanee el código QR" oninput="mayuscula(this)" style="width: 30%; margin: 20px; display: none;">
+              Checkbox: <input type="checkbox" class="myCheck" id="myCheckMFB-P1" onchange="comprobarmfbp1(this)">
+              <br>
+              <img id="mfbs_image_t" src="static/content/cajas/interior/mfbs/mfbs.jpg" alt="" width="120">
+              <h4 style="display: inline-block; margin-right: 20px"> MFB-S </h4>
+              <input type="text" class="qr" name="qrMFB-S" id="MFB-S" placeholder="Escanee el código QR" oninput="mayuscula(this)" style="width: 30%; margin: 20px; display: none;">
+              Checkbox: <input type="checkbox" class="myCheck" id="myCheckMFB-S" onchange="comprobarmfbs(this)">
+              <br><br>
+              <img id="mfbp2_image_t" src="static/content/cajas/interior/mfbp2/mfbp2.jpg" alt="" width="120">
+              <h4 style="display: inline-block; margin-right: 20px"> MFB-P2 </h4>
+              <input type="text" class="qr" name="qrMFB-P2" id="MFB-P2" placeholder="Escanee el código QR" oninput="mayuscula(this)" style="width: 30%; margin: 20px; display: none;">
+              Checkbox: <input type="checkbox" class="myCheck" id="myCheckMFB-P2" onchange="comprobarmfbp2(this)">                
+              <br>
+            </div>
+          </div>
+          <!-- Sección de MÓDULOS DE VISIÓN -->
+          <div class="panel-heading">
+            <h4 class="panel-title">
+              <a data-toggle="collapse" data-parent="#accordion" href="#mod_vision"> MODULOS DE VISION <hr></a>
+            </h4>
+          </div>
+          <div id="mod_vision" class="panel-collapse collapse">
+            <div class="panel-body">
+              <p>Seleccione uno o varios módulos de la siguiente lista, después de click en agregar o quitar.</p>
+              <select id="modulos_vision" >
+                <option selected> Seleccione un modulo de vision...</option>
+              </select>
+              <div class="botonesaq">
+                <button type="button" class="btn btn-success" onclick="agregarmodulov()" style="display: block; margin: 5px;"><i class="fas fa-plus"> Agregar</i></button>
+                <button type="button" class="btn btn-danger" onclick="quitarmodulov()" style="display: block; margin: 5px;"><i class="fas fa-minus"> Quitar</i></button>
+              </div>
+              <div id="arreglomv">Módulos de visión agregados: </div>
+              <button type="button" class="btn btn-secondary" onclick="clearmodulov()" style="display: inline-block; margin: 5px;">Clear</button>
+              <p> Vaya a la sección de módulos de torque para agregar módulos de torque a la orden.</p>
+            </div>
+          </div>
+          <!-- Sección de MÓDULOS DE TORQUE -->
+          <div class="panel-heading">
+            <h4 class="panel-title">
+              <a data-toggle="collapse" data-parent="#accordion" href="#mod_torque">MODULOS DE TORQUE <hr></a>
+            </h4>
+          </div>
+          <div id="mod_torque" class="panel-collapse collapse">
+            <div class="panel-body">
+              <p> Busque el módulo en la siguiente lista, después dé click en agregar  </p>
+              <select id="modulos_torque" >
+                <option selected> Seleccione un modulo de torque...</option>
+              </select>
+              <div class="botonesaq">
+                <button type="button" class="btn btn-success" onclick="agregarmodulot()" style="display: block; margin: 5px;"><i class="fas fa-plus"> Agregar</i></button>
+                <button type="button" class="btn btn-danger" onclick="quitarmodulot()" style="display: block; margin: 5px;"><i class="fas fa-minus"> Quitar</i></button>
+              </div>
+              <div id="arreglomt">Módulos de torque agregados:    </div>
+              <button type="button" class="btn btn-secondary" onclick="clearmodulot()" style="display: inline-block; margin: 5px;">Clear</button>
+            </div>
+          </div>
+          <!-- Sección de MÓDULOS DE ALTURA -->
+          <!-- <div class="panel-heading">
+            <h4 class="panel-title">
+              <a data-toggle="collapse" data-parent="#accordion" href="#mod_altura">MODULOS DE ALTURA <hr></a>
+            </h4>
+          </div>
+          <div id="mod_altura" class="panel-collapse collapse">
+            <div class="panel-body">
+              <p>El módulo de altura es calculado a partir de los módulos de visión.</p>
+            </div>
+          </div> -->
         </div>
         <div class="modal-footer">
           <button type="button" data-dismiss="modal" class="cancel_edit">Cancelar</button>
@@ -345,6 +380,9 @@
     </div>
   </div>
 <!--====  End of POP-UP PARA EDITAR LOS PEDIDOS  ====-->
+
+
+
 
 <!--Esto permite que el header tome un color celeste al hacer scroll en la página-->
 <div class="content" id="counter"></div>
@@ -402,6 +440,6 @@
 <script  type="text/javascript" src="static/script/jquery-3.3.1.js"></script>
 <script  type="text/javascript" src="static/script/jquery.dataTables.min.js"></script>
 <script  type="text/javascript" src="static/script/datatables/dataTables.responsive.min.js"></script>
-<script  type="text/javascript" src="static/script/definiciones.js"></script>
+<script  type="text/javascript" src="static/script/trazabilidadcheck.js"></script>
 </body>
 </html>

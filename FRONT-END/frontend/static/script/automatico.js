@@ -1,5 +1,6 @@
 let activo = 1
 let DBEVENT = '';
+let eventoArray;
 ///////// Función para limpiar el contenedor de eventos /////////
 function cleardiv() {
     document.getElementById("containerEventos").innerHTML = "";
@@ -10,7 +11,8 @@ function loadEvents(){
     .then(res=>res.json())
     .then(function (data){
         console.log("DATA: ",data);
-        // console.log(data.eventos)
+        //console.log(data.eventos)
+        eventoArray = data.eventos
         let keys = Object.keys(data.eventos)
         // console.log("Keys:",keys)
         for (let i = 0; i < keys.length; i++) {
@@ -69,12 +71,14 @@ function loadEvents(){
             let evento_title = document.createElement('h4'); // Creación de título del evento
             let matrizCargada = document.createElement('p'); // Creación de párrafo para mostrar el nombre de la Matriz de Modularidades Cargada en el evento
             let toggleStatus = document.createElement('input'); // Creación de input para cambiar el status del evento (Activo/Inactivo)
+            let light = document.createElement('div');
             toggleStatus.setAttribute("type", "checkbox"); // Al input de Status se le agrega el tipo "Checkbox"
             toggleStatus.classList.add('status');
-            eventoCard.classList.add('col-md-3');
-            eventoCard.classList.add('col-sm-6');
-            eventoCard.classList.add('col-xs-12');
+            // eventoCard.classList.add('col-md-3');
+            // eventoCard.classList.add('col-sm-6');
+            // eventoCard.classList.add('col-xs-12');
             eventoCard.classList.add('team_sect');
+            eventoCard.id = keys[i]
             evento_img.classList.add('eventos');
             evento_info.classList.add('evento-info');
             evento_info.classList.add('text-center');
@@ -91,6 +95,7 @@ function loadEvents(){
             icono3.classList.add('fa-history');
             icono4.classList.add('fas');
             icono4.classList.add('fa-trash');
+            light.classList.add('arrow')
             if (eventoStatus == 1){
                 img.src ="static/content/fase.jpg"; // Si el evento está Activo aparecerá con imagen de color azul
                 toggleStatus.checked = true
@@ -107,6 +112,7 @@ function loadEvents(){
             eventoCard.appendChild(evento_img);
             eventoCard.appendChild(evento_info);
             evento_img.appendChild(figure);
+            figure.appendChild(light)
             figure.appendChild(img);
             figure.appendChild(eventoBotones);
             eventoBotones.appendChild(btn1);
@@ -657,4 +663,34 @@ function clear_archivo_determinantes(){
     const fileField = document.getElementById('cargar_input_determinantes');
 	fileField.value="";
 	console.log(fileField.files)
+}
+function acceptEnter(){
+    if (event.key === 'Enter') {
+        searchDAT();
+    }
+}
+function searchDAT(){
+   var busqueDat = document.getElementById('searchDAT').value;
+   let eventKeys = Object.keys(eventoArray) 
+   console.log(busqueDat)  
+   eventKeys.forEach(evento => {
+            document.getElementById(evento).classList.remove('green-light')
+            document.getElementById(evento).classList.remove('red-light')
+            document.getElementById(evento).classList.remove('gray-light')
+           if (busqueDat.length !== 0){
+           fetch(dominio+"/api/get/"+evento+"/pedidos/ID/>/0/_/=/_")
+            .then(data=>data.json())
+            .then(data=>{
+        var arrayPedidos = data.PEDIDO
+        const encontrado = arrayPedidos !== undefined && arrayPedidos.find(element => element === busqueDat)? true:false;
+        console.log(encontrado)
+        if (encontrado) {
+            document.getElementById(evento).classList.add('green-light')
+        }
+        else{
+            document.getElementById(evento).classList.add('red-light')
+        }
+    })
+}else{ document.getElementById(evento).classList.add('gray-light')}
+});
 }

@@ -13,7 +13,8 @@ function lista_torque(){
       document.getElementById("tabla").innerHTML = "<label>Tabla sin registros.</label>";
     }else{
       document.getElementById("cargar_todo_vision").style.display = "none";
-      document.getElementById("cargar_todo_torque").style.display = "inline-block";
+      document.getElementById("cargar_todo_torque_trazabilidad").style.display = "inline-block";
+      document.getElementById("cargar_todo_torque_valores").style.display = "inline-block";
       var colnames = Object.keys(data);
       colnames.splice(colnames.indexOf("ALTURA"),4);
       colnames.splice(colnames.indexOf("INICIO"),0,"HM");
@@ -63,15 +64,28 @@ function lista_torque(){
         }
         var td = document.createElement('TD');
         var boton = document.createElement('button');
-        var cargar_torque = document.createElement('i');
-        cargar_torque.classList.add("fas");
-        cargar_torque.classList.add("fa-file-upload");
+        boton.appendChild(document.createTextNode("Trazabilidad"));
+        var cargar_torque_trazabilidad = document.createElement('i');
+        cargar_torque_trazabilidad.classList.add("fas");
+        cargar_torque_trazabilidad.classList.add("fa-file-upload");
         boton.title = 'Cargar Registro';
         boton.classList.add('btn');
         boton.classList.add('btn-warning');
-        boton.classList.add('btn-cargar_torque');
-        boton.appendChild(cargar_torque);
+        boton.classList.add('btn-cargar_torque_trazabilidad');
+        boton.appendChild(cargar_torque_trazabilidad);
+        var botondos = document.createElement('button');
+        botondos.appendChild(document.createTextNode("Valores"));
+        var cargar_torque_valores = document.createElement('i');
+        cargar_torque_valores.classList.add("fas");
+        cargar_torque_valores.classList.add("fa-file-upload");
+        botondos.title = 'Cargar Registro';
+        botondos.classList.add('btn');
+        botondos.classList.add('btn-primary');
+        botondos.classList.add('btn-cargar_torque_valores');
+        botondos.appendChild(cargar_torque_valores);
         td.appendChild(boton);
+        td.append(" ");
+        td.appendChild(botondos);
         tr.appendChild(td)
         tableBody.appendChild(tr);
       }
@@ -85,7 +99,7 @@ function lista_torque(){
   })
 }
 
-$(document).on('click','.btn-cargar_torque', function(){
+$(document).on('click','.btn-cargar_torque_trazabilidad', function(){
   let idTrazabilidad = $(this).parent().parent().children().first().text();
   let HM = $(this).parent().parent().children().first().next().text();
   let idSeghm;
@@ -146,8 +160,52 @@ $(document).on('click','.btn-cargar_torque', function(){
   
 });
 
-/////// Al presionar el Botón de Cargar Todo
-$(document).on('click','#cargar_todo_torque', function(){
+$(document).on('click','.btn-cargar_torque_valores', function(){
+  let idTrazabilidad = $(this).parent().parent().children().first().text();
+  let HM = $(this).parent().parent().children().first().next().text();
+  let idSeghm;
+  let newPost;
+  console.log("HM: ", HM);
+  console.log("Id de HM: ",idTrazabilidad);
+
+  fetch(dominio+"/api/get/historial/ID/=/"+idTrazabilidad+"/_/_/_")
+  .then(data=>data.json())
+  .then(data=>{
+    console.log("Data de Historial Local: ",data);
+    console.log("Inicio: ",data.INICIO);
+    console.log("FIN: ",data.FIN);
+    let enttorque = new Date(data.INICIO).getUTCFullYear()+"-"+(new Date(data.INICIO).getUTCMonth()+1)+"-"+new Date(data.INICIO).getUTCDate()+" "+new Date(data.INICIO).getUTCHours()+":"+new Date(data.INICIO).getUTCMinutes()+":"+new Date(data.INICIO).getUTCSeconds()
+    let saltorque = new Date(data.FIN).getUTCFullYear()+"-"+(new Date(data.FIN).getUTCMonth()+1)+"-"+new Date(data.FIN).getUTCDate()+" "+new Date(data.FIN).getUTCHours()+":"+new Date(data.FIN).getUTCMinutes()+":"+new Date(data.FIN).getUTCSeconds()
+    newPost = {
+      "HM": data.HM,
+      "RESULTADO": data.RESULTADO,
+      "VISION": data.VISION,
+      "ALTURA": data.ALTURA,
+      "INTENTOS_VA": data.INTENTOS_VA,
+      "TORQUE": data.TORQUE,
+      "ANGULO": data.ANGULO,
+      "INTENTOS_T": data.INTENTOS_T,
+      "SCRAP": data.SCRAP,
+      "SERIALES": data.SERIALES,
+      "INICIO": enttorque,
+      "FIN": saltorque,
+      "USUARIO": data.USUARIO,
+      "NOTAS": data.NOTAS
+    }
+    console.log("newPost: ",newPost);
+    fetch(dominio + '/seghm/post/seghm_valores', {
+      method: 'POST',
+      body: JSON.stringify(newPost),
+      headers: {"Content-type": "application/json"}
+    }).then(res => res.json())
+    .then(function(data) {
+      console.log(data);
+    })
+  })
+});
+
+/////// Al presionar el Botón de Cargar Todos los registros de TORQUE para Trazabilidad
+$(document).on('click','#cargar_todo_torque_trazabilidad', function(){
   console.log("Click en cargar todos los registros de TORQUE!")
 
   fetch(dominio+"/api/get/historial/ID/>/0/RESULTADO/=/1")
@@ -222,6 +280,55 @@ $(document).on('click','#cargar_todo_torque', function(){
   
   
 });
+/////// Al presionar el Botón de Cargar Todos los valores de TORQUE al servidor de FAMX2
+$(document).on('click','#cargar_todo_torque_valores', function(){
+  console.log("Click en cargar todos los valores de TORQUE!")
+
+  fetch(dominio+"/api/get/historial/ID/>/0/RESULTADO/=/1")
+  .then(data=>data.json())
+  .then(data=>{
+    console.log("Data de Historial Torque Local: ",data);
+    console.log("Data ID de Historial Torque Local: ",data.ID);
+    let totalRegistros = data.ID
+    console.log("Cantidad Total de Registros de Historial Torque Local: ",totalRegistros.length);
+    for (let i = 0; i < totalRegistros.length; i++) {
+      let enttorque;
+      let saltorque;
+      enttorque = new Date(data.INICIO[i]).getUTCFullYear()+"-"+(new Date(data.INICIO[i]).getUTCMonth()+1)+"-"+new Date(data.INICIO[i]).getUTCDate()+" "+new Date(data.INICIO[i]).getUTCHours()+":"+new Date(data.INICIO[i]).getUTCMinutes()+":"+new Date(data.INICIO[i]).getUTCSeconds()
+      saltorque = new Date(data.FIN[i]).getUTCFullYear()+"-"+(new Date(data.FIN[i]).getUTCMonth()+1)+"-"+new Date(data.FIN[i]).getUTCDate()+" "+new Date(data.FIN[i]).getUTCHours()+":"+new Date(data.FIN[i]).getUTCMinutes()+":"+new Date(data.FIN[i]).getUTCSeconds()
+      newPost = {
+        "HM": data.HM[i],
+        "RESULTADO": data.RESULTADO[i],
+        "VISION": data.VISION[i],
+        "ALTURA": data.ALTURA[i],
+        "INTENTOS_VA": data.INTENTOS_VA[i],
+        "TORQUE": data.TORQUE[i],
+        "ANGULO": data.ANGULO[i],
+        "INTENTOS_T": data.INTENTOS_T[i],
+        "SCRAP": data.SCRAP[i],
+        "SERIALES": data.SERIALES[i],
+        "INICIO": enttorque,
+        "FIN": saltorque,
+        "USUARIO": data.USUARIO[i],
+        "NOTAS": data.NOTAS[i]
+      }
+      enviarInfo_t(newPost);
+    }
+    
+  })
+
+  function enviarInfo_t(x){
+    console.log("HM: ",x["HM"])
+    fetch(dominio + '/seghm/post/seghm_valores', {
+      method: 'POST',
+      body: JSON.stringify(x),
+      headers: {"Content-type": "application/json"}
+    }).then(res => res.json())
+    .then(function(data) {
+      console.log("Respuesta: ",data);
+    })
+  }
+});
 
 ///////////////////// Cargar Registros de Visión a servidor /////////////////////
 function lista_vision(){
@@ -234,7 +341,8 @@ function lista_vision(){
       console.log("Sin registro alguno");
       document.getElementById("tabla").innerHTML = "<label>Tabla sin registros.</label>";
     }else{
-      document.getElementById("cargar_todo_torque").style.display = "none";
+      document.getElementById("cargar_todo_torque_trazabilidad").style.display = "none";
+      document.getElementById("cargar_todo_torque_valores").style.display = "none";
       document.getElementById("cargar_todo_vision").style.display = "inline-block";
       var colnames = Object.keys(data);
       colnames.splice(colnames.indexOf("ALTURA"),4);
@@ -369,10 +477,9 @@ $(document).on('click','.btn-cargar_vision', function(){
   
 });
 
-/////// Al presionar el Botón de Cargar Todo
+/////// Al presionar el Botón de Cargar Todos los registros de VISION para Trazabilidad
 $(document).on('click','#cargar_todo_vision', function(){
   console.log("Click en cargar todos los registros de VISIÓN!")
-
   fetch(dominio+"/api/get/historial/ID/>/0/RESULTADO/=/2")
   .then(data=>data.json())
   .then(data=>{
@@ -441,7 +548,4 @@ $(document).on('click','#cargar_todo_vision', function(){
       
     })
   }
-
-  
-  
 });

@@ -63,10 +63,7 @@ let battery2_t_array = [];
 
 var torques_BB = {
     'PDC-D': {
-        "E1": [
-            [353, 460],
-            [403, 510]
-        ]
+        "E1": [[353, 460],[403, 510]]
     },
     'PDC-P': {
         "E1": [
@@ -282,10 +279,21 @@ var modularity;
 let orientacion;
 let caja_pdcr;
 var color_style = "blue";
-
 var historial = "";
 var pdcr_caja = "";
 var pdcr_caja_to_db = "";
+
+
+var conteo_a_ATO = 0;
+var conteo_a_MINI = 0;
+var conteo_a_MULTI = 0
+var arrayFuses_a = []
+
+var conteo_b_ATO = 0;
+var conteo_b_MINI = 0;
+var conteo_b_MAXI =0 ;
+var conteo_b_RELAY =0 ;
+var arrayFuses_b = []
 
 function iniciar_pagina() {
     // console.log(modularity);
@@ -400,32 +408,32 @@ function cargar_info() {
                     document.getElementById('pdcr_t_title').innerHTML = 'PDC-R';
                     document.getElementById('caja_t_pdcr').innerHTML = '<canvas id="pdcr_image_t_canvas" class="img-fluid" style="margin-left: 15%"></canvas>';
                     img_pdcr_t = document.getElementById('pdcr_image_t_canvas');
-                    var t1 = new ToolTip_pdcr(img_pdcr, "This is a tool-tip", 150);
-                    var t1 = new ToolTip_pdcr_t(img_pdcr_t, "This is a tool-tip", 150);
+                    var t1 = new ToolTip_pdcr(img_pdcr, "This is a tool-tip", 182);
+                    var t1 = new ToolTip_pdcr_t(img_pdcr_t, "This is a tool-tip", 182);
                     cargar_imagen_pdcr();
                     cargar_imagen_pdcr_t();
                 } else if (modularity['variante'] == "PDC-RMID") {
                     console.log("Mostrando Caja PDC-RMID"); /// Si la caja es PDC-RMID mostrará dicho canvas tanto para Visión como para Torque
                     document.getElementById('pdcr_title').innerHTML = 'PDC-RMID';
-                    document.getElementById('caja_pdcr').innerHTML = '<canvas id="pdcr_1_image_v_canvas" class="img-fluid" style="margin-left: 9%"></canvas>';
+                    document.getElementById('caja_pdcr').innerHTML = '<canvas id="pdcr_1_image_v_canvas" class="img-fluid" style="margin-left: 0%"></canvas>';
                     img_pdcr_1 = document.getElementById('pdcr_1_image_v_canvas');
                     document.getElementById('pdcr_t_title').innerHTML = 'PDC-RMID';
                     document.getElementById('caja_t_pdcr').innerHTML = '<canvas id="pdcr_mid_image_t_canvas" class="img-fluid" style="margin-left: 15%"></canvas>';
                     img_pdcr_mid_t = document.getElementById('pdcr_mid_image_t_canvas');
-                    var t1 = new ToolTip_pdcr_1(img_pdcr_1, "This is a tool-tip", 150);
-                    var t1 = new ToolTip_pdcr_1t(img_pdcr_mid_t, "This is a tool-tip", 150);
+                    var t1 = new ToolTip_pdcr_1(img_pdcr_1, "This is a tool-tip", 182);
+                    var t1 = new ToolTip_pdcr_1t(img_pdcr_mid_t, "This is a tool-tip", 182);
                     cargar_imagen_pdcr_1();
                     cargar_imagen_pdcr_1_t();
                 } else if (modularity['variante'] == "PDC-RS") {
                     console.log("Mostrando Caja PDC-RS"); /// Si la caja es PDC-RS mostrará dicho canvas tanto para Visión como para Torque
                     document.getElementById('pdcr_title').innerHTML = 'PDC-RS';
-                    document.getElementById('caja_pdcr').innerHTML = '<canvas id="pdcr_small_image_v_canvas" class="img-fluid" style="margin-left: 9%"></canvas>';
+                    document.getElementById('caja_pdcr').innerHTML = '<canvas id="pdcr_small_image_v_canvas" class="img-fluid" style="margin-left: 0%"></canvas>';
                     img_pdcr_small = document.getElementById('pdcr_small_image_v_canvas');
                     document.getElementById('pdcr_t_title').innerHTML = 'PDC-RS';
                     document.getElementById('caja_t_pdcr').innerHTML = '<canvas id="pdcr_small_image_t_canvas" class="img-fluid" style="margin-left: 15%"></canvas>';
                     img_pdcr_small_t = document.getElementById('pdcr_small_image_t_canvas');
-                    var t1 = new ToolTip_pdcr_1(img_pdcr_small, "This is a tool-tip", 150);
-                    var t1 = new ToolTip_pdcrs_1t(img_pdcr_small_t, "This is a tool-tip", 150);
+                    var t1 = new ToolTip_pdcr_1(img_pdcr_small, "This is a tool-tip", 182);
+                    var t1 = new ToolTip_pdcrs_1t(img_pdcr_small_t, "This is a tool-tip", 182);
                     cargar_imagen_pdcr_small();
                     cargar_imagen_pdcr_small_t();
                 }
@@ -531,6 +539,7 @@ function cargar_info() {
 }
 
 function cargar_imagen_pdcr() {
+    console.log('PDCR')
     if (img_pdcr.getContext) {
         var ctx_pdcr = img_pdcr.getContext("2d");
         var img = new Image();
@@ -580,7 +589,26 @@ function cargar_imagen_pdcr() {
                     // console.log(cavidadw)
                     // console.log(cavidadh)
                     getDistance(cavidadx, cavidady, cavidadw, cavidadh);
-
+                    switch (cavidad_ctgry) {
+                        case 'ATO':
+                            conteo_b_ATO++;
+                            break;
+                        case 'MINI':
+                            conteo_b_MINI++;
+                            break
+                        case 'RELAY':
+                            conteo_b_RELAY++;
+                            break
+                        case 'MULTI':
+                            conteo_b_MULTI++;
+                            break
+                        case 'MAXI':
+                            conteo_b_MAXI++
+                            break;
+                        default:
+                            console.log('ALERTA FUSIBLE NO CONTADO',cavidad_ctgry)
+                            break;
+                    }
                     // console.log("PDC-R DISTANCE X",xDistance)
                     // console.log("PDC-R DISTANCE Y",yDistance)
                     let orientacion = xDistance > yDistance ? "h" : "v";
@@ -640,6 +668,7 @@ function cargar_imagen_pdcr() {
                     color_style = "#ffffff00";
                     if (amperaje !== "N/A") {
                         image.src = `static/content/fusibles/${cavidad_ctgry},${amperaje},${fusibleColocado}${orientacion}.jpg`;
+                        arrayFuses_b.push(`${cavidad_ctgry},${amperaje},${fusibleColocado}`);
                     }
 
                     ctx_pdcr.beginPath();
@@ -685,6 +714,7 @@ function cargar_cavidad_pdcr(
 }
 
 function cargar_imagen_pdcr_1() {
+    console.log('PDCR-MID')
     if (img_pdcr_1.getContext) {
         var ctx_pdcr_mid = img_pdcr_1.getContext("2d");
         var img = new Image();
@@ -718,8 +748,9 @@ function cargar_imagen_pdcr_1() {
                         fusibleColocado = modularity['vision']["PDC-RMID"][pdcr_1_array[i]][0];
                     } else if (modularity['vision']["PDC-RS"].hasOwnProperty(pdcr_1_array[i])) {
                         fusibleColocado = modularity['vision']["PDC-RS"][pdcr_1_array[i]][0];
+                    }else if(modularity['vision']["PDC-R"].hasOwnProperty(pdcr_1_array[i])){
+                        fusibleColocado = modularity['vision']["PDC-R"][pdcr_1_array[i]][0];
                     }
-                    // console.log("Fusible Colocado: ",fusibleColocado);
 
                     let cavidadx = fuses_BB["PDC-RMID"][cavidad][0][0];
                     let cavidady = fuses_BB["PDC-RMID"][cavidad][0][1];
@@ -730,9 +761,29 @@ function cargar_imagen_pdcr_1() {
                     // console.log(cavidady)
                     // console.log(cavidadw)
                     // console.log(cavidadh)
+                    //console.log(cavidad_ctgry)
+                    switch (cavidad_ctgry) {
+                        case 'ATO':
+                            conteo_b_ATO++;
+                            break;
+                        case 'MINI':
+                            conteo_b_MINI++;
+                            break
+                        case 'RELAY':
+                            conteo_b_RELAY++;
+                            break
+                        case 'MULTI':
+                            conteo_b_MULTI++;
+                            break
+                        case 'MAXI':
+                            conteo_b_MAXI++
+                            break;
+                        default:
+                            console.log('ALERTA FUSIBLE NO CONTADO',cavidad_ctgry)
+                            break;
+                        }
                     getDistance(cavidadx, cavidady, cavidadw, cavidadh);
-
-                    // console.log("PDC-RMID DISTANCE X",xDistance)
+                   // console.log("PDC-RMID DISTANCE X",xDistance)
                     // console.log("PDC-RMID DISTANCE Y",yDistance)
                     let orientacion = xDistance > yDistance ? "h" : "v";
                     var image = new Image();
@@ -791,6 +842,7 @@ function cargar_imagen_pdcr_1() {
                     color_style = "#ffffff00";
                     if (amperaje !== "N/A") {
                         image.src = `static/content/fusibles/${cavidad_ctgry},${amperaje},${fusibleColocado}${orientacion}.jpg`;
+                        arrayFuses_b.push(`${cavidad_ctgry},${amperaje},${fusibleColocado}`)
                     }
 
                     ctx_pdcr_mid.beginPath();
@@ -835,6 +887,7 @@ function cargar_cavidad_pdcr_mid(
     };
 }
 function cargar_imagen_pdcr_small() {
+    console.log('PDCRS')
     if (img_pdcr_small.getContext) {
         var ctx_pdcr_small = img_pdcr_small.getContext("2d");
         var img = new Image();
@@ -881,6 +934,26 @@ function cargar_imagen_pdcr_small() {
                     // console.log(cavidady)
                     // console.log(cavidadw)
                     // console.log(cavidadh)
+                    switch (cavidad_ctgry) {
+                        case 'ATO':
+                            conteo_b_ATO++;
+                            break;
+                        case 'MINI':
+                            conteo_b_MINI++;
+                            break
+                        case 'RELAY':
+                            conteo_b_RELAY++;
+                            break
+                        case 'MULTI':
+                            conteo_b_MULTI++;
+                            break
+                        case 'MAXI':
+                            conteo_b_MAXI++
+                            break;
+                        default:
+                            console.log('ALERTA FUSIBLE NO CONTADO',cavidad_ctgry)
+                            break;
+                    }
                     getDistance(cavidadx, cavidady, cavidadw, cavidadh);
 
                     // console.log("PDC-RS DISTANCE X",xDistance)
@@ -942,8 +1015,8 @@ function cargar_imagen_pdcr_small() {
                     color_style = "#ffffff00";
                     if (amperaje !== "N/A") {
                         image.src = `static/content/fusibles/${cavidad_ctgry},${amperaje},${fusibleColocado}${orientacion}.jpg`;
+                        arrayFuses_b.push(`${cavidad_ctgry},${amperaje},${fusibleColocado}`)
                     }
-
                     ctx_pdcr_small.beginPath();
                     ctx_pdcr_small.strokeStyle = color_style;
                     ctx_pdcr_small.strokeRect(cavidadx, cavidady, xDistance, yDistance);
@@ -1026,6 +1099,14 @@ function cargar_imagen_f96() {
                     // console.log(cavidady)
                     // console.log(cavidadw)
                     // console.log(cavidadh)
+                    switch (cavidad_ctgry) {
+                        case 'ATO':
+                            conteo_b_ATO++;
+                            break;
+                        default:
+                            console.log('ALERTA FUSIBLE NO CONTADO',cavidad_ctgry)
+                            break;
+                    }
                     getDistance(cavidadx, cavidady, cavidadw, cavidadh);
 
                     // console.log("PDC-R DISTANCE X",xDistance)
@@ -1087,6 +1168,7 @@ function cargar_imagen_f96() {
                     color_style = "#ffffff00";
                     if (amperaje !== "N/A") {
                         image.src = `static/content/fusibles/${cavidad_ctgry},${amperaje},${fusibleColocado}${orientacion}.jpg`;
+                        arrayFuses_b.push(`${cavidad_ctgry},${amperaje},${fusibleColocado}`)
                     }
 
                     ctx_f96.beginPath();
@@ -1160,7 +1242,7 @@ function cargar_imagen_pdcs() {
                     let cavidad = pdcs_array[i];
                     // console.log("CAVIDAD : ",cavidad);
                     let fusibleColocado = modularity['vision']["PDC-S"][pdcs_array[i]][0];
-                    console.log("Fusible Colocado: ", fusibleColocado);
+                    //console.log("Fusible Colocado: ", fusibleColocado);
 
                     let cavidadx = fuses_BB["PDC-S"][cavidad][0][0];
                     let cavidady = fuses_BB["PDC-S"][cavidad][0][1];
@@ -1171,6 +1253,14 @@ function cargar_imagen_pdcs() {
                     // console.log(cavidady)
                     // console.log(cavidadw)
                     // console.log(cavidadh)
+                    switch (cavidad_ctgry) {
+                        case 'ATO':
+                            conteo_b_ATO++;
+                            break;
+                        default:
+                            console.log('ALERTA FUSIBLE NO CONTADO',cavidad_ctgry)
+                            break;
+                    }
                     getDistance(cavidadx, cavidady, cavidadw, cavidadh);
 
                     // console.log("PDC-S DISTANCE X",xDistance)
@@ -1232,6 +1322,7 @@ function cargar_imagen_pdcs() {
                     color_style = "#ffffff00";
                     if (amperaje !== "N/A") {
                         image.src = `static/content/fusibles/${cavidad_ctgry},${amperaje},${fusibleColocado}${orientacion}.jpg`;
+                        arrayFuses_b.push(`${cavidad_ctgry},${amperaje},${fusibleColocado}`)
                     }
 
                     ctx_pdcs.beginPath();
@@ -1317,7 +1408,14 @@ function cargar_imagen_tblu() {
                     // console.log(cavidadw)
                     // console.log(cavidadh)
                     getDistance(cavidadx, cavidady, cavidadw, cavidadh);
-
+                    switch (cavidad_ctgry) {
+                        case 'ATO':
+                            conteo_b_ATO++;
+                            break;
+                        default:
+                            console.log('ALERTA FUSIBLE NO CONTADO',cavidad_ctgry)
+                            break;
+                    }
                     // console.log("TBLU DISTANCE X",xDistance)
                     // console.log("TBLU DISTANCE Y",yDistance)
                     let orientacion = xDistance > yDistance ? "h" : "v";
@@ -1377,6 +1475,7 @@ function cargar_imagen_tblu() {
                     color_style = "#ffffff00";
                     if (amperaje !== "N/A") {
                         image.src = `static/content/fusibles/${cavidad_ctgry},${amperaje},${fusibleColocado}_clear${orientacion}.jpg`;
+                        arrayFuses_b.push(`${cavidad_ctgry},${amperaje},${fusibleColocado}`)
                     }
 
                     ctx_tblu.beginPath();
@@ -1446,7 +1545,7 @@ function cargar_imagen_pdcd() {
                     // console.log("CAVIDAD : ",cavidad);
                     let fusibleColocado = modularity['vision']["PDC-D"][pdcd_array[i]][0];
                     // console.log("Fusible Colocado: ",fusibleColocado);
-
+                    
                     let cavidadx = fuses_BB["PDC-D"][cavidad][0][0];
                     let cavidady = fuses_BB["PDC-D"][cavidad][0][1];
                     let cavidadw = fuses_BB["PDC-D"][cavidad][1][0];
@@ -1457,7 +1556,17 @@ function cargar_imagen_pdcd() {
                     // console.log(cavidadw)
                     // console.log(cavidadh)
                     getDistance(cavidadx, cavidady, cavidadw, cavidadh);
-
+                    switch (cavidad_ctgry) {
+                        case 'ATO':
+                            conteo_a_ATO++;
+                            break;
+                        case 'MINI':
+                            conteo_a_MINI++;
+                            break
+                        default:
+                            console.log('ALERTA FUSIBLE NO CONTADO',cavidad_ctgry)
+                            break;
+                    }
                     // console.log("PDC-D DISTANCE X",xDistance)
                     // console.log("PDC-D DISTANCE Y",yDistance)
                     let orientacion = xDistance > yDistance ? "h" : "v";
@@ -1517,6 +1626,7 @@ function cargar_imagen_pdcd() {
                     color_style = "#ffffff00";
                     if (amperaje !== "N/A") {
                         image.src = `static/content/fusibles/${cavidad_ctgry},${amperaje},${fusibleColocado}${orientacion}.jpg`;
+                            arrayFuses_a.push(`${cavidad_ctgry},${amperaje},${fusibleColocado}`)
                     }
 
                     ctx_pdcd.beginPath();
@@ -1602,7 +1712,20 @@ function cargar_imagen_pdcp() {
                     // console.log(cavidadw)
                     // console.log(cavidadh)
                     getDistance(cavidadx, cavidady, cavidadw, cavidadh);
-
+                    switch (cavidad_ctgry) {
+                        case 'ATO':
+                            conteo_a_ATO++;  
+                            break;
+                        case 'MINI':
+                            conteo_a_MINI++;
+                            break
+                        case 'MULTI':
+                            conteo_a_MULTI++;
+                            break
+                        default:
+                            console.log('ALERTA FUSIBLE NO CONTADO',cavidad_ctgry)
+                            break;
+                    }
                     // console.log("PDC-P DISTANCE X",xDistance)
                     // console.log("PDC-P DISTANCE Y",yDistance)
                     let orientacion = xDistance > yDistance ? "h" : "v";
@@ -1662,6 +1785,7 @@ function cargar_imagen_pdcp() {
                     color_style = "#ffffff00";
                     if (amperaje !== "N/A") {
                         image.src = `static/content/fusibles/${cavidad_ctgry},${amperaje},${fusibleColocado}${orientacion}.jpg`;
+                        arrayFuses_a.push(`${cavidad_ctgry},${amperaje},${fusibleColocado}`)
                     }
 
                     ctx_pdcp.beginPath();
@@ -2224,7 +2348,7 @@ function cargar_imagen_battery2_t() {
 //////////////////////////////////////////// ToolTips para Cavidades ////////////////////////////////////////////
 /////////////////// ***********ToolTips para FUSIBLES***********///////////////////
 // create a tool-tip instance:
-var t1 = new ToolTip_pdcs(img_pdcs, "This is a tool-tip", 150);
+var t1 = new ToolTip_pdcs(img_pdcs, "This is a tool-tip", 182);
 // The Tool-Tip instance:
 function ToolTip_pdcs(img_pdcs, text, width) {
     var me = this, // self-reference for event handlers
@@ -2260,6 +2384,7 @@ function ToolTip_pdcs(img_pdcs, text, width) {
         var pos = getPos(e),
             posAbs = { x: e.clientX, y: e.clientY }; // div is fixed, so use clientX/Y
         for (i = 1; i < keys_cavidad.length + 1; i++) {
+            category = fuses_types['PDC-S'][cavidad]
             let fusible_tooltip;
             if (!visible && pos.x >= fuses_BB['PDC-S'][i][0][0] && pos.x <= fuses_BB['PDC-S'][i][1][0] && pos.y >= fuses_BB['PDC-S'][i][0][1] && pos.y <= fuses_BB['PDC-S'][i][1][1]) {
                 cavidad = keys_cavidad[i - 1];
@@ -2291,10 +2416,11 @@ function ToolTip_pdcs(img_pdcs, text, width) {
                         break;
                     default:
                         amperaje = 'N/A';
+                        category = ''
                         break;
                 }
 
-                div.innerHTML = `Cavidad: ${cavidad} <br>Fusible: ${fusible_tooltip} <br>Módulo: ${module} <br>Amperaje: ${amperaje}`;
+                div.innerHTML = `Cavidad: ${cavidad} <br>Fusible: ${category} ${fusible_tooltip} <br>Módulo: ${module} <br>Amperaje: ${amperaje}`;
                 me.show(posAbs); // show tool-tip at this pos
             } else setDivPos(posAbs);
         } // otherwise, update position
@@ -2429,6 +2555,7 @@ function ToolTip_pdcr(img_pdcr, text, width) {
         var pos = getPos(e),
             posAbs = { x: e.clientX, y: e.clientY }; // div is fixed, so use clientX/Y
         for (i = 0; i < keys_cavidad.length; i++) {
+            var category = fuses_types['PDC-R'][cavidad]
             if (!visible && pos.x >= fuses_BB['PDC-R'][keys_cavidad[i]][0][0] && pos.x <= fuses_BB['PDC-R'][keys_cavidad[i]][1][0] && pos.y >= fuses_BB['PDC-R'][keys_cavidad[i]][0][1] && pos.y <= fuses_BB['PDC-R'][keys_cavidad[i]][1][1]) {
                 cavidad = keys_cavidad[i];
                 // set some initial styles, can be replaced by class-name etc.
@@ -2484,12 +2611,13 @@ function ToolTip_pdcr(img_pdcr, text, width) {
                         break;
                     default:
                         amperaje = 'N/A';
+                        category = '';
                         break;
 
 
                 }
 
-                div.innerHTML = `Cavidad: ${cavidad} <br>Fusible: ${fusible_tooltip} <br>Módulo: ${module} <br>Amperaje: ${amperaje}`;
+                div.innerHTML = `Cavidad: ${cavidad} <br>Fusible: ${category}  ${fusible_tooltip} <br>Módulo: ${module} <br>Amperaje: ${amperaje}`;
                 me.show(posAbs); // show tool-tip at this pos
             } else setDivPos(posAbs);
         } // otherwise, update position
@@ -2550,6 +2678,7 @@ function ToolTip_pdcr_1(img_pdcr_1, text, width) {
         var pos = getPos(e),
             posAbs = { x: e.clientX, y: e.clientY }; // div is fixed, so use clientX/Y
         for (i = 0; i < keys_cavidad.length; i++) {
+            var category = fuses_types['PDC-RMID'][cavidad];
             if (!visible && pos.x >= fuses_BB['PDC-RMID'][keys_cavidad[i]][0][0] && pos.x <= fuses_BB['PDC-RMID'][keys_cavidad[i]][1][0] && pos.y >= fuses_BB['PDC-RMID'][keys_cavidad[i]][0][1] && pos.y <= fuses_BB['PDC-RMID'][keys_cavidad[i]][1][1]) {
                 cavidad = keys_cavidad[i];
                 // set some initial styles, can be replaced by class-name etc.
@@ -2560,6 +2689,9 @@ function ToolTip_pdcr_1(img_pdcr_1, text, width) {
                 } else if (modularity['vision']['PDC-RS'].hasOwnProperty(cavidad)) {
                     fusible_tooltip = modularity['vision']['PDC-RS'][cavidad][0];
                     module = modularity['vision']['PDC-RS'][cavidad][1];
+                }else if (modularity['vision']['PDC-R'].hasOwnProperty(cavidad)) {
+                    fusible_tooltip = modularity['vision']['PDC-R'][cavidad][0];
+                    module = modularity['vision']['PDC-R'][cavidad][1];
                 } else {
                     fusible_tooltip = "Vacío";
                     module = "N/A";
@@ -2602,12 +2734,13 @@ function ToolTip_pdcr_1(img_pdcr_1, text, width) {
                         break;
                     default:
                         amperaje = 'N/A';
+                        category = ''
                         break;
 
 
                 }
 
-                div.innerHTML = `Cavidad: ${cavidad} <br>Fusible: ${fusible_tooltip} <br>Módulo: ${module} <br>Amperaje: ${amperaje}`;
+                div.innerHTML = `Cavidad: ${cavidad} <br>Fusible: ${category} ${fusible_tooltip} <br>Módulo: ${module} <br>Amperaje: ${amperaje}`;
                 me.show(posAbs); // show tool-tip at this pos
             } else setDivPos(posAbs);
         } // otherwise, update position
@@ -2635,7 +2768,7 @@ function ToolTip_pdcr_1(img_pdcr_1, text, width) {
 }
 
 //-----------------------------  F96 ToolTip
-var t1 = new ToolTip_f96(img_f96, "This is a tool-tip", 150);
+var t1 = new ToolTip_f96(img_f96, "This is a tool-tip", 182);
 
 function ToolTip_f96(img_f96, text, width) {
     var me = this, // self-reference for event handlers
@@ -2670,6 +2803,7 @@ function ToolTip_f96(img_f96, text, width) {
         var pos = getPos(e),
             posAbs = { x: e.clientX, y: e.clientY }; // div is fixed, so use clientX/Y
         for (i = 0; i < keys_cavidad.length; i++) {
+            category = fuses_types['F96'][cavidad];
             if (!visible && pos.x >= fuses_BB['F96'][keys_cavidad[i]][0][0] && pos.x <= fuses_BB['F96'][keys_cavidad[i]][1][0] && pos.y >= fuses_BB['F96'][keys_cavidad[i]][0][1] && pos.y <= fuses_BB['F96'][keys_cavidad[i]][1][1]) {
                 cavidad = keys_cavidad[i];
                 // set some initial styles, can be replaced by class-name etc.
@@ -2720,9 +2854,10 @@ function ToolTip_f96(img_f96, text, width) {
                         break;
                     default:
                         amperaje = 'N/A';
+                        category = '';
                         break;
                 }
-                div.innerHTML = `Cavidad: ${cavidad} <br>Fusible: ${fusible_tooltip} <br>Módulo: ${module} <br>Amperaje: ${amperaje}`;
+                div.innerHTML = `Cavidad: ${cavidad} <br>Fusible: ${category} ${fusible_tooltip}  <br>Módulo: ${module} <br>Amperaje: ${amperaje}`;
                 me.show(posAbs); // show tool-tip at this pos
             } else setDivPos(posAbs);
         } // otherwise, update position
@@ -2749,7 +2884,7 @@ function ToolTip_f96(img_f96, text, width) {
     });
 }
 //-----------------------------  TBLU ToolTip
-var t1 = new ToolTip_tblu(img_tblu, "This is a tool-tip", 150);
+var t1 = new ToolTip_tblu(img_tblu, "This is a tool-tip", 182);
 
 function ToolTip_tblu(img_tblu, text, width) {
     var me = this, // self-reference for event handlers
@@ -2784,6 +2919,7 @@ function ToolTip_tblu(img_tblu, text, width) {
         var pos = getPos(e),
             posAbs = { x: e.clientX, y: e.clientY }; // div is fixed, so use clientX/Y
         for (i = 1; i < keys_cavidad.length + 1; i++) {
+            var category = fuses_types['TBLU'][cavidad]
             if (!visible && pos.x >= fuses_BB['TBLU'][i][0][0] && pos.x <= fuses_BB['TBLU'][i][1][0] && pos.y >= fuses_BB['TBLU'][i][0][1] && pos.y <= fuses_BB['TBLU'][i][1][1]) {
                 cavidad = keys_cavidad[i - 1];
                 // set some initial styles, can be replaced by class-name etc.
@@ -2808,9 +2944,10 @@ function ToolTip_tblu(img_tblu, text, width) {
                         break;
                     default:
                         amperaje = 'N/A';
+                        category ='';
                         break;
                 }
-                div.innerHTML = `Cavidad: ${cavidad} <br>Fusible: ${fusible_tooltip} <br>Módulo: ${module} <br>Amperaje: ${amperaje}`;
+                div.innerHTML = `Cavidad: ${cavidad} <br>Fusible: ${category} ${fusible_tooltip} <br>Módulo: ${module} <br>Amperaje: ${amperaje}`;
                 me.show(posAbs); // show tool-tip at this pos
             } else setDivPos(posAbs);
         } // otherwise, update position
@@ -2837,7 +2974,7 @@ function ToolTip_tblu(img_tblu, text, width) {
     });
 }
 //-----------------------------  PDC-D ToolTip
-var t1 = new ToolTip_pdcd(img_pdcd, "This is a tool-tip", 150);
+var t1 = new ToolTip_pdcd(img_pdcd, "This is a tool-tip", 182);
 
 function ToolTip_pdcd(img_pdcd, text, width) {
     var me = this, // self-reference for event handlers
@@ -2872,6 +3009,7 @@ function ToolTip_pdcd(img_pdcd, text, width) {
         var pos = getPos(e),
             posAbs = { x: e.clientX, y: e.clientY }; // div is fixed, so use clientX/Y
         for (i = 0; i < keys_cavidad.length; i++) {
+            var category= fuses_types['PDC-D'][cavidad];
             if (!visible && pos.x >= fuses_BB['PDC-D'][keys_cavidad[i]][0][0] && pos.x <= fuses_BB['PDC-D'][keys_cavidad[i]][1][0] && pos.y >= fuses_BB['PDC-D'][keys_cavidad[i]][0][1] && pos.y <= fuses_BB['PDC-D'][keys_cavidad[i]][1][1]) {
                 cavidad = keys_cavidad[i];
                 // set some initial styles, can be replaced by class-name etc.
@@ -2915,9 +3053,10 @@ function ToolTip_pdcd(img_pdcd, text, width) {
                         break;
                     default:
                         amperaje = 'N/A';
+                        category=''
                         break;
                 }
-                div.innerHTML = `Cavidad: ${cavidad} <br>Fusible: ${fusible_tooltip} <br>Módulo: ${module} <br>Amperaje: ${amperaje}`;
+                div.innerHTML = `Cavidad: ${cavidad} <br>Fusible: ${category}  ${fusible_tooltip} <br>Módulo: ${module} <br>Amperaje: ${amperaje}`;
                 me.show(posAbs); // show tool-tip at this pos
             } else setDivPos(posAbs);
         } // otherwise, update position
@@ -2944,7 +3083,7 @@ function ToolTip_pdcd(img_pdcd, text, width) {
     });
 }
 //-----------------------------  PDC-P ToolTip
-var t1 = new ToolTip_pdcp(img_pdcp, "This is a tool-tip", 150);
+var t1 = new ToolTip_pdcp(img_pdcp, "This is a tool-tip", 182);
 
 function ToolTip_pdcp(img_pdcp, text, width) {
     var me = this, // self-reference for event handlers
@@ -2979,6 +3118,7 @@ function ToolTip_pdcp(img_pdcp, text, width) {
         var pos = getPos(e),
             posAbs = { x: e.clientX, y: e.clientY }; // div is fixed, so use clientX/Y
         for (i = 0; i < keys_cavidad.length; i++) {
+            var category = fuses_types['PDC-P'][cavidad];
             if (!visible && pos.x >= fuses_BB['PDC-P'][keys_cavidad[i]][0][0] && pos.x <= fuses_BB['PDC-P'][keys_cavidad[i]][1][0] && pos.y >= fuses_BB['PDC-P'][keys_cavidad[i]][0][1] && pos.y <= fuses_BB['PDC-P'][keys_cavidad[i]][1][1]) {
                 cavidad = keys_cavidad[i];
                 // set some initial styles, can be replaced by class-name etc.
@@ -3022,9 +3162,10 @@ function ToolTip_pdcp(img_pdcp, text, width) {
                         break;
                     default:
                         amperaje = 'N/A';
+                        category=''
                         break;
                 }
-                div.innerHTML = `Cavidad: ${cavidad} <br>Fusible: ${fusible_tooltip} <br>Módulo: ${module} <br>Amperaje: ${amperaje}`;
+                div.innerHTML = `Cavidad: ${cavidad} <br>Fusible:  ${category} ${fusible_tooltip} <br>Módulo: ${module} <br>Amperaje: ${amperaje}`;
                 me.show(posAbs); // show tool-tip at this pos
             } else setDivPos(posAbs);
         } // otherwise, update position
@@ -3053,7 +3194,7 @@ function ToolTip_pdcp(img_pdcp, text, width) {
 
 /////////////////// ***********ToolTips para TORQUES***********///////////////////
 //-----------------------------  PDC-P ToolTip
-var t1 = new ToolTip_pdcpt(img_pdcp_t, "This is a tool-tip", 150);
+var t1 = new ToolTip_pdcpt(img_pdcp_t, "This is a tool-tip", 182);
 
 function ToolTip_pdcpt(img_pdcp_t, text, width) {
     var me = this, // self-reference for event handlers
@@ -3128,7 +3269,7 @@ function ToolTip_pdcpt(img_pdcp_t, text, width) {
     });
 }
 //-----------------------------  PDC-D ToolTip
-var t1 = new ToolTip_pdcdt(img_pdcd_t, "This is a tool-tip", 150);
+var t1 = new ToolTip_pdcdt(img_pdcd_t, "This is a tool-tip", 182);
 
 function ToolTip_pdcdt(img_pdcd_t, text, width) {
     var me = this, // self-reference for event handlers
@@ -3203,7 +3344,7 @@ function ToolTip_pdcdt(img_pdcd_t, text, width) {
     });
 }
 //-----------------------------  MFB-P1 ToolTip
-var t1 = new ToolTip_mfbp1(img_mfbp1_t, "This is a tool-tip", 150);
+var t1 = new ToolTip_mfbp1(img_mfbp1_t, "This is a tool-tip", 182);
 
 function ToolTip_mfbp1(img_mfbp1_t, text, width) {
     var me = this, // self-reference for event handlers
@@ -3278,7 +3419,7 @@ function ToolTip_mfbp1(img_mfbp1_t, text, width) {
     });
 }
 //-----------------------------  MFB-S ToolTip
-var t1 = new ToolTip_mfbs(img_mfbs_t, "This is a tool-tip", 150);
+var t1 = new ToolTip_mfbs(img_mfbs_t, "This is a tool-tip", 182);
 
 function ToolTip_mfbs(img_mfbs_t, text, width) {
     var me = this, // self-reference for event handlers
@@ -3353,7 +3494,7 @@ function ToolTip_mfbs(img_mfbs_t, text, width) {
     });
 }
 //-----------------------------  MFB-E ToolTip
-var t1 = new ToolTip_mfbe(img_mfbe_t, "This is a tool-tip", 150);
+var t1 = new ToolTip_mfbe(img_mfbe_t, "This is a tool-tip", 182);
 
 function ToolTip_mfbe(img_mfbe_t, text, width) {
     var me = this, // self-reference for event handlers
@@ -3428,7 +3569,7 @@ function ToolTip_mfbe(img_mfbe_t, text, width) {
     });
 }
 //-----------------------------  MFB-P2 ToolTip
-var t1 = new ToolTip_mfbp2(img_mfbp2_t, "This is a tool-tip", 150);
+var t1 = new ToolTip_mfbp2(img_mfbp2_t, "This is a tool-tip", 182);
 
 function ToolTip_mfbp2(img_mfbp2_t, text, width) {
     var me = this, // self-reference for event handlers
@@ -3503,7 +3644,7 @@ function ToolTip_mfbp2(img_mfbp2_t, text, width) {
     });
 }
 //-----------------------------  BATTERY ToolTip
-var t1 = new ToolTip_bt(img_bt_t, "This is a tool-tip", 150);
+var t1 = new ToolTip_bt(img_bt_t, "This is a tool-tip", 182);
 
 function ToolTip_bt(img_bt_t, text, width) {
     var me = this, // self-reference for event handlers
@@ -3578,7 +3719,7 @@ function ToolTip_bt(img_bt_t, text, width) {
     });
 }
 //-----------------------------  BATTERY-2 ToolTip
-var t1 = new ToolTip_battery2(img_battery2_t, "This is a tool-tip", 150);
+var t1 = new ToolTip_battery2(img_battery2_t, "This is a tool-tip", 182);
 
 function ToolTip_battery2(img_battery2_t, text, width) {
     var me = this, // self-reference for event handlers
@@ -3877,3 +4018,137 @@ $('#pdf_torque').on('click', function () {
         $('#torque_title').click();
     }
 });
+
+var activated = 0;
+//****************CHECK-TIME*****************//
+$('#time').on('click', function () {
+ if (activated === 0) {
+     document.getElementById('timeContainer').classList.add("active-calc")   
+     document.getElementById('fusiblesTotales').classList.add("active-calc");    
+    activated++;    
+} else{
+    document.getElementById('timeContainer').classList.remove("active-calc")
+    document.getElementById('fusiblesTotales').classList.remove("active-calc");    
+    activated = 0;
+}
+})
+var conteoRobotA = 0
+var conteoRobotB = 0
+
+var grid_a = document.createElement('div')  
+grid_a.classList = 'timeFuseType';
+grid_a.id = 'timeFuseType';
+grid_a.style.height = 'fit-content';
+function dateTime_a (){
+    //console.log(arrayFuses_a)
+    timeResult_a = document.getElementById("timeResult_a")
+    /**ROBOT- A**/
+    var minutos_a =0;
+    let time_a_ATO = document.getElementById("time_a_ATO").value
+    let time_a_MINI = document.getElementById("time_a_MINI").value
+    let time_a_MULTI = document.getElementById("time_a_MULTI").value
+    grid_a.innerHTML = ''
+    grid_a.display = 'content'
+    let title = document.createElement('b')
+    title.innerHTML = `Robot-A`;
+    grid_a.appendChild(title)
+    /******************************************************* */
+    time_a_ATO *= conteo_a_ATO
+    time_a_MINI *= conteo_a_MINI
+    time_a_MULTI *= conteo_a_MULTI
+    segundos_a = time_a_ATO + time_a_MINI +time_a_MULTI;
+    while (segundos_a > 60){
+        segundos_a -= 60
+        minutos_a++
+    } 
+    conteoRobotA = conteo_a_ATO + conteo_a_MINI + conteo_a_MULTI;
+    //console.log(`${minutos_a} Minutos y ${segundos_a} Segundos en ${conteoRobotA}`);
+    //console.log(arrayFuses_a);
+    timeResult_a.innerHTML = (`${minutos_a} Minuto(s) y ${segundos_a} Segundos (Sin fallas) <br> <p> En ${conteoRobotA} fusibles </p>`)
+    document.getElementById('fusiblesTotales').innerHTML = `${conteoRobotA + conteoRobotB} Fusibles en total`
+    
+//console.log(arrayFuses_a);
+const unicos = [... new Set(arrayFuses_a)];
+//console.log(unicos); 
+
+for (let i  = 0; i < unicos.length; i++) {
+    var p = document.createElement('p');
+    var conteo = 0
+    for (let j = 0; j < arrayFuses_a.length; j++) {
+        const valor = arrayFuses_a[j];
+        if (unicos[i] === valor) {
+            conteo++
+            //console.log(unicos[i], conteo)
+        }
+        // else{
+        //     console.log(`PAM`)
+        // }
+    }
+    p.innerHTML= `${unicos[i]} : ${conteo}`
+    grid_a.appendChild(p)
+}
+
+document.getElementById('timeContainer').appendChild(grid_a)
+    return false
+}
+
+var grid_b = document.createElement('div')
+grid_b.classList = 'timeFuseType';
+grid_b.id = 'timeFuseType';
+grid_b.style.height = 'fit-content';
+function dateTime_b(){
+timeResult_b = document.getElementById("timeResult_b")
+/**ROBOT- B**/
+let time_b_ATO = document.getElementById("time_b_ATO").value
+let time_b_MINI = document.getElementById("time_b_MINI").value
+let time_b_MAXI = document.getElementById("time_b_MAXI").value
+let time_b_RELAY = document.getElementById("time_b_RELAY").value
+grid_b.innerHTML = ''
+grid_b.display = 'content'
+let title = document.createElement('b')
+title.innerHTML = `Robot-B`;
+grid_b.appendChild(title)
+/****************************************************** */
+
+var minutos_b =0;
+time_b_ATO *= conteo_b_ATO
+time_b_MINI *= conteo_b_MINI
+time_b_MAXI *= conteo_b_MAXI
+time_b_RELAY *= conteo_b_RELAY
+segundos_b = time_b_ATO + time_b_MINI +time_b_MAXI + time_b_RELAY;
+//console.log(`${time_b_ATO} + ${time_b_MINI} + ${time_b_MAXI} + ${time_b_RELAY}`)
+while (segundos_b > 60){
+    segundos_b -= 60
+    minutos_b++
+} 
+
+conteoRobotB = conteo_b_ATO + conteo_b_MINI + conteo_b_MAXI + conteo_b_RELAY;
+//console.log(`${minutos_b} Minutos y ${segundos_b} Segundos en ${conteoRobotB}`);
+timeResult_b.innerHTML = (`${minutos_b} Minuto(s) y ${segundos_b} Segundos (Sin fallas) <br> <p> En ${conteoRobotB} fusibles </p>`)
+document.getElementById('fusiblesTotales').innerHTML = `${conteoRobotA + conteoRobotB} Fusibles en total`
+
+
+//console.log(arrayFuses_b);
+const unicos = [... new Set(arrayFuses_b)];
+//console.log(unicos); 
+
+for (let i  = 0; i < unicos.length; i++) {
+    var p = document.createElement('p');
+    var conteo = 0
+    for (let j = 0; j < arrayFuses_b.length; j++) {
+        const valor = arrayFuses_b[j];
+        if (unicos[i] === valor) {
+            conteo++
+            //console.log(unicos[i], conteo)
+        }
+        // else{
+        //     console.log(`PAM`)
+        // }
+    }
+    p.innerHTML= `${unicos[i]} : ${conteo}`
+    grid_b.appendChild(p)
+}
+
+document.getElementById('timeContainer').appendChild(grid_b)
+return false
+}

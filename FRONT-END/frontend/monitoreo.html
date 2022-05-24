@@ -21,6 +21,7 @@
       <link rel="stylesheet" type="text/css" href="static/content/preset.css" />
       <link rel="stylesheet" type="text/css" href="static/content/animate.css" />
       <link rel="stylesheet" type="text/css" href="static/content/style.css" />
+      <link rel="stylesheet" type="text/css" href="static/content/botones.css" />
       <link rel="stylesheet" type="text/css" href="static/content/responsive.css" />
       <link rel="stylesheet" type="text/css" href="static/content/jquery.dataTables.min.css" />
       <link rel="stylesheet" type="text/css" href="static/content/responsive.dataTables.min.css" />
@@ -80,10 +81,10 @@
             </div>
             <ul>
               <!-- <li><a href="home.html">Home</a></li> -->
-              <li><a id="comentariosHeader" href="comentarios.html" class="cool-link" style="display: none;">Comentarios</a></li>
+              <!-- <li><a id="comentariosHeader" href="comentarios.html" class="cool-link" style="display: none;">Comentarios</a></li> -->
               <li><a href="monitoreo.html" class="cool-link">Monitoreo</a></li>
               <!-- <li><a href="maquina.html">Disponibilidad de Máquina</a></li> -->
-              <li><a href="historial - interior.html" class="cool-link">Historial</a></li>
+              <!-- <li><a href="historial - interior.html" class="cool-link">Historial</a></li> -->
               <li><a href="index.html" class="cool-link">Gestión de Datos</a></li>
               <li><button id="iniciarsesion" data-toggle="modal" data-target="#login_modal" style="width:auto;" class="login">Iniciar Sesión</button></li>
               <li><button id="cerrarsesion" onclick="cerrar()" class="login" style="display: none;">Cerrar Sesión</button></li>
@@ -147,6 +148,19 @@
       color: red;
       cursor: pointer;
     }
+
+    thead tr:first-child Th{
+      position: sticky;
+      z-index: 12;
+      top: 11rem;
+      background: white;
+    }
+    thead Th{
+      position: sticky;
+      z-index: 12;
+      top: 11rem;
+      background: white;
+    }
   </style>
   <div class="modal fade" id="login_modal" name="login_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
     <div class="modal-dialog" role="document">
@@ -157,7 +171,7 @@
             <span aria-hidden="true" style="float: right;">&times;</span>
           </button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body" style="overflow-y:unset; max-height:inherit !important">
           <img src="static/content/admin.png" alt="Avatar" class="img-centro">
           <div id="alerta" style="display: none;"></div>
 
@@ -219,9 +233,9 @@
         <form id="fecha" name="fecha">
           <!-- Campo de entrada de fecha -->
           <label>Fecha inicial:</label>
-          <input type="date" id="fechai" name="fechai" min="2019-01-01" max="2021-12-31" value="2019-01-01">
+          <input type="date" id="fechai" name="fechai" min="2019-01-01" max="2024-12-31" value="2019-01-01">
           <label>Fecha final:</label>
-          <input type="date" id="fechaf" name="fechaf" min="2019-01-01" max="2021-12-31" value="2021-01-01">
+          <input type="date" id="fechaf" name="fechaf" min="2019-01-01" max="2024-12-31" value="2021-01-01">
         </form>
 
         <form id="id" name="id" style="display: none;">
@@ -286,7 +300,7 @@
   <style>
     .modal-dialog-centered {
       transform: translate(0, -50%);
-      top: 40%;
+      top: 20%;
       margin: 0 auto;
     }
 
@@ -312,6 +326,78 @@
   <!--Esto permite que el header tome un color celeste al hacer scroll en la página-->
   <div class="content" id="counter"></div>
   <!-- Fin de header color celeste al hacer scroll -->
+  <!--====================================================
+  =            POP-UP PARA EDITAR LOS PEDIDOS            =
+  =====================================================-->
+  <div class="modal fade" id="modal_estacions_edit" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" id="modal-dialog"  role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="exampleModalCenterTitle"><span id="comentario_edit_title">Insertar Comentario</span></h3>
+                <button type="button" id="cerrar" class="close" data-dismiss="modal" aria-label="Close">
+    <span aria-hidden="true" style="float: right;">&times;</span>
+  </button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <div align="center" id="formusuario">
+                    <form id="" style="margin-top: 10px">
+                      <div> <label>Hm:</label>  <p id="pedidoHM"></p></div>
+                        <div class="contenedoragregar">
+                            <!-- <label for="modulo"><b>Comentario:</b></label> -->
+                            <textarea type="text" id="comentario_edit" name="comentario" style=" width: 50rem; height: 20rem;"> </textarea>
+                            <br>
+                            
+                            <label>Estación:</label>
+                            <select id="estacion_edit">
+                                <option id="TORQUE" value="TORQUE">TORQUE</option>
+                                <option id="VISION" value="VISION">VISION</option>
+                                <option id="INSERCION" value="INSERCION">INSERCION</option>
+                            </select>
+                            
+                            <label for="evento_edit">Evento:</label>
+                            <select id="evento_edit">
+                                <option id="X294" value="X294">X294</option>
+                                <option id="X296" value="X296">X296</option>
+                            </select>
+
+                            <label for="fase_edit">Fase:</label>
+                            <input type="text" name="fase_edit" id="fase_edit">
+
+                            <label for="conduccion_edit">conduccion:</label>
+                            <select id="conduccion_edit">
+                                <option value="IZQUIERDO">IZQUIERDO</option>
+                                <option value="DERECHO">DERECHO</option> 
+                            </select>
+                            
+                        </div>
+                    </form>
+                    <div class="container alert alert-success alert-dismissible" id="alertaadd" style="display: none;">
+                        <button type="button" class="close" data-hide="alert" aria-hidden="true">&times;</button>
+                        <strong id="alerta_estacion"></strong>
+                    </div>
+                    <div class="container alert alert-danger alert-dismissible" id="alertaadd_fail" style="display: none;">
+                        <button type="button" class="close" data-hide="alert" aria-hidden="true">&times;</button>
+                        <strong id="alerta_estacion_fail"></strong>
+                    </div>
+                    <div id="alertaadd"></div>
+                </div>
+            </div>
+            <div class="modal-footer" id="modal-comment-footer">
+                <button type="button" data-dismiss="modal" class="cancel_edit">Cancelar</button>
+                <button type="button" class="guardar_edit" onclick="guardar_edit(dateHM , hm)">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="registros" class="container" align="left">
+        <div><button type="button" class="btn btn-primary" id="mostrar" data-toggle="modal" data-target="#modal_estacions" style="display: none;"></div>
+        <div><button type="button" class="btn btn-primary" id="mostrar_estacions" data-toggle="modal" data-target="#modal_estacions_edit" style="display: none;"></div>
+        
+        </div>
+        <!--Esto permite que el header tome un color celeste al hacer scroll en la página-->
+        <div class="content" id="counter"></div>
+    </div>
+<!--====  End of POP-UP PARA EDITAR LOS PEDIDOS  ====-->
 
   <!--============================================
   =            FOOTER O PIE DE PÁGINA            =
@@ -392,5 +478,6 @@
    <script type="text/javascript" src="static/script/datatables/Buttons-1.6.5/js/buttons.print.min.js"></script>
   <script type="text/javascript" src="static/script/datatables/buttons.html5.styles.min.js"></script>
   <script type="text/javascript" src="static/script/datatables/buttons.html5.styles.templates.min.js"></script>
+  <script type="text/javascript" src="static/script/cajaComentario.js"></script>
 </body>
 </html>

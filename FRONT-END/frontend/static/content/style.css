@@ -29,6 +29,7 @@ Primary use:
 [5] Blog Details
 [6] Error Page
 [7] Project Single
+[8] Sticky checktime
 ==========================================================================*/
 
 /**==================== Header ======================**/
@@ -886,7 +887,7 @@ footer {
 /**==================== Breadcrumb ======================**/
  .breadcrumbSec{
      padding: 78px 0 87px;
-    // background: url(../images/breadcum/3.jpg) no-repeat scroll center center/cover;
+  /*   background: url(../images/breadcum/3.jpg) no-repeat scroll center center/cover;*/
      position: relative;
 	 background-size: cover;
 	 background-position: center;
@@ -1611,8 +1612,61 @@ padding-bottom:20px;
  .showit:hover{
      background: #333;
 }
-
-/**** ** MONITOREO.html ** ****/
+/**========================Sticky CheckTime=======================**/
+ .sticky{
+    position: sticky;
+    top: 12rem;
+}
+.time-tag{
+    cursor: pointer;
+    color: rgb(255, 255, 255);
+    background-color: #0dbed6;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    text-align: center;
+    transition: all ease-in-out 0.3s;
+}
+.time-tag:hover{
+    color: rgb(240, 240, 240);
+    background-color: #0ba8bd;
+    transition: all ease-in-out 0.3s;
+}
+.timeFuseType{
+    align-items: baseline;
+    justify-content: space-between;
+    opacity: 0;
+    height: 0;
+    transition: all 0.5s cubic-bezier(1,0,0,1);
+    overflow: hidden;
+} 
+ .input-number{
+ width: 6rem;
+}
+.timeContainer{
+    display: grid;
+    grid-template-columns: 19rem 19rem; 
+    overflow-y: hidden;
+    max-height: 43rem;
+}
+.timeContainer.active-calc{
+    overflow-y: scroll;
+}
+#fila{
+    margin-bottom: 1rem;
+}
+.active-calc .timeFuseType{
+    color: black;
+    height: 4rem;
+    opacity: 1;
+    transition: all 0.5s cubic-bezier(1,0,0,1);
+} 
+.active-calc{
+    opacity: 1;
+}
+.timeResult{
+    text-align: center;
+}
+/**** ** Estilos personalizados css ** ****/
 .grid{
     display: grid;
 }
@@ -1629,7 +1683,150 @@ padding-bottom:20px;
     grid-template-columns: 1fr 1fr 1fr;
     margin-left: 3rem;
 }
-
+.flex-box{
+    display: flex;
+}
+.column-reverse{
+    flex-direction: column-reverse;
+}
+.justify-center{
+    justify-content: center;
+}
+.justify-end{
+    justify-content: flex-end;
+}
+.justify-around{
+    justify-content: space-around;
+}
 #titulo-caja > span > p {
 	word-spacing: 4rem;
 }
+
+.comentarios{
+    margin: 0 auto;
+    width: 0px;
+    height: 0rem;
+    margin-bottom: 2rem;
+    transition: all 0.5s;
+}
+.comment-active{
+    height: 30rem;
+    /* overflow-y: scroll; */
+    transition: all 0.5s; 
+    animation: apertura;
+    animation-fill-mode: forwards;
+}
+
+
+/* 
+
+@keyframes apertura {
+    10%{
+        width: 60%;
+    }
+    100%{
+        width: 60%; height: 70rem;
+    }
+
+} */
+
+/* 
+.comment-active::-webkit-scrollbar {
+    width: 12px;               
+  }
+.comment-active::-webkit-scrollbar-track {
+    background: #A6BEA9;       
+  }
+  .comment-active::-webkit-scrollbar-track:hover {
+    background: #b7d1ba;       
+  }
+.comment-active::-webkit-scrollbar-thumb {
+    background-color: gray;             
+  }
+  .comment-active::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(148, 148, 148);              
+  } */
+.contenedor{
+    display: grid;
+    grid-template-columns: 1fr 25rem 10rem;
+    border-bottom: 2px solid #a7a4a4;
+    border-radius: 5px;
+    margin-top: 0.5rem;
+}
+.dropOptions{
+    margin-left: 3rem;
+    opacity: 0;
+    background: transparent;
+}
+.ocultarCheck{
+    margin-left: -1.5rem !important;
+    height: 2rem;
+    width: 2rem;
+    cursor: pointer;
+    opacity: 0;
+}
+.dropMenu{
+    margin-right: 1rem;
+}
+
+.dropItDown{
+    display: none;    
+}
+.ocultarCheck:checked ~ .dropItDown{
+    display: grid;
+    margin-left: -13rem;
+    margin-top: -0.5rem;
+    margin-right: 3rem;
+}
+
+.optionButton{
+    background-color: whitesmoke;
+}
+
+.contenedor:hover > .dropMenu .dropOptions {
+    opacity: 1;
+}
+.etiqueta {
+    margin: 0 1rem 0 1rem;
+    background-color: #e8d8c1;
+    border: solid 1px;
+    border-radius: 8%;
+    padding: 0px 4px 0px 4px;
+    font-size: smaller;
+}
+.fecha{
+    font-style: oblique;
+    padding-left: 1rem;
+    /* margin-right: 1rem; */
+    text-align: end;
+}
+.hm{
+    text-align: end;
+    font-weight: bold;
+}
+.cancel-text{
+    margin: 0 0 0 auto;
+}
+.send-text 
+    { 
+    margin:  0 0 0 1rem;
+    width: 8rem;
+    }
+
+.btn-ver-comentario {
+    margin-left: -7rem;
+    margin-right: 1rem;
+}
+/**BOOTSRAP TABLE**/
+thead tr:first-child Th{
+    position: sticky;
+    z-index: 12;
+    top: 11rem;
+    background: white;
+  }
+  thead Th{
+    position: sticky;
+    z-index: 12;
+    top: 11rem;
+    background: white;
+  }

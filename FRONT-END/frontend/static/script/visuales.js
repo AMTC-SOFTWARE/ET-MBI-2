@@ -212,12 +212,12 @@ $(document).on('click','.btn-ver-altura', function(){
           //console.log ("cavidad",obj_cavidad);
           //console.log ("valor",cavidades[obj_cavidad]);
           let span = document.createElement("span");
-          span.classlist = "caja-valor";
+          span.classList = "flex-box";
           let valores = JSON.stringify(cavidades[obj_cavidad]);
           //console.log("Aqui en string: ",valores)
           let boxValue = valores.replace(re, 'N/A');
 
-          span.innerHTML = `<p>${valores} </p>`;
+          span.innerHTML = `<b>${j+1}: </b> <p>${valores} </p>`;
           grid.appendChild(span);
          }
       }
@@ -284,12 +284,12 @@ $(document).on('click','.btn-ver-torque', function(){
           //console.log ("cavidad",obj_cavidad);
           //console.log ("valor",cavidades[obj_cavidad]);
           let span = document.createElement("span");
-          span.classlist = "caja-valor";
+          span.classList = "flex-box";
           let valores = JSON.stringify(cavidades[obj_cavidad]);
           //console.log("Aqui en string: ",valores)
           let boxValue = valores.replace(re, 'N/A');
 
-          span.innerHTML = `<p>${valores} </p>`;
+          span.innerHTML = `<b>${j+1}: </b> <p>${valores} </p>`;
           grid.appendChild(span);
          }
       }
@@ -345,12 +345,12 @@ $(document).on('click','.btn-ver-vision', function(){
           //console.log ("cavidad",obj_cavidad);
           //console.log ("valor",cavidades[obj_cavidad]);
           let span = document.createElement("span");
-          span.classlist = "caja-valor";
+          span.classList = "flex-box";
           let valores = JSON.stringify(cavidades[obj_cavidad]);
           //console.log("Aqui en string: ",valores)
           let boxValue = valores.replace(re, 'N/A');
 
-          span.innerHTML = `<p>${valores} </p>`;
+          span.innerHTML = `<b>${j+1}: </b> <p>${valores} </p>`;
           grid.appendChild(span);
         }
       }
@@ -394,12 +394,12 @@ $(document).on('click','.btn-ver-vision', function(){
           //console.log ("cavidad",obj_cavidad);
           //console.log ("valor",cavidades[obj_cavidad]);
           let span = document.createElement("span");
-          span.classlist = "caja-valor";
+          span.classList = "flex-box";
           let valores = JSON.stringify(cavidades[obj_cavidad]);
           //console.log("Aqui en string: ",valores)
           let boxValue = valores.replace(re, 'N/A');
 
-          span.innerHTML = `<p>${valores} </p>`;
+          span.innerHTML = `<b>${j+1}: </b> <p>${valores} </p>`;
           grid.appendChild(span);
         }
       }

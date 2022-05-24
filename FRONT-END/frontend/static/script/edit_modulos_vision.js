@@ -360,6 +360,14 @@ $("#cafe_pdcr").on("click", function() {
     ctgry = "MINI"
     console.log("Caja seleccionada", caja);
 });
+$("#cafe_ato_pdcr").on("click", function() {
+    color = "cafe";
+    color_style = "#8B4513";
+    console.log("Color seleccionado: ", color)
+    caja = "pdcr";
+    ctgry = "ATO"
+    console.log("Caja seleccionada", caja);
+});
 $("#rojo_pdcr").on("click", function() {
     color = "rojo";
     color_style = "#FF0000";
@@ -406,6 +414,14 @@ $("#amarillo_pdcr").on("click", function() {
     console.log("Color seleccionado: ", color)
     caja = "pdcr";
     ctgry = "ATO"
+    console.log("Caja seleccionada", caja);
+});
+$("#verde_30_pdcr").on("click", function() {
+    color = "verde";
+    color_style = "#008000";
+    console.log("Color seleccionado: ", color)
+    caja = "pdcr";
+    ctgry = "MAXI"
     console.log("Caja seleccionada", caja);
 });
 $("#naranja_pdcr").on("click", function() {
@@ -494,7 +510,7 @@ function cargar_imagen_pdcr() {
                         fuses_value["PDC-R"][element] = color
                         //console.log(cavidad);
                         fusible = element;
-                        console.log(fusible);
+                        //console.log(fusible);
                         switch (color){
                            case "cafe":
                            amperaje = '7.5';
@@ -803,6 +819,14 @@ $("#amarillo_pdcr_mid").on("click", function() {
     ctgry = "ATO"
     console.log("Caja seleccionada", caja);
 });
+$("#verde_30_pdcr_mid").on("click", function() {
+    color = "verde";
+    color_style = "#008000";
+    console.log("Color seleccionado: ", color)
+    caja = "pdcr_mid";
+    ctgry = "MAXI"
+    console.log("Caja seleccionada", caja);
+});
 $("#naranja_pdcr_mid").on("click", function() {
     color = "naranja";
     color_style = "#FFA500";
@@ -835,6 +859,14 @@ $("#relt_pdcr_mid").on("click", function() {
     ctgry = "RELAY"
     console.log("Caja seleccionada", caja);
 });
+$("#cafe_ato_pdcr_mid").on("click", function() {
+    color = "cafe";
+    color_style = "#8B4513";
+    console.log("Color seleccionado: ", color)
+    caja = "pdcr_mid";
+    ctgry = "ATO"
+    console.log("Caja seleccionada", caja);
+});
 $("#eliminar_pdcr_mid").on("click", function() {
     color = "eliminar";
     color_style = "#A9A9A9";
@@ -847,10 +879,10 @@ $("#eliminar_pdcr_mid").on("click", function() {
 function cargar_imagen_pdcr_1() {
     var t1 = new ToolTip_pdcr_1(img_pdcr_1, "This is a tool-tip", 150);
     if (img_pdcr_1.getContext) {
-        var ctx_pdcr_mid = img_pdcr_1.getContext("2d");
-        var img = new Image();
-        img.src = "static/content/cajas/interior/pdcr_1/pdcr_1.jpg";
-        img.onload = function() {
+            var ctx_pdcr_mid = img_pdcr_1.getContext("2d");
+            var img = new Image();
+            img.src = "static/content/cajas/interior/pdcr_1/pdcr_1.jpg";
+            img.onload = function() {
             imgWidth_pdcr_mid = this.width;
             imgHeight_pdcr_mid = this.height;
             img_pdcr_1.width = imgWidth_pdcr_mid;
@@ -884,12 +916,12 @@ function cargar_imagen_pdcr_1() {
                 for (i = 0; i < keys_pdcr_mid.length; i++) {
                     if (pixelx >= fuses_BB["PDC-RMID"][keys_pdcr_mid[i]][0][0] && pixelx <= fuses_BB["PDC-RMID"][keys_pdcr_mid[i]][1][0] && pixely >= fuses_BB["PDC-RMID"][keys_pdcr_mid[i]][0][1] && pixely <= fuses_BB["PDC-RMID"][keys_pdcr_mid[i]][1][1] && color != "vacio" && caja == "pdcr_mid") {
                         var temporal_text = "Esta dentro de " + keys_pdcr_mid[i]
-                            // console.log("TEMPORAL TEXT",temporal_text)
+                        // console.log("TEMPORAL TEXT",temporal_text)
                         element = keys_pdcr_mid[i]
                         fuses_value["PDC-RMID"][element] = color
                         //console.log(cavidad);
                         fusible = element;
-                        console.log(fusible);
+                        //console.log(fusible);
                         switch (color){
                            case "cafe":
                            amperaje = '7.5';
@@ -1193,6 +1225,22 @@ $("#natural_pdcr_small").on("click", function() {
 $("#amarillo_pdcr_small").on("click", function() {
     color = "amarillo";
     color_style = "#FFFF00";
+    console.log("Color seleccionado: ", color)
+    caja = "pdcr_small";
+    ctgry = "ATO"
+    console.log("Caja seleccionada", caja);
+});
+$("#verde_30_pdcr_small").on("click", function() {
+    color = "verde";
+    color_style = "#008000";
+    console.log("Color seleccionado: ", color)
+    caja = "pdcr_small";
+    ctgry = "MAXI"
+    console.log("Caja seleccionada", caja);
+});
+$("#cafe_ato_pdcr_small").on("click", function() {
+    color = "cafe";
+    color_style = "#8B4513";
     console.log("Color seleccionado: ", color)
     caja = "pdcr_small";
     ctgry = "ATO"

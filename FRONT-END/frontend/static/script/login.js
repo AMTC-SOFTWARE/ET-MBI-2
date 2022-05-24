@@ -1,5 +1,5 @@
-﻿var dominio = 'http://localhost:5000';
-console.log("Hola, Soy la actualización del 07 ♥ de Enero de 2022");
+﻿var dominio = 'http://localhost:5000'; // IP Máquina(Router): 192.168.1.10 IP Pruebas: localhost
+console.log("Hola, Soy la actualización del 28 ♥ de Abril de 2022");
 console.log(dominio);
 var alerta = document.getElementById('alerta');
 var alertasesion = document.getElementById('alertasesion');
@@ -125,7 +125,7 @@ function sesion_1(){
 		document.getElementById('boton_auto').classList.remove('disabled');
 		document.getElementById('tipo').disabled = true;
 		document.getElementById('tipo').value = "CALIDAD";
-		document.getElementById('comentariosHeader').style.display = "inline-block";
+		// document.getElementById('comentariosHeader').style.display = "inline-block";
 		break;
 		case "MANTENIMIENTO":
 		document.getElementById('iniciarsesion').style.display = "none";
@@ -175,7 +175,7 @@ function sesion_1(){
 		document.getElementById('boton_manual').classList.remove('disabled');
 		document.getElementById('boton_auto').classList.remove('disabled');
 		document.getElementById('dbbkup').style.display = "inline-block";
-		document.getElementById('comentariosHeader').style.display = "inline-block";
+		// document.getElementById('comentariosHeader').style.display = "inline-block";
 		break;
 		default:
 		console.log("Ningún usuario logueado");
@@ -188,7 +188,7 @@ function sesion_2(){
 		case "CALIDAD":
 		document.getElementById('iniciarsesion').style.display = "none";
 		document.getElementById('cerrarsesion').style.display = "inline-block";
-		document.getElementById('comentariosHeader').style.display = "inline-block";
+		// document.getElementById('comentariosHeader').style.display = "inline-block";
 		break;
 		case "MANTENIMIENTO":
 		document.getElementById('iniciarsesion').style.display = "none";
@@ -209,7 +209,7 @@ function sesion_2(){
 		case "SUPERUSUARIO":
 		document.getElementById('iniciarsesion').style.display = "none";
 		document.getElementById('cerrarsesion').style.display = "inline-block";
-		document.getElementById('comentariosHeader').style.display = "inline-block";
+		// document.getElementById('comentariosHeader').style.display = "inline-block";
 		break;
 		default:
 		console.log("Ningún usuario logueado");
@@ -226,7 +226,7 @@ function sesion_3(){
 		case "CALIDAD":
 		document.getElementById('iniciarsesion').style.display = "none";
 		document.getElementById('cerrarsesion').style.display = "inline-block";
-		document.getElementById('comentariosHeader').style.display = "inline-block";
+		// document.getElementById('comentariosHeader').style.display = "inline-block";
 		break;
 		case "MANTENIMIENTO":
 		document.getElementById('iniciarsesion').style.display = "none";
@@ -247,7 +247,7 @@ function sesion_3(){
 		case "SUPERUSUARIO":
 		document.getElementById('iniciarsesion').style.display = "none";
 		document.getElementById('cerrarsesion').style.display = "inline-block";
-		document.getElementById('comentariosHeader').style.display = "inline-block";
+		// document.getElementById('comentariosHeader').style.display = "inline-block";
 		break;
 		default:
 		console.log("No tiene los permisos necesarios para acceder a esta información");
@@ -263,7 +263,7 @@ function sesion_4(){
 		case "CALIDAD":
 		document.getElementById('iniciarsesion').style.display = "none";
 		document.getElementById('cerrarsesion').style.display = "inline-block";
-		document.getElementById('comentariosHeader').style.display = "inline-block";
+		// document.getElementById('comentariosHeader').style.display = "inline-block";
 		break;
 		case "MANTENIMIENTO":
 		document.getElementById('iniciarsesion').style.display = "none";
@@ -284,7 +284,7 @@ function sesion_4(){
 		case "SUPERUSUARIO":
 		document.getElementById('iniciarsesion').style.display = "none";
 		document.getElementById('cerrarsesion').style.display = "inline-block";
-		document.getElementById('comentariosHeader').style.display = "inline-block";
+		// document.getElementById('comentariosHeader').style.display = "inline-block";
 		break;
 		default:
 		console.log("No tiene los permisos necesarios para acceder a esta información");

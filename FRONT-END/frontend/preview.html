@@ -196,8 +196,6 @@
     </div>
   </section>
   <!--====  End of BREADCRUMB  ====-->
-
-
   <!--==============================================
   =            AGREGAR NÚMEROS DE PARTE            =
   ===============================================-->
@@ -221,11 +219,45 @@
             <hr>
           </h4>
         </div>
-        <div id="modularidad_vision" class="panel-collapse collapse">
+        <div id="modularidad_vision" class="panel-collapse collapse" style="position:sticky">
+          
+            <div class="grid justify-end sticky" style="margin-right: -28rem; float:right">
+              <p id="time" class="time-tag">Ver Tiempo Aproximado</p>
+              <div id="timeContainer" class="timeContainer">
+                <div>
+              <form action="" >
+                <b class="timeFuseType">ROBOT - A</b>
+                <p class="timeFuseType" style="font-size: small;">(PDC-D y PDC-P)</p>
+               <span class="flex-box timeFuseType" >  <p>ATO</p> <input class="input-number" type="number" name="" id="time_a_ATO" value = '6.5' > </span>
+               <span class="flex-box timeFuseType" >  <p>MINI</p> <input class="input-number" type="number" name="" id="time_a_MINI" value = '6.5'> </span>
+               <span class="flex-box timeFuseType" >  <p>MULTI</p> <input class="input-number" type="number" name="" id="time_a_MULTI" value = '9'> </span>
+               <span class="flex-box timeFuseType" style="justify-content: center;"> <input type="button" value="Calcular" onclick="dateTime_a()" ></span>
+               <span class="flex-box timeFuseType" style='height: 8rem; max-width: 18rem;'> <div id="timeResult_a" class="timeResult"> </div> </span>
+              </form>
+            </div>
+            <div style="margin-left: 1.5rem;">
+              <form action="" >
+                <b class="timeFuseType">ROBOT - B</b>
+                <p class="timeFuseType" style="font-size: small;">(PDC-R ,F96 ,PDC-S y TBLU)</p>
+                <span class="flex-box timeFuseType" >  <p>ATO</p> <input class="input-number" type="number" name="" id="time_b_ATO" value = '6.5' > </span>
+                <span class="flex-box timeFuseType" >  <p>MINI</p> <input class="input-number" type="number" name="" id="time_b_MINI" value = '6.5'> </span>
+                <span class="flex-box timeFuseType" >  <p>MAXI</p> <input class="input-number" type="number" name="" id="time_b_MAXI" value = '9'> </span>
+                <span class="flex-box timeFuseType" >  <p>RELAY</p> <input class="input-number" type="number" name="" id="time_b_RELAY" value = '11'> </span>
+                <span class="flex-box timeFuseType" >  <p>MULTI</p> <input class="input-number" type="number" name="" id="time_b_MULTI" value = '9'> </span>
+                <span class="flex-box timeFuseType" style="justify-content: center;"> <input type="button" value="Calcular" onclick="dateTime_b()" ></span>
+                <span class="flex-box timeFuseType" style='height: 9rem; max-width: 18rem;'> <div id="timeResult_b" class="timeResult"> </div> </span>
+              </form>
+            </div>
+          </div>
+          <b class="timeFuseType" id="fusiblesTotales" style="text-align: center; margin-top: 1rem; height: 8rem;"> </b>
+            
+          </div>
           <div class="panel-body">      
 
             <div class="caja_pdcr_options">
+                <br/>
                 <h4 id="pdcr_title"> PDC-R </h4>
+                <br/>
                 <div id="caja_pdcr">
                   <div class="loading">Cargando Modularidad, espere porfavor...<img src="static/content/loader.gif" alt=""></div>
                     <img id="pdcr_image_v" src="static/content/cajas/interior/pdcr/pdcr.jpg" alt="" width="754" height="341" style="display: none;">
@@ -421,6 +453,7 @@
       </div>
     </div>
   </footer>
+
   <!--====  End of FOOTER O PIE DE PÁGINA  ====-->
 
   <a href="#" id="backToTop"><i class="fa fa-angle-up"></i></a>

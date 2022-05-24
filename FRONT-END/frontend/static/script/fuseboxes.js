@@ -291,6 +291,22 @@ $("#amarillo_pdcr").on("click", function() {
     ctgry = "ATO"
     console.log("Caja seleccionada", caja);
 });
+$("#cafe_ato_pdcr").on("click", function() {
+    color = "cafe";
+    color_style = "#8B4513";
+    console.log("Color seleccionado: ", color)
+    caja = "pdcr";
+    ctgry = "ATO"
+    console.log("Caja seleccionada", caja);
+});
+$("#verde_30_pdcr").on("click", function() {
+    color = "verde";
+    color_style = "#008000";
+    console.log("Color seleccionado: ", color)
+    caja = "pdcr";
+    ctgry = "MAXI"
+    console.log("Caja seleccionada", caja);
+});
 $("#naranja_pdcr").on("click", function() {
     color = "naranja";
     color_style = "#FFA500";
@@ -637,6 +653,14 @@ $("#cafe_pdcr_mid").on("click", function() {
     ctgry = "MINI"
     console.log("Caja seleccionada", caja);
 });
+$("#cafe_ato_pdcr_mid").on("click", function() {
+    color = "cafe";
+    color_style = "#8B4513";
+    console.log("Color seleccionado: ", color)
+    caja = "pdcr_mid";
+    ctgry = "ATO"
+    console.log("Caja seleccionada", caja);
+});
 $("#rojo_pdcr_mid").on("click", function() {
     color = "rojo";
     color_style = "#FF0000";
@@ -683,6 +707,14 @@ $("#amarillo_pdcr_mid").on("click", function() {
     console.log("Color seleccionado: ", color)
     caja = "pdcr_mid";
     ctgry = "ATO"
+    console.log("Caja seleccionada", caja);
+});
+$("#verde_30_pdcr_mid").on("click", function() {
+    color = "verde";
+    color_style = "#008000";
+    console.log("Color seleccionado: ", color)
+    caja = "pdcr_mid";
+    ctgry = "MAXI"
     console.log("Caja seleccionada", caja);
 });
 $("#naranja_pdcr_mid").on("click", function() {
@@ -1031,6 +1063,14 @@ $("#cafe_pdcr_small").on("click", function() {
     ctgry = "MINI"
     console.log("Caja seleccionada", caja);
 });
+$("#cafe_ato_pdcr_small").on("click", function() {
+    color = "cafe";
+    color_style = "#8B4513";
+    console.log("Color seleccionado: ", color)
+    caja = "pdcr_small";
+    ctgry = "ATO"
+    console.log("Caja seleccionada", caja);
+});
 $("#rojo_pdcr_small").on("click", function() {
     color = "rojo";
     color_style = "#FF0000";
@@ -1077,6 +1117,14 @@ $("#amarillo_pdcr_small").on("click", function() {
     console.log("Color seleccionado: ", color)
     caja = "pdcr_small";
     ctgry = "ATO"
+    console.log("Caja seleccionada", caja);
+});
+$("#verde_30_pdcr_small").on("click", function() {
+    color = "verde";
+    color_style = "#008000";
+    console.log("Color seleccionado: ", color)
+    caja = "pdcr_small";
+    ctgry = "MAXI"
     console.log("Caja seleccionada", caja);
 });
 $("#naranja_pdcr_small").on("click", function() {

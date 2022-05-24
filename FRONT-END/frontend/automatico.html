@@ -235,6 +235,71 @@
     #myTable td {
       white-space: inherit;
     }
+    .container{
+      width: 90%;
+    }
+    .team_sect{
+      width: 30rem;
+      margin: 1rem;
+    }
+    .containerEventos{
+      display: grid;
+      grid-template-columns: 1fr 1fr 2fr;
+    }
+    /**BOOTSRAP TABLE**/
+  thead tr:first-child Th{
+    position: inherit;
+    z-index: 1;
+    top: auto;
+    background: white;
+    }
+  thead Th{
+    position: inherit;
+    z-index: 1;
+    top: auto;
+    background: white;
+  }
+  .searching{
+    margin: 1rem -8rem 0px 0px;
+    width: max-content;
+    position: sticky;
+    top: 20rem;
+    float: right;
+    z-index: 3;
+  }
+  .color{
+    background-color: #a6bea9;
+    height: 3rem;
+    align-items: center;
+    padding-right: 4px;
+  }
+  .color>button{
+    background-color: transparent;
+  }
+  .color>input[type=text]{
+    height: 1rem;
+  } 
+  .arrow{
+    position: absolute;
+    right: 50px;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 100%;
+    background-color: gray;
+    transition:  all 0.2s;
+  }
+  .green-light > .eventos > figure > .arrow {
+  background-color: greenyellow;
+  transition:  all 0.2s;
+  }
+  .red-light > .eventos > figure > .arrow {
+  background-color: red;
+  transition:  all 0.2s;
+  }
+  .gray-light > .eventos > figure > .arrow {
+  background-color: gray;
+  transition:  all 0.2s;
+  }
   </style>
   <div class="modal fade" id="login_modal" name="login_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
     <div class="modal-dialog" role="document">
@@ -283,11 +348,15 @@
     </div>
   </section>
   <!--====  End of BREADCRUMB  ====-->
-
   <!--==============================================
   =            TABLA CON REGISTROS DE ORDENES            =
   ===============================================-->
   <div id="registros" class="container" align="left" style="display: block;">
+    <div class="searching">
+      <div class="color flex-box">
+        <button onclick="searchDAT()"> <i class='fa fa-search'></i> </button><input type="text" name="searchDAT" id="searchDAT" placeholder="Buscar Pedido (ILX O IRX)" onkeypress="acceptEnter()">
+      </div>
+    </div>
     <div>
       <br>
       <h3>EVENTOS</h3>
@@ -331,7 +400,7 @@
             <p>Validación Matriz de Modularidades fusibles Interior X294 Izq. Fase BL3 17-08-2021</p>
         </div>
       </div> -->
-      <div id="containerEventos"></div>
+      <div id="containerEventos" class="containerEventos"></div>
     </div>
   </div>
   <div id="alertasesion" style="display: none;"></div>
