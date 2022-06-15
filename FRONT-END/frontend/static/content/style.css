@@ -1830,3 +1830,56 @@ thead tr:first-child Th{
     top: 11rem;
     background: white;
   }
+  
+  .fixed-section{
+    position: fixed;
+    
+    display: flex;
+    flex-direction: row;
+    margin-left: -2rem;
+    z-index: 14;
+    
+}
+.va-fixed {
+    top: 38rem;
+    right: -1.5rem;
+}
+.tor-fixed{
+    top: 20rem;
+    right: -1.5rem;
+}
+
+
+  .pestana {
+    padding: 1.5rem 0 0 2px;
+    width: 2%;
+    border-bottom: 6px solid #ff0a0a00;
+    border-left: 20px solid #e8d8c1;
+    border-right: 20px solid #e8d8c1;
+    border-radius: 0 0px 0px 40px;
+    height: 17rem;
+    background-color: #e8d8c1;
+}
+.pestana>p {
+    writing-mode: vertical-lr;
+    margin: 0 0 0 -1.5rem;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.sticky-canvas{
+    float: left;
+    background-color: #0DBED6;
+    transition: all ease-in-out 0.5s
+}
+
+.grafico{
+    width: 0px;
+    height: 0px;
+    background-color: white; 
+    transition: all ease-in-out 0.3s;
+}
+
+.canvasjs-chart-credit{
+    display: none;
+}

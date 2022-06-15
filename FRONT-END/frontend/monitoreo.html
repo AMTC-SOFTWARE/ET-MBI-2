@@ -281,7 +281,17 @@
             <div id="table_torque"></div>
             <div id="table_intentost"></div>
             <div id="table_angulo"></div>
+    <!--  PESTAÑA DE GRAFICA  -->
+<div class="fixed-section tor-fixed">
+  <div class="pestana pes_T" id="pestaña">
+    <p>Ver Grafica Torque</p>
+  </div>
+  <div class="sticky-canvas" id="grafico_T" style="width: 0px; height: 0px;" >
+    <div class="graph_T" id="graph_T" ></div>
+  </div>
+</div>
 
+  <!-- END OF PESTAÑA DE GRAFICA -->
     <div class="container">
       <div class="row">
         <div class="col-lg-12">
@@ -435,26 +445,27 @@
       </div>
     </div>
   </footer>
-
-
+  
+  
   <!--====  End of FOOTER O PIE DE PÁGINA  ====-->
-
-
+  
+  
   <a href="#" id="backToTop"><i class="fa fa-angle-up"></i></a>
   <!-- Include All JS -->
-
+  
+  <script type="text/javascript" src="static/script/canvasjs.min.js"></script>
   <!----------------------------SHEET JS----------------------------->
    <script type="text/javascript" src="static/script/xlsx.full.min.js"></script>
   <script lang="javascript" src="static/script/xlsx.bundle.js"></script>
   <script type="text/javascript" src="static/script/FileSaver.min.js"></script> 
   <!--------------------------- SHEET JS --------------------------->
   
-<!-----------------------------MOMENT JS---------------------------->
- <script lang="javascript" src="static/script/moment.min.js"></script>
-<!-----------------------------MOMENT JS---------------------------->
+  <!-----------------------------MOMENT JS---------------------------->
+  <script lang="javascript" src="static/script/moment.min.js"></script>
+  <!-----------------------------MOMENT JS---------------------------->
   <script type="text/javascript" src="static/script/jquery.js"></script>
   <script type="text/javascript" src="static/script/resultados.js"></script>
-
+  
   <script type="text/javascript" src="static/script/login.js"></script>
   <script  type="text/javascript" src="static/script/bootstrap.min.js"></script>
   <script  type="text/javascript" src="static/script/owl.carousel.js"></script>
@@ -466,7 +477,7 @@
   <script  type="text/javascript" src="static/script/jquery-3.3.1.js"></script>
   <script  type="text/javascript" src="static/script/jquery.dataTables.min.js"></script>
   <script  type="text/javascript" src="static/script/datatables/dataTables.responsive.min.js"></script>
-
+  
   <script type="text/javascript" src="static/script/datatables/JSZip-2.5.0/jszip.min.js"></script>
   <script type="text/javascript" src="static/script/datatables/pdfmake-0.1.36/pdfmake.min.js"></script>
   <script type="text/javascript" src="static/script/datatables/pdfmake-0.1.36/vfs_fonts.js"></script>
