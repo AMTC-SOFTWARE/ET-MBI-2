@@ -15,7 +15,7 @@ var pedido = document.getElementById("pedido");
 var HM = document.getElementById("HM");
 var nombre = document.getElementById("nombre");
 var gafete = document.getElementById("gafete");
-var chartColumns_T, logArray;
+
 function fechaActual(){
     var fechaFinal = moment.utc().add(1,'days').format('YYYY-MM-DD'); //Insertar una fecha del dia de hoy mas 1 dia
     var fechaInicial = moment.utc().add(-1,'month').format('YYYY-MM-DD'); //Insertar una fecha del dia de hoy menos 1 mes
@@ -522,9 +522,6 @@ function cargarhistorial() {
 
 
 async function historialApp(data) {
-  chartColumns_T =[]
-  logArray =[]
-  graficar()
   try {
     const mostrar = await mostrarHistorial(data);
     console.log(mostrar);
@@ -5353,6 +5350,7 @@ for (let i = 0; i < dataKeys_t.length; i++) {
     
 
 function graficar () {
+
   //console.log(chartColumns)
   for (let i = 0; i < chartColumns_T.length; i++) {
     chartColumns_T[i]['x'] = i;

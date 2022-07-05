@@ -1,5 +1,5 @@
 ﻿var dominio = 'http://127.0.0.1:5000';
-console.log("Hola, Soy la actualización del 7 ♥ de Julio de 2022");
+console.log("Hola, Soy la actualización del 15 ♥ de Junio de 2022");
 console.log(dominio);
 var alerta = document.getElementById('alerta');
 var alertasesion = document.getElementById('alertasesion');
@@ -174,7 +174,7 @@ function sesion_1(){
 		document.getElementById('botonparte').classList.remove('disabled');
 		document.getElementById('boton_manual').classList.remove('disabled');
 		document.getElementById('boton_auto').classList.remove('disabled');
-		// document.getElementById('dbbkup').style.display = "inline-block";
+		document.getElementById('dbbkup').style.display = "inline-block";
 		// document.getElementById('comentariosHeader').style.display = "inline-block";
 		break;
 		default:
