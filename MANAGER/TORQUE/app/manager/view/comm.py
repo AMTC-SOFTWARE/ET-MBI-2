@@ -385,7 +385,7 @@ class MqttClient (QObject):
                 self.raffi_check("PDC-D", "keyboard_F2")
                 self.raffi_check("PDC-P", "keyboard_F1")
 
-                if self.keyboard_key == "k":
+                if self.keyboard_key == "keyboard_K":
                     # si la variable es True, quiere decir que hubo un mal torqueo y se requiere llave para habilitar la reversa
                     if self.model.reintento_torque == True:
                         #esta llave solo es para proceso
