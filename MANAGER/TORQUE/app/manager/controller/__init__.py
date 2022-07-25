@@ -220,48 +220,26 @@ class Controller (QObject):
             self.model.qr_codes[i] = qr_box
           
 
-##EJECUCIÓN EN PARALELO
-#class MyThread(QThread):
-#    def __init__(self, model = None, parent = None):
-#        super().__init__(parent)
-#        self.model  = model
+#EJECUCIÓN EN PARALELO
+class MyThread(QThread):
+    def __init__(self, model = None, parent = None):
+        super().__init__(parent)
+        self.model  = model
         
-#        print("se crea un objeto de la clase MyThread con padre QThread")
-#        print("con entrada del objeto model de la clase model que está en model.py")
-#        print("y el objeto client de la clase MqttClient que está en comm.py")
+        print("se crea un objeto de la clase MyThread con padre QThread")
+        print("con entrada del objeto model de la clase model que está en model.py")
+        print("y el objeto client de la clase MqttClient que está en comm.py")
         
-#    def run(self):
+    def run(self):
 
-#        while 1:
+        while 1:
 
-#            #tiempo de espera para no alentar las ejecuciones de otros procesos
-#            sleep(0.2)  
+            #tiempo de espera para no alentar las ejecuciones de otros procesos
+            sleep(10)  
 
-#            #si se inicia el modo dos robots e inicia el robot_a...
-#            if self.model.estado_candados == True:
-#                print("Revisión de Candados Activados!")
-#                print("||||Dentro de Estado Palpador PARALELO!")
-#                candados = self.model.input_data["database"]["candados"]
-#                print("Candados a Revisar: ",candados)
-
-#                command = {
-#                    "lbl_instructions" : {"text": "                                 ", "color": "black"},
-#                    "img_nuts" : "blanco.jpg",
-#                    "lbl_nuts"  : {"text": "", "color": "black"},
-#                    "img_toolCurrent" : "blanco.jpg",
-#                    "lbl_toolCurrent"  : {"text": "", "color": "black"},
-#                    "img_center" : "boxes/fuseconnvalidation.jpg",
-#                    "lbl_result" : {"text": "Validación de Conectores PDC-R", "color": "blue"},
-#                    "lbl_steps"  : {"text": "Coloque el Palpador sobre los candados", "color": "black"},
-#                    }
-#                publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-#                #se emite la señal para continuar a checar las zonas del Palpador
-#                self.model.CheckZonePalpador = True
-#                if self.model.CheckZonePalpador == True:
-#                    self.model.CheckZonePalpador = False
-#                    print("|||| Dentro de Estado CheckZonePalpador PARALELO!")
-
-
-#            else:
-#                print("Revisión de Candados Desactivados!")
+            command = {
+                "lineEdit" : True
+                }
+            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            print("Focus de lineEdit enviado")
             

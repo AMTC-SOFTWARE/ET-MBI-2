@@ -77,10 +77,12 @@ class MainWindow (QMainWindow):
         actionLogout = QAction("Logout",self)
         actionConfig = QAction("Config",self)
         actionWEB = QAction("WEB",self)
+        actionGDI = QAction("GDI",self)
         menu.addAction(actionLogin)
         menu.addAction(actionLogout)
         menu.addAction(actionConfig)
         menu.addAction(actionWEB)
+        menu.addAction(actionGDI)
         menu.triggered[QAction].connect(self.menuProcess)
 
 
@@ -116,6 +118,8 @@ class MainWindow (QMainWindow):
                     self.pop_out.setWindowTitle("Warning")
                     QTimer.singleShot(2000, self.pop_out.button(QMessageBox.Ok).click)
                     self.pop_out.exec()
+            elif case == "GDI":
+                self.output.emit({"request":"gdi"})
             elif case == "Config":
                 if self.cycle_started == False:
                     self.output.emit({"request":"config"})
@@ -229,6 +233,14 @@ class MainWindow (QMainWindow):
                 self.ui.lbl_boxTITLE.setText(message["lbl_boxTITLE"]["text"])
                 if "color" in message["lbl_boxTITLE"]:
                     self.ui.lbl_boxTITLE.setStyleSheet("color: " + message["lbl_boxTITLE"]["color"])
+
+            if "lineEdit" in message:
+                if message["lineEdit"] == True:
+                    self.ui.lineEdit.setVisible(True)
+                    self.ui.lineEdit.setFocus(True)
+                if message["lineEdit"] == False:
+                    self.ui.lineEdit.setVisible(False)
+
             ######### Modificación para etiqueta PDC-R #########
             if "lbl_boxPDCR" in message:
                 self.ui.lbl_boxPDCR.setText(message["lbl_boxPDCR"]["text"])

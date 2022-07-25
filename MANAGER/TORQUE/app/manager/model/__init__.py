@@ -28,8 +28,8 @@ class Model (object):
         self.smallflag = False
         self.pdcr_serie = ""
         self.mfbp2_serie = ""
-        self.boxPos1 = ["PDC-R","PDC-RMID","PDC-RS","MFB-P2","MFB-S","MFB-E"] #Falta agregar la caja: ,"MFB-P1"
-        self.boxPos2 = ["BATTERY","BATTERY-2","PDC-D","PDC-P"]
+        self.boxPos1 = ["PDC-R","PDC-RMID","PDC-RS","MFB-P1","MFB-S","MFB-E","BATTERY","BATTERY-2"]
+        self.boxPos2 = ["MFB-P2","PDC-D","PDC-P"]
 
         ###############################
         #variable para iniciar el estado de revisión de candados con el palpador
@@ -66,11 +66,11 @@ class Model (object):
         #Variable para bloquear la activación de los raffis según la caja
         self.active_lock = {"PDC-P": False,"PDC-D": False,"MFB-P1": False,"MFB-P2": False,"PDC-R": False,"PDC-RMID": False,"BATTERY": False,"BATTERY-2": False,"MFB-S": False,"MFB-E": False}
         #variable para bloequear la activación de los raffi según la herramienta activa
-        self.active_lock_tool = {"tool1": False,"tool2": False}
+        self.active_lock_tool = {"tool1": False,"tool2": False,"tool3": False}
         #variable para habilitar la llave normal o la del proceso
-        self.backward_key_tool = {"tool1": False,"tool2": False, "raffi": False}
+        self.backward_key_tool = {"tool1": False,"tool2": False,"tool3": False, "raffi": False}
         #variable para evitar recibir una señal falsa de la reversa después de salir de este estado
-        self.lock_backward = {"tool1": False,"tool2": False}
+        self.lock_backward = {"tool1": False,"tool2": False,"tool3": False}
         #variable para monitorear el perfil actual de cada herramienta
         self.torque_bin = {
             "tool1": {
@@ -85,13 +85,20 @@ class Model (object):
                 "bin3": 0,
                 "send_profile": 0,
                 "current_profile":0},
+            "tool3": {
+                "bin1": 0,
+                "bin2": 0,
+                "bin3": 0,
+                "send_profile": 0,
+                "current_profile":0}
             }
         ###############################
 
         #variable para guardar las tareas actuales de cada herramienta
         self.current_queue = {
             "tool1": [],
-            "tool2": []
+            "tool2": [],
+            "tool3": []
             }
 
         #variable para guardar las tareas de la herramienta m8 para poder acceder a estas a la vez
@@ -289,47 +296,47 @@ class Model (object):
             "PDC-D": {
                 "E1": ["tool1",2,"6mm Nut"]},
             "BATTERY": {
-                "BT": ["tool1",9,"Battery Nut"]},
+                "BT": ["tool2",9,"Battery Nut"]},
             "BATTERY-2": {
-                "BT": ["tool1",9,"Battery Nut"]},
+                "BT": ["tool2",9,"Battery Nut"]},
             "MFB-P1": {
-                "A47": ["tool2",10,"8mm Nut"],
-                "A46": ["tool2",5,"8mm Nut"],
-                "A45": ["tool1",3,"6mm Nut"],
-                "A44": ["tool1",4,"6mm Nut"],
-                "A43": ["tool1",6,"6mm Nut"],
-                "A41": ["tool2",4,"8mm Nut"], 
-                "A42": ["tool1",5,"6mm Nut"]},
+                "A47": ["tool3",10,"8mm Nut"],
+                "A46": ["tool3",5,"8mm Nut"],
+                "A45": ["tool2",3,"6mm Nut"],
+                "A44": ["tool2",4,"6mm Nut"],
+                "A43": ["tool2",6,"6mm Nut"],
+                "A41": ["tool3",4,"8mm Nut"], 
+                "A42": ["tool2",5,"6mm Nut"]},
             "MFB-S": {
-                "A51": ["tool2",9,"8mm Nut"],
-                "A52": ["tool2",2,"8mm Nut"],
-                "A53": ["tool1",2,"6mm Nut"],
-                "A54": ["tool1",8,"6mm Nut"],
-                #"A55": ["tool1",12,"6mm Nut"],
-                "A55": ["tool1",7,"6mm Nut"],
-                "A56": ["tool1",7,"6mm Nut"]},
+                "A51": ["tool3",9,"8mm Nut"],
+                "A52": ["tool3",2,"8mm Nut"],
+                "A53": ["tool2",2,"6mm Nut"],
+                "A54": ["tool2",8,"6mm Nut"],
+                #"A55": ["tool2",12,"6mm Nut"],
+                "A55": ["tool2",7,"6mm Nut"],
+                "A56": ["tool2",7,"6mm Nut"]},
             "MFB-E": {
-                "E1": ["tool2",13,"8mm Nut"],
-                "A1": ["tool2",14,"8mm Nut"],
-                "A2": ["tool2",15,"8mm Nut"]},
+                "E1": ["tool3",13,"8mm Nut"],
+                "A1": ["tool3",14,"8mm Nut"],
+                "A2": ["tool3",15,"8mm Nut"]},
             "MFB-P2": {
-                "A20": ["tool2",7,"8mm Nut"],
+                "A20": ["tool3",7,"8mm Nut"],
                 "A21": ["tool1",8,"6mm Nut"],
                 "A22": ["tool1",5,"6mm Nut"],
                 "A23": ["tool1",4,"6mm Nut"],
                 "A24": ["tool1",7,"6mm Nut"],
-                "A25": ["tool2",3,"8mm Nut"], 
+                "A25": ["tool3",3,"8mm Nut"], 
                 "A26": ["tool1",6,"6mm Nut"], 
                 "A27": ["tool1",10,"6mm Nut"], 
                 "A28": ["tool1",11,"6mm Nut"], 
                 "A29": ["tool1",9,"6mm Nut"], 
-                "A30": ["tool2",8,"8mm Nut"]},
+                "A30": ["tool3",8,"8mm Nut"]},
             "PDC-R": {
-                "E1": ["tool2",11,"8mm Nut"]},
+                "E1": ["tool3",11,"8mm Nut"]},
             "PDC-RS": {
-                "E1": ["tool2",6,"8mm Nut"]},
+                "E1": ["tool3",6,"8mm Nut"]},
             "PDC-RMID": {
-                "E1": ["tool2",6,"8mm Nut"]}
+                "E1": ["tool3",6,"8mm Nut"]}
             }
 
         self.sub_topics = {
@@ -338,9 +345,9 @@ class Model (object):
                         #"torque_1": "torque/1/status",
                         #"torque_2": "torque/2/status",
                         #"torque_3": "torque/3/status",
-                        "torque_1": "TorqueModbus/1/status",
-                        "torque_2": "TorqueModbus/2/status",
-                        #"torque_3": "TorqueModbus/4/status",
+                        "torque_1": "TorqueModbus/2/status",
+                        "torque_2": "TorqueModbus/3/status",
+                        "torque_3": "TorqueModbus/4/status",
                         "gui": "gui/status",
                         "gui_2": "gui_2/status",
                         "config": "config/status"
@@ -351,8 +358,12 @@ class Model (object):
                         "gui_2": "gui_2/set",
                         "plc": "PLC/1",
                         "torque": {
-                                   "tool1": "TorqueModbus/1",
-                                   "tool2": "TorqueModbus/2"
+                                   #"tool1": "torque/1/set",
+                                   #"tool2": "torque/2/set",
+                                   #"tool3": "torque/3/set"
+                                   "tool1": "TorqueModbus/2",
+                                   "tool2": "TorqueModbus/3",
+                                   "tool3": "TorqueModbus/4"
                                    },
                         "printer": "printer/set",
                         "config": "config/set"
@@ -362,10 +373,12 @@ class Model (object):
             "encoder_feedback": {
                 "tool1": True,
                 "tool2": True,
+                "tool3": True
             },
             "retry_btn_mode": {
                 "tool1": False,
                 "tool2": False,
+                "tool3": False  
             },
             "constraints": {
                 "tools": [["tool1", "tool3"]]
@@ -396,14 +409,15 @@ class Model (object):
             "plc": {
                 "emergency": True,
                 "encoder_1": {"zone": "0"},# el valor de "zone" debe ser de la forma: '{"caja": "torque_name"}'
-                "encoder_2": {"zone": "0"},
+                "encoder_2": {"zone": "0","candado":"0"},
                 "encoder_3": {"zone": "0"},
                 "encoder_4": {"candado": "0"}, # Encoder correspondiente a altura
                 "retry_btn": False,
                 "clamps": ["PDC-P", "PDC-D", "BATTERY", "MFB-P1", "MFB-S", "MFB-P2", "PDC-R"]}, # Debe inicializarce vacío
             "torque":{
                 "tool1": {},
-                "tool2": {}},
+                "tool2": {},
+                "tool3": {}},
             "gui": {
                 "request": "", 
                 "ID": "", 
@@ -436,31 +450,18 @@ class Model (object):
                 "error": False,
                 "enable" : False
                 },
-            }
-
-        self.boxes = {
-            "PDC-P": {
-                "gui": self.pub_topics["gui_2"]},
-            "PDC-D": {
-                "gui": self.pub_topics["gui_2"]},
-            "BATTERY": {
-                "gui": self.pub_topics["gui_2"]},
-            "BATTERY-2": {
-                "gui": self.pub_topics["gui_2"]},
-            "MFB-P1": {
-                "gui": self.pub_topics["gui"]},
-            "MFB-S": {
-                "gui": self.pub_topics["gui"]},
-            "MFB-E": {
-                "gui": self.pub_topics["gui"]},
-            "MFB-P2": {
-                "gui": self.pub_topics["gui"]},
-            "PDC-R": {
-                "gui": self.pub_topics["gui"]},
-            "PDC-RS": {
-                "gui": self.pub_topics["gui"]},
-            "PDC-RMID": {
-                "gui": self.pub_topics["gui"]}
+            "tool3" : {
+                "stop_profile": 0,
+                "backward_profile": 1, 
+                "current_trq": None,
+                "queue": [], #[["PDC-P", "E1", 3, "tuerca_x"]]
+                "rqst": False,
+                "gui": self.pub_topics["gui"],
+                "past_trq": None,
+                "img": None,
+                "error": False,
+                "enable" : False
+                }
             }
 
     def reset (self):

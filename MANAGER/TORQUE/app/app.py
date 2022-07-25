@@ -16,11 +16,15 @@ commands for User Experience:
 
 from gui import MainWindow
 from manager import Controller
+import os
 
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication
     from time import sleep
     import sys
+
+
+    os.startfile('C:\\WINDOWS\\system32\\cmd.exe')
 
     app = QApplication(sys.argv)
     gui_1 = MainWindow(name = "Interior 1.1", topic = "gui")

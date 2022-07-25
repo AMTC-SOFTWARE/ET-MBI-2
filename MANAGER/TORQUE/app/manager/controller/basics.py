@@ -71,13 +71,14 @@ class Startup(QState):
         command["position"]["text"] = "POSICIÓN 2"
         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
-        QTimer.singleShot(100, self.stopTorque)
-        #QTimer.singleShot(15000, self.kioskMode)
+        QTimer.singleShot(10, self.stopTorque)
+        QTimer.singleShot(15, self.kioskMode)
         self.ok.emit()
 
     def stopTorque (self):
         publish.single(self.model.pub_topics["torque"]["tool1"],json.dumps({"profile" : 0}),hostname='127.0.0.1', qos = 2)
         publish.single(self.model.pub_topics["torque"]["tool2"],json.dumps({"profile" : 0}),hostname='127.0.0.1', qos = 2)
+        publish.single(self.model.pub_topics["torque"]["tool3"],json.dumps({"profile" : 0}),hostname='127.0.0.1', qos = 2)
 
     def kioskMode(self):
         system("taskkill /f /im explorer.exe")
@@ -187,6 +188,12 @@ class StartCycle (QState):
         self.clamps = True
 
     def onEntry(self, event):
+
+        command = {
+                "lineEdit" : False
+                }
+        publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+        print("lineEdit desactivado")
 
         #para avisar que se finalizó el modo de revisión de candados
         self.model.estado_candados = False
@@ -394,6 +401,24 @@ class CheckQr (QState):
             for i in temp:
                 if "HM" in i:
                     self.model.qr_codes["HM"] = i
+
+                    if "HM000000011936" in i:
+                        self.model.config_data["trazabilidad"] = False
+                        
+                    if "HM000000011925" in i:
+                        self.model.config_data["trazabilidad"] = False
+
+                    if "HM000000011920" in i:
+                        self.model.config_data["trazabilidad"] = False
+
+
+                    if self.model.config_data["trazabilidad"] == False:
+                        command = {
+                            "lbl_info3" : {"text": "Trazabilidad\nDesactivada", "color": "red"}
+                        }
+                        publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                        publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+
                 ############# MODIFICACIÓN #############
                 if "IL" in i or "IR" in i: #Se agregó la opción de escanear etiquetas con prefijo "IR"
                 ############# MODIFICACIÓN #############
@@ -680,6 +705,7 @@ class CheckQr (QState):
                                                     self.model.input_data["database"]["modularity"].clear()
                                                     self.model.torque_data["tool1"]["queue"].clear()
                                                     self.model.torque_data["tool2"]["queue"].clear()
+                                                    self.model.torque_data["tool3"]["queue"].clear()
                                                     self.nok.emit()
                                             self.model.input_data["database"]["modularity"][i] = []
                                             #print(" AQUI ESTÁ EL NUEVO I!!!!!!!!!: ",i)#### MODIFICACIÓN PDCR ####
@@ -912,6 +938,7 @@ class CheckQr (QState):
             self.model.input_data["database"]["modularity"].clear()
             self.model.torque_data["tool1"]["queue"].clear()
             self.model.torque_data["tool2"]["queue"].clear()
+            self.model.torque_data["tool3"]["queue"].clear()
             self.nok.emit()
 
     def torqueClamp (self):
@@ -1107,6 +1134,22 @@ class Finish (QState):
 
                 #publish.single(self.model.pub_topics["printer"], json.dumps(label), hostname='127.0.0.1', qos = 2)
                 
+                if "0011936" in self.model.qr_codes["HM"]:
+                    self.model.config_data["trazabilidad"] = True
+                        
+                if "0011925" in self.model.qr_codes["HM"]:
+                    self.model.config_data["trazabilidad"] = True
+
+                if "0011920" in self.model.qr_codes["HM"]:
+                    self.model.config_data["trazabilidad"] = True
+
+
+                if self.model.config_data["trazabilidad"] == True:
+                    command = {
+                        "lbl_info3" : {"text": "Trazabilidad\nActivada", "color": "green"}
+                    }
+                    publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                    publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
                 self.finalMessage()
                 Timer(4, self.ok.emit).start()
@@ -1139,6 +1182,8 @@ class Finish (QState):
         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
 
+
+
 class Reset (QState):
     ok      = pyqtSignal()
     nok     = pyqtSignal()
@@ -1147,6 +1192,23 @@ class Reset (QState):
         self.model = model
 
     def onEntry(self, event):
+
+        if "0011936" in self.model.qr_codes["HM"]:
+            self.model.config_data["trazabilidad"] = True
+                        
+        if "0011925" in self.model.qr_codes["HM"]:
+            self.model.config_data["trazabilidad"] = True
+
+        if "0011920" in self.model.qr_codes["HM"]:
+            self.model.config_data["trazabilidad"] = True
+
+
+        if self.model.config_data["trazabilidad"] == True:
+            command = {
+                "lbl_info3" : {"text": "Trazabilidad\nActivada", "color": "green"}
+            }
+            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
         #para avisar que se finalizó el modo de revisión de candados
         self.model.estado_candados = False

@@ -47,6 +47,7 @@ class MqttClient (QObject):
     keyboard_key = ""
     keyboard_value = False
     llave = False
+    mostrar_gdi = True
     
     nido = ["PDC-P","PDC-D","MFB-P1","MFB-P2","PDC-R","PDC-RMID","BATTERY","BATTERY-2","MFB-S","MFB-E"]
     nido_pub = ""
@@ -348,6 +349,12 @@ class MqttClient (QObject):
                 #print("key: ",self.keyboard_key)
                 #print("value: ",self.keyboard_value)
 
+                if self.keyboard_key == "keyboard_space":
+                    print("se presionó el palpador de teclado")
+                    self.model.pin_pressed = True
+                    self.pin.emit()
+
+
                 if self.llave == True:
 
                     if self.keyboard_key == "keyboard_esc":
@@ -377,6 +384,18 @@ class MqttClient (QObject):
                 self.raffi_check("MFB-E", "keyboard_F3")
                 self.raffi_check("PDC-D", "keyboard_F2")
                 self.raffi_check("PDC-P", "keyboard_F1")
+
+                if self.keyboard_key == "k":
+                    # si la variable es True, quiere decir que hubo un mal torqueo y se requiere llave para habilitar la reversa
+                    if self.model.reintento_torque == True:
+                        #esta llave solo es para proceso
+                        print("key_process.emit()")
+                        self.key_process.emit()
+                    # si la variable es False, quiere decir que estás en otra parte del proceso y la llave reiniciará el ciclo
+                    elif self.model.reintento_torque == False:
+                        command = {"popOut":"¿Seguro que desea dar llave?\n Presione Esc. para salir, Enter para continuar..."}
+                        self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                        self.llave = True
 
 
             if message.topic == self.model.sub_topics["plc"]:
@@ -630,7 +649,51 @@ class MqttClient (QObject):
                         #se emite la señal de que se hizo un torque con esta herramienta
                         self.torque2.emit()
                     else:
-                        print("torque no emit, saliendo de reversa")                
+                        print("torque no emit, saliendo de reversa")
+
+
+            if message.topic == self.model.sub_topics["torque_3"]:
+
+                payload_str = json.dumps(payload)
+                tool = "tool3"
+
+                #if "signal_start_button" in payload: 
+                #    print("signal start button: ",payload["signal_start_button"])
+
+                if "bin" in payload_str:
+                    if "bin1" in payload:
+                        if payload["bin1"]:
+                            self.model.torque_bin[tool]["bin1"] = 1
+                        else:
+                            self.model.torque_bin[tool]["bin1"] = 0
+                    if "bin2" in payload:
+                        if payload["bin2"]:
+                            self.model.torque_bin[tool]["bin2"] = 2
+                        else:
+                            self.model.torque_bin[tool]["bin2"] = 0
+                    if "bin3" in payload:
+                        if payload["bin3"]:
+                            self.model.torque_bin[tool]["bin3"] = 4
+                        else:
+                            self.model.torque_bin[tool]["bin3"] = 0
+
+                    self.model.torque_bin[tool]["current_profile"] = self.model.torque_bin[tool]["bin1"] + self.model.torque_bin[tool]["bin2"] + self.model.torque_bin[tool]["bin3"]
+
+                if "result" in payload: 
+                    #se convierten los valores leídos de string a float
+                    for item in payload:
+                        payload[item] = float(payload[item])
+
+                    #si no está bloqueada la señal (por estar transicionando al salir de backward)
+                    if self.model.lock_backward[tool] == False:
+                        #se copia la información del arreglo recibido del torque por esta herramienta
+                        self.model.input_data["torque"][tool] = copy(payload)
+                        print("torque3 emit()")
+                        #se emite la señal de que se hizo un torque con esta herramienta
+                        self.torque3.emit()
+                    else:
+                        print("torque no emit, saliendo de reversa")
+                
 
             if message.topic == self.model.sub_topics["gui"]:
                 if "request" in payload:
@@ -641,6 +704,22 @@ class MqttClient (QObject):
                         self.logout.emit()
                     elif payload["request"] == "config":
                         self.config.emit()
+                    elif payload["request"] == "gdi":
+
+                        print("USUARIO TIPO:", self.model.local_data["user"]["type"])
+                        
+                        if self.model.local_data["user"]["type"] == "CALIDAD" or self.model.local_data["user"]["type"] == "SUPERUSUARIO":
+
+                            if self.mostrar_gdi == True:
+                                self.mostrar_gdi = False
+                                self.client.publish("GDI",json.dumps({"Esconder":"window"}), qos = 2)
+                                print("Escondiendo GDI")
+                            elif self.mostrar_gdi == False:
+                                self.mostrar_gdi = True
+                                self.client.publish("GDI",json.dumps({"Mostrar":"window"}), qos = 2)
+                                print("Mostrando GDI")
+
+
                 if "ID" in payload:
                     self.model.input_data["gui"]["ID"] = payload["ID"]
                     self.ID.emit()

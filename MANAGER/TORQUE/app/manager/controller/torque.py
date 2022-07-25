@@ -20,6 +20,7 @@ class Torquing (QState):
         self.manager    = ToolsManager(model = self.model, parent = self)
         self.tool1      = NewTool1(tool = "tool1", model = self.model, parent = self)
         self.tool2      = NewTool2(tool = "tool2", model = self.model, parent = self)
+        self.tool3      = NewTool3(tool = "tool3", model = self.model, parent = self)
 
         #transición al clampear una caja regresas a clase de ToolsManager
         self.manager.addTransition(self.model.transitions.clamp, self.manager)
@@ -27,10 +28,15 @@ class Torquing (QState):
         #cada que finalizas una herramienta de todas sus terminales, regresas a clase de ToolsManager
         self.manager.addTransition(self.tool1.finish, self.manager)
         self.manager.addTransition(self.tool2.finish, self.manager)
+        self.manager.addTransition(self.tool3.finish, self.manager)
 
         #señales emitidas por ToolsManager que afectan a los objetos de NewTool
         self.manager.ok1.connect(self.tool1.trigger.emit)
         self.manager.ok2.connect(self.tool2.trigger.emit)
+        self.manager.ok3.connect(self.tool3.trigger.emit)
+
+        #Al emitir "goPalpador" señal desde la NewTool3, se lanza un trigger que inicia todo lo relacionado al palpador en la NewTool2
+        self.tool3.goPalpador.connect(self.tool2.triggerPalpador.emit)
 
         #señal de finish de que finaliza el ciclo (viene desde la clase ToolsManager)
         self.manager.finish.connect(self.finish.emit)
@@ -42,6 +48,7 @@ class Torquing (QState):
     def clean(self):
         self.tool1.clean()
         self.tool2.clean()
+        self.tool3.clean()
 
 class NewTool1 (QState):
     finish  = pyqtSignal()
@@ -155,6 +162,7 @@ class NewTool1 (QState):
 class NewTool2 (QState):
     finish          = pyqtSignal()
     trigger         = pyqtSignal()
+    triggerPalpador = pyqtSignal()
 
     def __init__(self, tool = "tool2", model = None, parent = None):
         super().__init__(parent)
@@ -175,6 +183,7 @@ class NewTool2 (QState):
         self.raffi_message_palpador = RaffiMessage(tool = self.tool, model = self.model, parent = self)
         self.chk_profile    = CheckProfile(tool = self.tool, model = self.model, parent = self)
         self.palpador       = Palpador(tool = self.tool, model = self.model, parent = self)
+        self.zone_palpador  = CheckZonePalpador(tool = self.tool, model = self.model, parent = self)
         self.waiting_pin    = WaitingPin(tool = self.tool, model = self.model, parent = self)
 
         self.zone.addTransition(self.model.transitions.raffi_on, self.raffi_message)
@@ -184,9 +193,29 @@ class NewTool2 (QState):
         self.raffi_key.addTransition(self.model.transitions.raffi_off,self.zone)
 
         self.standby.addTransition(self.trigger, self.zone)
+        self.standby.addTransition(self.triggerPalpador, self.palpador)
         self.zone.addTransition(self.zone.nok, self.standby)
         self.zone.addTransition(self.model.transitions.zone_tool2, self.zone)
         self.zone.addTransition(self.model.transitions.torque2, self.chk_response)
+
+        #PALPADOR
+        #self.zone.addTransition(self.zone.chk_candados, self.palpador)
+        self.palpador.addTransition(self.palpador.continuar, self.zone_palpador)
+        self.zone_palpador.addTransition(self.model.transitions.zone_tool2, self.zone_palpador)
+        self.zone_palpador.addTransition(self.model.transitions.zone_tool4, self.zone_palpador)
+        self.zone_palpador.addTransition(self.zone_palpador.wait_pin, self.waiting_pin)
+
+        self.waiting_pin.addTransition(self.waiting_pin.continuar,self.zone_palpador)
+        self.waiting_pin.addTransition(self.model.transitions.pin,self.zone_palpador)
+        self.waiting_pin.addTransition(self.model.transitions.zone_tool2,self.zone_palpador)
+        self.waiting_pin.addTransition(self.model.transitions.zone_tool4,self.zone_palpador)
+
+        #RAFFI EN ZONE_PALPADOR
+        self.zone_palpador.addTransition(self.model.transitions.raffi_on, self.raffi_message_palpador)
+        self.raffi_message_palpador.addTransition(self.raffi_message_palpador.process_continue, self.zone_palpador)
+        self.raffi_message_palpador.addTransition(self.model.transitions.key_process, self.raffi_key_palpador)
+        self.raffi_message_palpador.addTransition(self.model.transitions.raffi_off, self.zone_palpador)
+        self.raffi_key_palpador.addTransition(self.model.transitions.raffi_off,self.zone_palpador)
 
         self.chk_response.addTransition(self.chk_response.ok, self.zone)
         self.chk_response.addTransition(self.chk_response.nok, self.NOK)
@@ -210,6 +239,7 @@ class NewTool2 (QState):
         self.addTransition(self.finish, self.standby)
 
         self.zone.ok.connect(self.finished)
+        self.zone_palpador.end.connect(self.finished)
         #self.NOK.entered.connect(self.error)
         #self.NOK.exited.connect(self.retry)
 
@@ -231,6 +261,85 @@ class NewTool2 (QState):
     def finished(self):
         self.clean()
         self.finish.emit()
+
+class NewTool3 (QState):
+    finish      = pyqtSignal()
+    trigger     = pyqtSignal()
+    goPalpador  = pyqtSignal()
+
+    def __init__(self, tool = "tool3", model = None, parent = None):
+        super().__init__(parent)
+        self.model = model
+        self.tool = tool
+
+        self.standby                = QState(parent = self)
+        self.zone                   = CheckZone(tool = self.tool, model = self.model, parent = self)
+        self.chk_response           = CheckResponse(tool = self.tool, model = self.model, parent = self)
+        self.NOK                    = Error(tool = self.tool, model = self.model, parent = self)
+        self.qintervention          = QualityIntervention(tool = self.tool, model = self.model, parent = self)
+        self.qgafet                 = gafetQuality(tool = self.tool, model = self.model, parent = self)
+        self.backward               = Backward(tool = self.tool, model = self.model, parent = self)
+        #self.raffi_active           = RaffiActive(tool = self.tool, model = self.model, parent = self)
+        self.raffi_key              = RaffiKey(tool = self.tool, model = self.model, parent = self)
+        self.raffi_message          = RaffiMessage(tool = self.tool, model = self.model, parent = self)
+        self.chk_profile            = CheckProfile(tool = self.tool, model = self.model, parent = self)
+        
+        
+        #RAFFI EN ZONE
+        self.zone.addTransition(self.model.transitions.raffi_on, self.raffi_message)
+        self.raffi_message.addTransition(self.raffi_message.process_continue, self.zone)
+        self.raffi_message.addTransition(self.model.transitions.key_process, self.raffi_key)
+        self.raffi_message.addTransition(self.model.transitions.raffi_off, self.zone)
+        self.raffi_key.addTransition(self.model.transitions.raffi_off,self.zone)        
+
+        #FUNCIONAMIENTO PRINCIPALE DE ZONAS Y TORQUES
+        self.standby.addTransition(self.trigger, self.zone)
+        self.zone.addTransition(self.zone.nok, self.standby)
+        self.zone.addTransition(self.model.transitions.zone_tool3, self.zone)
+        self.zone.addTransition(self.model.transitions.torque3, self.chk_response)
+        self.chk_response.addTransition(self.chk_response.ok, self.zone)
+        self.chk_response.addTransition(self.chk_response.nok, self.NOK)
+        self.chk_response.addTransition(self.chk_response.quality, self.qintervention)
+
+        #VALIDACION DE 4to INTENTO
+        self.qintervention.addTransition(self.model.transitions.ID, self.qgafet)
+        self.qgafet.addTransition(self.qgafet.ok, self.backward)
+        self.qgafet.addTransition(self.qgafet.nok, self.qintervention)
+
+        #REVERSA DE HERRAMIENTA
+        self.NOK.addTransition(self.model.transitions.key_process, self.backward)
+        self.backward.addTransition(self.model.transitions.key_process, self.backward)
+        self.backward.addTransition(self.model.transitions.zone_tool3, self.backward)
+        
+        #SALIDA DE LA REVERSA
+        #self.backward.addTransition(self.model.transitions.torque3, self.zone)
+        self.backward.addTransition(self.model.transitions.torque3, self.chk_profile)
+        self.chk_profile.addTransition(self.chk_profile.ok, self.zone)
+        self.chk_profile.addTransition(self.chk_profile.retry, self.chk_profile)
+        self.chk_profile.addTransition(self.model.transitions.key_process, self.zone)
+
+        
+
+        #CONNECT DE SEÑALES DE FINISH
+        self.addTransition(self.finish, self.standby)
+        self.zone.ok.connect(self.finished)
+        self.zone.chk_candados.connect(self.palpadorTool2)
+
+        self.setInitialState(self.standby)
+
+
+    def clean(self):
+        self.zone.img_name = ""
+        self.zone.flex_BB_drawed = False
+
+    def finished(self):
+        self.clean()
+        self.finish.emit()
+
+    def palpadorTool2(self):
+        self.clean()
+        self.goPalpador.emit()
+
 
 class CheckZone (QState):
     ok              = pyqtSignal()
@@ -322,6 +431,59 @@ class CheckZone (QState):
         print("||||||||||||||||||||||||||||||||||||||||||||||")
         print("self.queueeeeeeeee dentro de zone: ",self.queue)
         print("||||||||||||||||||||||||||||||||||||||||||||||")
+        ########################## Funcionmiento Único para MFP1 y MFBP2 con tool3 ###################
+        #self.model.current_queue[self.tool].clear()
+        #if self.tool == "tool3":
+        #    if len(self.queue):
+        #        for tarea in self.queue:
+
+        #            print("Tarea: ",tarea)
+        #            print("current zone[0]",zone[0])
+        #            #si la zona actual está en la lista de tareas
+        #            if zone[0] in tarea:
+        #                #se agregan las tareas de queue que hay para esta caja
+        #                self.model.current_queue[self.tool].append(tarea)
+        #                print("tareas_actuales: ",self.model.current_queue[self.tool])
+        #        if len(self.model.current_queue[self.tool]):
+        #            print("len of self.model.current_queue[tool3]: ",len(self.model.current_queue[self.tool]))
+
+        #            if zone[0] == "MFB-P1":
+        #                print("zone 0 = MFB-P1")
+        #                self.model.torque_data[self.tool]["current_trq"] = self.model.current_queue[self.tool][0]
+        #                current_trq = self.model.current_queue[self.tool][0]
+        #                #se utiliza la 1 primer pantalla
+        #                self.model.torque_data[self.tool]["gui"] = self.model.pub_topics["gui"]
+        #                #se llama al método draw con argumentos: caja y posición
+        #                self.draw([current_trq[0], current_trq[1]])
+
+        #                #se publica en la gui las instrucciones visuales
+        #                command = {
+        #                    "img_center" : self.tool + ".jpg"
+        #                    }
+        #                publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+
+        #            if zone[0]== "MFB-P2":
+        #                print("zone 0 = MFB-P2")
+        #                self.model.torque_data[self.tool]["current_trq"] = self.model.current_queue[self.tool][0]
+        #                current_trq = self.model.current_queue[self.tool][0]
+        #                #se utiliza la gui_2 la segunda pantalla
+        #                self.model.torque_data[self.tool]["gui"] = self.model.pub_topics["gui_2"]
+        #                #se llama al método draw con argumentos: caja y posición
+        #                self.draw([current_trq[0], current_trq[1]])
+
+        #                #se publica en la gui las instrucciones visuales
+        #                command = {
+        #                    "img_center" : self.tool + ".jpg"
+        #                    }
+        #                publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+        ################################################################################################
+
+        #si se habilita el estado_candados porque ya es la última tarea de la caja PDCR entonces se va a finish para mandar la señal de PALPADOR
+        if self.model.estado_candados == True:
+
+                if self.tool == "tool3":
+                    self.finish()
+                    return
 
         #si el valor de current_trq es None (por el momento está vacío) o config_data está en True el flexible_mode
         if current_trq == None or self.model.config_data["flexible_mode"]:
@@ -333,15 +495,17 @@ class CheckZone (QState):
                 #se iguala el current_trq a la tarea en cola (la ultima) con el valor de la caja , terminal, profile, y tuerca !!!!!!!!!!
                 #SE ASIGNA LA ULTIMA TAREA DE ESTA HERRAMIENTA EN current_trq!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 current_trq = self.queue[0] # ["PDC-P", "E1", 2, "6mm Nut"]
-                print("/**************Caja a trabajar: ",current_trq[0])
 
-                #si la caja en la tarea en cola es MFB-P2...
-                if current_trq[0] == "MFB-P2":
-                    #se utiliza la gui_2 la segunda pantalla
-                    self.model.torque_data[self.tool]["gui"] = self.model.pub_topics["gui"]
-                else:
-                    #de lo contrario se utiliza la 1 primer pantalla
-                    self.model.torque_data[self.tool]["gui"] = self.model.pub_topics["gui"]
+                #si la herramienta es la 2
+                if self.tool == "tool3":
+                    #si la caja en la tarea en cola es MFB-P1...
+                    if current_trq[0] == "MFB-P2":
+                        #se utiliza la gui_2 la segunda pantalla
+                        self.model.torque_data[self.tool]["gui"] = self.model.pub_topics["gui_2"]
+                    else:
+                        #de lo contrario se utiliza la 1 primer pantalla
+                        self.model.torque_data[self.tool]["gui"] = self.model.pub_topics["gui"]
+
 
                 #SI EL MODO ES FLEXIBLE
                 if self.model.config_data["flexible_mode"]:
@@ -387,10 +551,15 @@ class CheckZone (QState):
                 #Para mostrar en pantalla el nombre de la herramienta que está en este estado CheckZone
                 if self.tool == "tool1":
                     self.currentTool = "HERRAMIENTA 1"
-                if self.tool == "tool2":
+                if self.tool == "tool3":
                     self.currentTool = "HERRAMIENTA 2"
-                if current_trq[0] == "MFB-P1" or current_trq[0] == "MFB-S" or current_trq[0] == "MFB-P2":
-                    print("Mostrar imagen de 2 herramientas para MFB-P1, P2 y S")
+                if self.tool == "tool2":
+                    self.currentTool = "HERRAMIENTA 3"
+                if current_trq[0] == "MFB-P1" or current_trq[0] == "MFB-S":
+                    print("Mostrar imagen de 2 herramientas para MFB-P1 y S")
+                    self.currentTool = "HERRAMIENTAS 2,3"
+                if current_trq[0] == "MFB-P2":
+                    print("Mostrar imagen de 2 herramientas para MFB-P2")
                     self.currentTool = "HERRAMIENTAS 1,2"
 
                 #se imprime la herramienta actual activa
@@ -418,7 +587,7 @@ class CheckZone (QState):
                     "lbl_toolCurrent" : {"text": "USAR "+self.currentTool, "color": "black"},
                     "img_center" : self.tool + ".jpg"
                     }
-                publish.single(self.model.boxes[current_trq[0]]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
 
             #SI NO HAY TAREAS EN COLA PARA ESTA HERRAMIENTA (pero se pueden agregar más)
@@ -443,6 +612,10 @@ class CheckZone (QState):
 
         ##si esta variable contiene elementos
         else:
+            #si lleva la caja PDC-R en esa queue de tareas, se hace true la variable para enviar la señal que te lleva al estado del palpador en lugar de finish
+            if "PDC-R" in current_trq[0]:
+                self.model.contains_PDCR = True            
+
             #se inicia profile como stop
             profile = self.stop
             command = {}
@@ -526,7 +699,7 @@ class CheckZone (QState):
         #se guarda el valor del perfil que se quiera configurar en la herramienta: ya sea un perfil o un stop etc.
         self.model.torque_bin[self.tool]["send_profile"] = profile
         #finalmente haces un publish del mensaje y le mandas el profile a la herramienta (siempre y cuando sea diferente del profile anterior)
-        publish.single(self.model.boxes[current_trq[0]]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+        publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         Timer(self.delay1, self.profilePub, args = (profile,)).start()
 
     def draw(self, BB):
@@ -563,6 +736,13 @@ class CheckZone (QState):
                 #si esta tool tiene habilitado su bloqueo de raffi
                 if self.model.active_lock_tool["tool2"] == True:
                     check_raffi_lock = True
+
+        if self.model.torque_data["tool3"]["current_trq"] != None:
+            if current_box == self.model.torque_data["tool3"]["current_trq"][0]:
+                print("para esta caja: ",current_box," se tienen tareas con la tool3")
+                #si esta tool tiene habilitado su bloqueo de raffi
+                if self.model.active_lock_tool["tool3"] == True:
+                    check_raffi_lock = True
         ###################################################################################
 
         #si ninguna tool de las que lleva esta caja, tiene habilitado su bloqueo de raffi (ninguna de las que lleva la caja está activa), entonces:
@@ -581,6 +761,9 @@ class CheckZone (QState):
             check_key_lock = True
 
         if self.model.backward_key_tool["tool2"] == True:
+            check_key_lock = True
+
+        if self.model.backward_key_tool["tool3"] == True:
             check_key_lock = True
 
         if self.model.backward_key_tool["raffi"] == True:
@@ -614,8 +797,14 @@ class CheckZone (QState):
         #publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         Timer(self.delay1, self.profilePub, args = (self.stop,)).start()
         self.model.torque_data[self.tool]["enable"] = False
-        print("se emite finish de queue de caja")
-        Timer(self.delay2, self.ok.emit).start()
+
+        #variable para cuando entras a zone ir a estado palpador hasta que se haya finalizado
+        if self.model.contains_PDCR == True:
+            print("se emite la señal para palpador")
+            Timer(self.delay2, self.chk_candados.emit).start()
+        else:
+            print("se emite finish de queue de caja")
+            Timer(self.delay2, self.ok.emit).start()
 
 class CheckResponse (QState):
     ok      = pyqtSignal()
@@ -713,7 +902,7 @@ class CheckResponse (QState):
                         "lbl_steps" : {"text": "", "color": "black"},
                         "img_center" : self.tool + ".jpg"
                         }
-                    publish.single(self.model.boxes[box]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                    publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
                     self.model.result[box][current_trq[1]] = response["torque"]
                     self.model.resultAngle[box][current_trq[1]] = response["angle"]
@@ -723,26 +912,28 @@ class CheckResponse (QState):
                     else:
                         self.model.local_data["lbl_info1_text"] = info1
 
-                    modularity = self.model.input_data["database"]["modularity"]
-                    modularity[box].pop(modularity[box].index(current_trq[1]))
 
-                    for i in range(len(self.queue)):
-                        if box == self.queue[i][0]:
-                            if current_trq[1] == self.queue[i][1]:
-                                self.model.torque_data[self.tool]["queue"].pop(i)
-                                break
+                    #si la tarea que se realiza es la última de la caja PDCR
+                    if len(self.queue) == 1:
 
-                    #si la caja ya no tiene terminales por torquear, se quita la caja de la colección y se libera la caja 
-                    if not(len(modularity[box])):
-                        modularity.pop(box)
-                        Timer(1, self.releaseTorqueClamp, args = (box,)).start()
+                        if "PDC-R" in box:
+                            print("||||||||||La caja Torqueada es una PDC-R: ",box)
 
-                    self.model.torque_data[self.tool]["current_trq"]  = None
-                    #se vuelve a habilitar la opción de activar el raffi de esa caja
-                    self.model.active_lock[box] = False
-                    self.model.active_lock_tool[self.tool] = False
+                            print("QUEUEEEEEE:\n",self.queue)
+                            print("BOXXXXXXXX: ",box)
+                            print("current_trq[1]: ",current_trq[1])
 
-                    #tiempo para mostrar en pantalla que se torqueó correctamente
+                            #para después quitar la queue
+                            self.model.save_box_candados = box
+                            self.model.save_current_trq_candados = current_trq[1]
+                            #para inicial el modo de revisión de candados
+                            self.model.estado_candados = True
+                        else:
+                            self.remove_task(box, current_trq)
+                    else:
+                        self.remove_task(box, current_trq)
+
+                    #tiempo para mostrar en pantalla que se torqueó correctamente (se regresa al estado zone y si no hay más tareas para la herramienta se finaliza con un ok.emit() el estado zone)
                     Timer(self.delay2, self.ok.emit).start()
 
                 #Si el resultado del torque no es correcto (NOK)
@@ -756,7 +947,7 @@ class CheckResponse (QState):
                         "lbl_steps" : {"text": "", "color": "black"},
                         "img_center" : self.tool + ".jpg"
                         }
-                    publish.single(self.model.boxes[box]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                    publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
                     if self.model.tries[box][current_trq[1]] % 1 == 0:
                         if box in self.model.local_data["nuts_scrap"]:
@@ -791,9 +982,7 @@ class CheckResponse (QState):
 
         #se hace el pop de la tarea de la herramienta una vez que se realizó correctamente
         for i in range(len(self.queue)):
-            print("-/-/-/--//-/-/-/--/-//--//- i",i)
             if box == self.queue[i][0]:
-                print("-/-/-/--//-/-/-/--/-//--//- BOX ES IGUAL A SELF QUEUE I 0",box)
                 if current_trq[1] == self.queue[i][1]:
                     self.queue.pop(i)
                     break
@@ -1117,6 +1306,7 @@ class ToolsManager (QState):
 
     ok1      = pyqtSignal()
     ok2      = pyqtSignal()
+    ok3      = pyqtSignal()
     finish  = pyqtSignal()
 
     def __init__(self, model = None, parent = None):
@@ -1125,8 +1315,15 @@ class ToolsManager (QState):
         self.emty_tools = {}
         self.temporal1 = ""
         self.temporal2 = ""
+        self.temporal3 = ""
     
     def onEntry(self, event):
+
+        command = {
+                "lineEdit" : True
+                }
+        publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+        print("Focus de lineEdit enviado")
 
         #Para saber si aún quedan cajas del lado izquierdo o derecho dependiendo de en que posición se hayan activado sus variables, se mantiene como true o se hace false
         Pos1Finished = False
@@ -1262,7 +1459,7 @@ class ToolsManager (QState):
 
 
             #emty_tools vale True cuando la herramienta no tiene tareas, y False cuando aún tiene 
-            #para recorrer las herramientas i = "tool1,tool2"
+            #para recorrer las herramientas i = "tool1,tool2,tool3"
             for i in self.emty_tools:
                 #si emty_tools no tiene tareas pendientes
                 if self.emty_tools[i] == True:
@@ -1290,9 +1487,6 @@ class ToolsManager (QState):
                         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                     #Si ambas posiciones tienes cajas pendientes, actualizar las GUI's correspondientes según la Tool "i" (self.model.torque_data[i]["gui"])
                     else:
-                        print("+-+-+-+-+-+-+-+-Actualizando ambas GUIS (i)",i)
-                        print("self empty tools: ",self.emty_tools)
-                        print("GUI correspondiente: ",self.model.torque_data[i]["gui"])
                         publish.single(self.model.torque_data[i]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)       
             
                     
@@ -1302,7 +1496,10 @@ class ToolsManager (QState):
             # Se activa la herramienta 2 (6mm,Centro)
             if self.temporal2 == "ok2":
                 Timer(0.05, self.ok2.emit).start()
-            if self.temporal1 == "" and self.temporal2 == "":
+            # Se activa la herramienta 3 (8mm,Der)
+            if self.temporal3 == "ok3":
+                Timer(0.05, self.ok3.emit).start()
+            if self.temporal1 == "" and self.temporal2 == "" and self.temporal3 == "":
                 print("Ninguna Tool se activa!")
         
         #NO HAY ELEMENTOS CLAMPEADOS
@@ -1323,6 +1520,7 @@ class ToolsManager (QState):
         if self.model.config_data["flexible_mode"]:
             self.temporal1 = "ok1"
             self.temporal2 = "ok2"
+            self.temporal3 = "ok3"
         else:
 
             if len(self.model.torque_data["tool1"]["queue"]):
@@ -1337,11 +1535,18 @@ class ToolsManager (QState):
             else:
                 self.temporal2 = ""
 
+            if len(self.model.torque_data["tool3"]["queue"]):
+                print("Aun hay elementos en tool3 para esta caja")
+                self.temporal3 = "ok3"
+            else:
+                self.temporal3 = ""
+
         #se imprimen las tareas en cola de cada herramienta
         print("queue pendientes Tool 1",self.model.torque_data["tool1"]["queue"])
-        print("queue pendientes Tool 2",self.model.torque_data["tool2"]["queue"])
+        print("queue pendientes Tool 2",self.model.torque_data["tool3"]["queue"])
+        print("queue pendientes Tool 3",self.model.torque_data["tool2"]["queue"])
 
-        #se recorre item: "tool1, tool2"
+        #se recorre item: "tool1, tool2, tool3"
         for item in self.model.torque_data:
 
             #se revisa hay elementos en las tareas en cola de cada herramienta
@@ -1693,6 +1898,8 @@ class Palpador (QState):
 
 class WaitingPin (QState):
 
+    continuar   = pyqtSignal()
+
     def __init__(self, tool = "tool1", model = None, parent = None):
         super().__init__(parent)
         self.model = model
@@ -1701,6 +1908,10 @@ class WaitingPin (QState):
 
     def onEntry(self, event):
         print("||||Dentro de Estado WaitingPin!")
+
+        #BYPASS para palpador
+        #self.model.pin_pressed = True
+        #self.continuar.emit()
 
 
     def onExit(self, event):
@@ -1770,6 +1981,9 @@ class CheckZonePalpador (QState):
 
             candado_encoder = self.model.input_data["plc"]["encoder_2"]["candado"]
             current_height = self.model.input_data["plc"]["encoder_4"]["candado"]
+
+            #BYPASS para estación 2
+            current_height = "height"
 
         except Exception as ex:
             print (f"CheckZone {self.tool} Exception: ", ex)
@@ -1942,6 +2156,13 @@ class CheckZonePalpador (QState):
                 #si esta tool tiene habilitado su bloqueo de raffi
                 if self.model.active_lock_tool["tool2"] == True:
                     check_raffi_lock = True
+
+        if self.model.torque_data["tool3"]["current_trq"] != None:
+            if current_box == self.model.torque_data["tool3"]["current_trq"][0]:
+                print("para esta caja: ",current_box," se tienen tareas con la tool3")
+                #si esta tool tiene habilitado su bloqueo de raffi
+                if self.model.active_lock_tool["tool3"] == True:
+                    check_raffi_lock = True
         ###################################################################################
 
         #si ninguna tool de las que lleva esta caja, tiene habilitado su bloqueo de raffi (ninguna de las que lleva la caja está activa), entonces:
@@ -1960,6 +2181,9 @@ class CheckZonePalpador (QState):
             check_key_lock = True
 
         if self.model.backward_key_tool["tool2"] == True:
+            check_key_lock = True
+
+        if self.model.backward_key_tool["tool3"] == True:
             check_key_lock = True
 
         if self.model.backward_key_tool["raffi"] == True:
@@ -1997,6 +2221,25 @@ class CheckZonePalpador (QState):
             modularity.pop(box)
 
             print("se hace pop de la box\nmodularity:\n",modularity)
+
+            queue3 = self.model.torque_data["tool3"]["queue"]
+
+            print("queue tool3:\n",queue3)
+
+            #se hace el pop de la tarea de la herramienta
+            #(se busca el elemento i que contiene en i[0] a esa tarea y se elimina la tarea)
+            for i in range(len(queue3)):
+                print("i:",i)
+                if box == queue3[i][0]:
+                    print("Estamos Dentro")
+                    print("i posible: ",i)
+                    if trq == queue3[i][1]:
+                        print("i encontrada UwU: ",i)
+                        queue3.pop(i)
+                        break
+            
+            print("se hace pop de tarea\nself.queue tool3:\n",queue3)
+
             #############################################################################################################################################
         
             print("|||||||||Finalizando PALPADOR y liberando variante de PDC-R")
@@ -2026,8 +2269,13 @@ class CheckZonePalpador (QState):
             self.model.cajas_habilitadas[box] = 3
             print("|||||self.model.cajas_habilitadas: ",self.model.cajas_habilitadas)
 
+            #se vacía el current trq para que se agregue ahí la siguiente tarea para la herramienta
+            self.model.torque_data["tool3"]["current_trq"]  = None
+
             #se vuelve a habilitar la opción de activar el raffi de esa caja
             self.model.active_lock[box] = False
+            self.model.active_lock_tool["tool3"] = False
+
 
             Timer(self.delay2, self.end.emit).start()
 
