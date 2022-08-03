@@ -15,7 +15,7 @@ class Model (object):
         self.datetime = None
         self.imgs = {}
         self.server = "127.0.0.1:5000"
-        self.serial = "EVTA-MBI-1"
+        self.serial = "ET-MBI-2"
         self.id_HM = None
 
         ###############################

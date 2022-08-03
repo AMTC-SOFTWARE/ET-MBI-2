@@ -453,8 +453,6 @@ class MqttClient (QObject):
                     #obtener encoder_1, encoder_2, encoder_3, o encoder_4
                     encoder = "encoder_" + str(payload["encoder"])
 
-
-
                     #si no se encuentra activado el modo de revisión de candados (funcionamiento normal)
                     if self.model.estado_candados == False:
 

@@ -173,7 +173,7 @@ class Controller (QObject):
                             break
                     if not(ok):
                         command = {
-                            "lbl_steps" : {"text": "Vuelve a escanear la caja", "color": "red"}
+                            "lbl_steps" : {"text": "CAJA INCORRECTA, VUELVA A INTENTARLO", "color": "red"}
                             }
                         self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                 for item in self.model.torque_data:
