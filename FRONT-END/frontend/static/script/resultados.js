@@ -16,11 +16,20 @@ var HM = document.getElementById("HM");
 var nombre = document.getElementById("nombre");
 var gafete = document.getElementById("gafete");
 var chartColumns_T, logArray;
-function fechaActual(){
-    var fechaFinal = moment.utc().add(1,'days').format('YYYY-MM-DD'); //Insertar una fecha del dia de hoy mas 1 dia
-    var fechaInicial = moment.utc().add(-1,'month').format('YYYY-MM-DD'); //Insertar una fecha del dia de hoy menos 1 mes
-    document.getElementById('fechaf').value = fechaFinal;
-    document.getElementById('fechai').value = fechaInicial;
+
+
+
+
+
+
+
+
+
+function fechaActual() {
+  var fechaFinal = moment.utc().add(1, 'days').format('YYYY-MM-DD'); //Insertar una fecha del dia de hoy mas 1 dia
+  var fechaInicial = moment.utc().add(-1, 'month').format('YYYY-MM-DD'); //Insertar una fecha del dia de hoy menos 1 mes
+  document.getElementById('fechaf').value = fechaFinal;
+  document.getElementById('fechai').value = fechaInicial;
 }
 
 var options = {
@@ -522,8 +531,8 @@ function cargarhistorial() {
 
 
 async function historialApp(data) {
-  chartColumns_T =[]
-  logArray =[]
+  chartColumns_T = []
+  logArray = []
   graficar()
   try {
     const mostrar = await mostrarHistorial(data);
@@ -585,13 +594,13 @@ function mostrarHistorial(data) {
     //ENCABEZADOS DE LA TABLA
     var tr = document.createElement('TR');
     Encabezados.appendChild(tr);
-    
+
     for (i = 0; i < colnames.length; i++) {
       var th = document.createElement('TH')
       var titulo = colnames[i].replace("_", " ")
       th.width = '100';
       //console.log(colnames[i]);
-      if(titulo !== 'COMENTARIO'){
+      if (titulo !== 'COMENTARIO') {
         th.appendChild(document.createTextNode(titulo));
       }
       tr.appendChild(th).style.backgroundColor = "#0DBED6";
@@ -603,17 +612,17 @@ function mostrarHistorial(data) {
         var td = document.createElement('TD')
         switch (colnames[j]) {
           case "HM":
-            var selector  = document.createElement('input');
+            var selector = document.createElement('input');
             const hm = data[colnames[j]][i];
-            const pedidoId = data['ID'][i]; 
+            const pedidoId = data['ID'][i];
             selector.setAttribute('type', 'checkbox');
-            selector.id = 'pedido'  
+            selector.id = 'pedido'
             selector.style.marginLeft = '0.5rem'
-            selector.setAttribute('onclick', 'pedidoValue(this)')       
+            selector.setAttribute('onclick', 'pedidoValue(this)')
             selector.value = `{"HM":"${hm}","ID":"${pedidoId}"}`;
             td.appendChild(document.createTextNode(hm));
             td.appendChild(selector);
-            break; 
+            break;
           case "VISION":
             var boton = document.createElement('button');
             var icono = document.createElement('i');
@@ -787,7 +796,7 @@ function mostrarHistorial(data) {
             boton_crear.classList.add('btn-insertar-comentario');
             boton_crear.value = data['ID'][i]
             boton_crear.innerHTML = 'Insertar Comentario';
-            
+
             boton_ver = document.createElement('button');
             boton_ver.title = "Ver Comentarios"
             boton_ver.classList.add('btn')
@@ -798,45 +807,29 @@ function mostrarHistorial(data) {
             // boton_crear.style.width = "60px";
             td.appendChild(boton_ver);
             td.appendChild(boton_crear);
-          break;
+            break;
           case "INTERVALO":
-            fecha_fin_hora = new Date(data["FIN"][i]).getUTCHours()
-            fecha_fin_min = new Date(data["FIN"][i]).getUTCMinutes()
-            fecha_fin_seg = new Date(data["FIN"][i]).getUTCSeconds()
-
-            fecha_inicio_hora = new Date(data["INICIO"][i]).getUTCHours()
-            fecha_inicio_min = new Date(data["INICIO"][i]).getUTCMinutes()
-            fecha_inicio_seg = new Date(data["INICIO"][i]).getUTCSeconds()
-            // console.log(fecha_fin_hora - fecha_inicio_hora, data["ID"][i]);
-
-            // if (transcurridoMinutos < 0) {
-            //   transcurridoHoras--;
-            //   transcurridoMinutos = 60 + transcurridoMinutos;
-            // }
-            transcurridoMinutos = fecha_fin_min - fecha_inicio_min;
-            //console.log(transcurridoMinutos)
-            transcurridoHoras = fecha_fin_hora - fecha_inicio_hora;
-            //console.log(transcurridoHoras)
-            transcurridoSegundos = fecha_fin_seg - fecha_inicio_seg;
-            //console.log(transcurridoSegundos)
-
-            if (transcurridoMinutos < 0) {
-              transcurridoHoras--;
-              transcurridoMinutos = 60 + transcurridoMinutos;
-            }
-            if (transcurridoSegundos < 0) {
-              transcurridoMinutos--;
-              transcurridoSegundos = 60 + transcurridoSegundos;
-            }
-
-            horas = transcurridoHoras.toString();
-            minutos = transcurridoMinutos.toString();
-            segundos = transcurridoSegundos.toString();
-
-
-            //console.log(horas+":"+minutos+" "+segundos);
-            let diferencia = horas <= 0 ? `${minutos} Minutos, y ${segundos} Segundos` : `${horas} Hora(s), ${minutos} Minutos, y ${segundos} Segundos`;
-            td.appendChild(document.createTextNode(diferencia));
+            const dateEnd = moment.utc(new Date(data["FIN"][i]), "HH:mm:ss");
+              const dateStart = moment.utc(new Date(data["INICIO"][i]), "HH:mm:ss");
+  
+              var hourEnd = Number(dateEnd.format('HH')) == 0 && dateStart.format('HH') === 1?  Number(dateEnd.format('HH')): 24;
+              var hourStart = Number(dateStart.format('HH')) == 0 && dateEnd.format('HH') === 1?  Number(dateStart.format('HH')): 24;
+              var dateDiference;
+  
+             // console.log(hourStart);
+              //console.log(hourEnd);
+  
+              if (hourEnd >= hourStart) {
+                dateDiference = dateEnd.diff(dateStart);
+              } else {
+                dateDiference = dateStart.diff(dateEnd);
+              }
+              //console.log(dateDiference);
+  
+              let duracion = moment.utc(dateDiference).format("HH:mm:ss")
+              //console.log(duracion);
+  
+              td.appendChild(document.createTextNode(`${duracion}`));
             break;
           default:
             td.appendChild(document.createTextNode(data[colnames[j]][i]));
@@ -854,70 +847,70 @@ function mostrarHistorial(data) {
     $(document).ready(function () {
       // Setup - add a text input to each footer cell
       $('#myTable thead tr')
-          
-          .addClass('filters')
-          .appendTo('#myTable thead');
-   
-      var table = $('#myTable').DataTable({
-          orderCellsBottom: true,
-          responsive: true,
-          initComplete: function () {
-              var api = this.api();
-              fuck = 0;
-              // For each column
-              api
-                  .columns(5)
-                  .eq(0)
-                  .each(function (colIdx) {
-                      // Set the header cell to contain the input element
-                     // console.log(colIdx)
-                      var cell = $('.filters th').eq(
-                          $(api.column(colIdx).header()).index()
-                      );
-                      
-                      var title = $(cell).text();
-                      //console.log(cell)
 
-                      $(cell).html(`<select id="selector" name="select">
+        .addClass('filters')
+        .appendTo('#myTable thead');
+
+      var table = $('#myTable').DataTable({
+        orderCellsBottom: true,
+        responsive: true,
+        initComplete: function () {
+          var api = this.api();
+          fuck = 0;
+          // For each column
+          api
+            .columns(5)
+            .eq(0)
+            .each(function (colIdx) {
+              // Set the header cell to contain the input element
+              // console.log(colIdx)
+              var cell = $('.filters th').eq(
+                $(api.column(colIdx).header()).index()
+              );
+
+              var title = $(cell).text();
+              //console.log(cell)
+
+              $(cell).html(`<select id="selector" name="select">
                       <option value="">Resultado</option>
                       <option value="Vision">Vision</option>
                       <option value="Torque">Torque</option>
                       <option value="Reset">Reset</option>
                     </select>`);
-   
-                      // On every keypress in this input
-                      $(
-                          'select',
-                          $('.filters th').eq($(api.column(colIdx).header()).index())
-                      )
-                          .off('keyup change')
-                          .on('keyup change', function (e) {
-                              e.stopPropagation();
-                              // Get the search value
-                              $(this).attr('value', $(this).val());
-                              var regexr = '({search})'; //$(this).parents('th').find('select').val();
-   
-                              var cursorPosition = this.selectionStart;
-                              // Search the column for that value
-                              api
-                                  .column(colIdx)
-                                  .search(
-                                      this.value != ''
-                                          ? regexr.replace('{search}', '(((' + this.value + ')))')
-                                          : '',
-                                      this.value != '',
-                                      this.value == ''
-                                  )
-                                  .draw();
-   
-                              $(this)
-                                  .focus()[0]
-                                  //.setSelectionRange(cursorPosition, cursorPosition);
-                          });
-                  });
-          },
+
+              // On every keypress in this input
+              $(
+                  'select',
+                  $('.filters th').eq($(api.column(colIdx).header()).index())
+                )
+                .off('keyup change')
+                .on('keyup change', function (e) {
+                  e.stopPropagation();
+                  // Get the search value
+                  $(this).attr('value', $(this).val());
+                  var regexr = '({search})'; //$(this).parents('th').find('select').val();
+
+                  var cursorPosition = this.selectionStart;
+                  // Search the column for that value
+                  api
+                    .column(colIdx)
+                    .search(
+                      this.value != '' ?
+                      regexr.replace('{search}', '(((' + this.value + ')))') :
+                      '',
+                      this.value != '',
+                      this.value == ''
+                    )
+                    .draw();
+
+                  $(this)
+                    .focus()[0]
+                  //.setSelectionRange(cursorPosition, cursorPosition);
+                });
+            });
+        },
       });
-  });
+    });
     setTimeout(() => {
       resovle('Las Tablas fueron Descargadas');
     }, 1000);
@@ -948,12 +941,11 @@ function descargarHistorial(data) {
 
     //CREACION DE LA TABLA PARA DESCARGAR TORQUE
     var torque = new Array();
-    var cajaKeysT, cajaKeysV, cajaKeysA, cajaKeysAng, cajaKeys_intV
+    var cajaKeysT, /*cajaKeysV, cajaKeysA,*/ cajaKeysAng
     let intentos_t = [];
-    let vision = [];
-    let altura = [];
-    let intentos_v = [];
-    let intentos_a = [];
+    // let vision = [];
+    // let altura = [];
+    // let intentos_va = [];
     let angulo = [];
 
     //ENCABEZADOS DE LA TABLA PARA DESCARGAR
@@ -965,15 +957,15 @@ function descargarHistorial(data) {
     colnames.splice(colnames.indexOf("SERIALES"), 1);
     colnames.splice(colnames.indexOf("RESULTADO"), 0, ("REFERENCIA"));
     colnames.splice(colnames.indexOf("FIN"), 0, ("HORA_INICIAL"));
-    colnames.splice(colnames.indexOf("INTERVALO"), 0, "HORA_INICIAL", "HORA_FINAL");
+    colnames.splice(colnames.indexOf("INTERVALO"), 0, ("HORA_FINAL"));
     colnames.splice(colnames.indexOf("SCRAP"), 1);
     colnames.splice(colnames.indexOf("NOTAS"), 0, ("SCRAP"));
     colnames.splice(colnames.indexOf("TORQUE"), 1);
     colnames.splice(colnames.indexOf("INTENTOS_VA"), 1);
     colnames.splice(colnames.indexOf("INTENTOS_T"), 1);
-    colnames.splice(colnames.indexOf("ANGULO"), 1); 
-    colnames.splice(colnames.indexOf("IMPRIMIR"), 1); 
-    colnames.splice(colnames.indexOf("COMENTARIO"), 1); 
+    colnames.splice(colnames.indexOf("ANGULO"), 1);
+    colnames.splice(colnames.indexOf("IMPRIMIR"), 1);
+    colnames.splice(colnames.indexOf("COMENTARIO"), 1);
     console.log(individuales); ///Conserva los nombres de los objetos originales
 
     for (i = 0; i < colnames.length; i++) {
@@ -1072,44 +1064,29 @@ function descargarHistorial(data) {
             td.appendChild(ul);
             // document.getElementById("informacion").appendChild(ul)
             break;
-            case "INTERVALO":
-              fecha_fin_hora = new Date(data["FIN"][i]).getUTCHours()
-              fecha_fin_min = new Date(data["FIN"][i]).getUTCMinutes()
-              fecha_fin_seg = new Date(data["FIN"][i]).getUTCSeconds()
-  
-              fecha_inicio_hora = new Date(data["INICIO"][i]).getUTCHours()
-              fecha_inicio_min = new Date(data["INICIO"][i]).getUTCMinutes()
-              fecha_inicio_seg = new Date(data["INICIO"][i]).getUTCSeconds()
-  
-              if (fecha_inicio_hora > fecha_fin_hora) {
-                transcurridoMinutos  = isNaN(fecha_fin_min || fecha_inicio_min)?0:Math.abs(fecha_fin_min  + fecha_inicio_min);
-                transcurridoHoras    = isNaN(fecha_fin_hora|| fecha_inicio_hora)?0:Math.abs(fecha_fin_hora + fecha_inicio_hora);
-                transcurridoSegundos = isNaN(fecha_fin_seg || fecha_inicio_seg)?0:Math.abs(fecha_fin_seg  + fecha_inicio_seg);  
-              }else{
-                transcurridoMinutos  = isNaN(fecha_fin_min || fecha_inicio_min)?0:Math.abs(fecha_fin_min  - fecha_inicio_min);
-                transcurridoHoras    = isNaN(fecha_fin_hora|| fecha_inicio_hora)?0:Math.abs(fecha_fin_hora - fecha_inicio_hora);
-                transcurridoSegundos = isNaN(fecha_fin_seg || fecha_inicio_seg)?0:Math.abs(fecha_fin_seg  - fecha_inicio_seg);
-              }
-  
-              if (transcurridoSegundos < 0) {
-                transcurridoMinutos--;
-                transcurridoSegundos = 60 + transcurridoSegundos;
-              }
-              while (transcurridoMinutos > 60) {
-                transcurridoHoras++;
-                transcurridoMinutos -= 60;
-              }           
-              horas = transcurridoHoras.toString();
-              minutos = isNaN(transcurridoMinutos)? '0': transcurridoMinutos.toString();
-              segundos = isNaN(transcurridoSegundos)? '0': transcurridoSegundos.toString();
-              if (segundos.length === 1) {
-                segundos = `0${segundos}`              
-              }
-              var diferencia;
-              diferencia = horas>0? `${horas}:${minutos}:${segundos}`:`${minutos}:${segundos}`;
-              
-              td.appendChild(document.createTextNode(diferencia));
-              break;
+          case "INTERVALO":
+            const dateEnd = moment.utc(new Date(data["FIN"][i]), "HH:mm:ss");
+            const dateStart = moment.utc(new Date(data["INICIO"][i]), "HH:mm:ss");
+
+            var hourEnd = Number(dateEnd.format('HH')) == 0 && dateStart.format('HH') === 1?  Number(dateEnd.format('HH')): 24;
+            var hourStart = Number(dateStart.format('HH')) == 0 && dateEnd.format('HH') === 1?  Number(dateStart.format('HH')): 24;
+            var dateDiference;
+
+           // console.log(hourStart);
+            //console.log(hourEnd);
+
+            if (hourEnd >= hourStart) {
+              dateDiference = dateEnd.diff(dateStart);
+            } else {
+              dateDiference = dateStart.diff(dateEnd);
+            }
+            //console.log(dateDiference);
+
+            let duracion = moment.utc(dateDiference).format("HH:mm:ss")
+            //console.log(duracion);
+
+            td.appendChild(document.createTextNode(`${duracion}`));
+            break;
           case "FIN":
             dateStamp = moment.utc((data[colnames[j]][i])).format("MM/DD/YYYY");
             td.appendChild(document.createTextNode(dateStamp));
@@ -1139,7 +1116,6 @@ function descargarHistorial(data) {
     const colID = data[colnames[colnames.indexOf("ID")]];
     //FILAS DE LA TABLA PARA DESCARGAR
     for (i = 0; i < filas; i++) {
-       
       let secciones = JSON.parse(individuales);
       //console.log(data[secciones[i]]);
       for (j = 0; j < secciones.length; j++) {
@@ -1198,64 +1174,34 @@ function descargarHistorial(data) {
               ...ObjectID_ANG
             });
             break;
-            case "INTENTOS_VA":
-              let columns_VA = {};
-              columns_V = {};
-              columns_A = {};
-              //console.log(secciones[j]);
-              colTitle = secciones[j];
-              //console.log(colID);
-              dataParse = data[colTitle];
-              var cajas = dataParse[i] == false ? "" : JSON.parse(dataParse[i]);
-              //console.log(cajas);
-              //console.log(cajas.VISION);
-              //console.log(cajas.ALTURA);
-            if (cajas.VISION !== undefined) {
-              cajaKeys_intV = Object.keys(cajas.VISION)
-              console.log(cajaKeys_intV);
-              var arraySection_V = [];
-              var ObjectID_V = [cajaKeys_intV];
-              for (let index = 0; index < cajaKeys_intV.length; index++) {
-                let titleArray = cajaKeys_intV[index];
-                columns_V = {
-                  ...cajas.VISION[cajaKeys_intV[index]]
-                }
-                ObjectID_V[titleArray] = cajas.VISION[cajaKeys_intV[index]];
-              };
-              
-            }else{
-              columns_V = {
-                ...[]
-              }
-            }
-            
-            if (cajas.ALTURA !== undefined) {
-              var cajaKeys_A = Object.keys(cajas.ALTURA)
-              var arraySection_A = [];
-              var ObjectID_A = [cajaKeysA]
-              for (let index = 0; index < cajaKeys_A.length; index++) {
-                let titleArray = cajaKeys_A[index];
-                columns_A = {
-                  ...cajas.ALTURA[cajaKeys_A[index]]
-                }
-                ObjectID_A[titleArray] = cajas.ALTURA[cajaKeys_A[index]];
-              };
-            }else{
-              columns_A = {
-                ...[]
-              }
-            }
-              //console.log(columns_VA);
-              intentos_v.push({
-                ID: colID[i],
-                ...ObjectID_V})
-  
-              intentos_a.push({
-                ID: colID[i],
-                ...ObjectID_V})
-              //console.log(intentos_v);
-              //console.log(intentos_a);
-              break;
+            // case "INTENTOS_VA":
+            //   let columns_VA = {};
+            //   colTitle = secciones[j];
+            //   //console.log(colID);
+            //   dataParse = data[colTitle];
+            //   //console.log(dataParse);
+            //   var cajas = dataParse[i] == false ? "" : JSON.parse(dataParse[i]);
+            //   var cajaKeys = Object.keys(cajas)
+            //   var arraySection = [];
+            //   for (let index = 0; index < cajaKeys.length; index++) {
+            //     let titleArray = cajaKeys[index];
+            //     let jsonString = JSON.stringify(cajas[cajaKeys[index]])
+            //     jsonString = jsonString.replace("{", "")
+            //     jsonString = jsonString.split('"').join(' ');
+            //     jsonString = jsonString.replace("}", " ")
+            //     jsonString = jsonString.split("null").join('N/A ');
+            //     jsonString = jsonString.split("vacio").join('N/A ');
+            //     arraySection[titleArray] = jsonString;
+            //     columns_VA = {
+            //       ...arraySection
+            //     }
+            //   };
+            //   let ObjectID_VA = {
+            //     ID: colID[i],
+            //     ...columns_VA
+            //   };
+            //   intentos_va.push(ObjectID_VA)
+            //   break;
           case "INTENTOS_T":
             let columns_INTT = {};
             colTitle = secciones[j];
@@ -1283,79 +1229,79 @@ function descargarHistorial(data) {
               ...ObjectID_INTT
             });
             break;
-          case "VISION":
-            var columns_V = {};
-            colTitle = secciones[j];
-            dataParse = data[colTitle];
-            //console.log(data[colTitle])                   
-            var cajas = dataParse[i] == false ? '' : JSON.parse(dataParse[i]);
-            var cajaKeys = Object.keys(cajas)
-            if (cajaKeys.length !== 0) {
-              //console.log(cajaKeys.length);
-              cajaKeysV = cajaKeys
-            }
-            //console.log(cajaKeys)
-            var arraySection = [];
-            var ObjectID_VIS = [cajaKeys];
-            //console.log(ObjectID_VIS)
-            for (let index = 0; index < cajaKeys.length; index++) {
-              let titleArray = cajaKeys[index]
-              // let jsonString = JSON.stringify(cajas[cajaKeys[index]])
-              //arraySection[titleArray] = jsonString;
-              columns_V = {
-                ...cajas[cajaKeys[index]]
-              }
-              ObjectID_VIS[titleArray] = cajas[cajaKeys[index]];
-              //console.log(ObjectID_VIS)
-            };
-            vision.push({
-              ID: colID[i],
-              ...ObjectID_VIS
-            });
+            // case "VISION":
+            //   var columns_V = {};
+            //   colTitle = secciones[j];
+            //   dataParse = data[colTitle];
+            //   //console.log(data[colTitle])                   
+            //   var cajas = dataParse[i] == false ? '' : JSON.parse(dataParse[i]);
+            //   var cajaKeys = Object.keys(cajas)
+            //   //console.log(cajaKeys.length);
+            //   if (cajaKeys.length !== 0) {
+            //     cajaKeysV = cajaKeys
+            //   }
+            //   //console.log(cajaKeys)
+            //   var arraySection = [];
+            //   var ObjectID_VIS = [cajaKeys];
+            //   //console.log(ObjectID_VIS)
+            //   for (let index = 0; index < cajaKeys.length; index++) {
+            //     let titleArray = cajaKeys[index]
+            //     // let jsonString = JSON.stringify(cajas[cajaKeys[index]])
+            //     //arraySection[titleArray] = jsonString;
+            //     columns_V = {
+            //       ...cajas[cajaKeys[index]]
+            //     }
+            //     ObjectID_VIS[titleArray] = cajas[cajaKeys[index]];
+            //     //console.log(ObjectID_VIS)
+            //   };
+            //   vision.push({
+            //     ID: colID[i],
+            //     ...ObjectID_VIS
+            //   });
 
-            break;
-          case "ALTURA":
-            var columns_A = {};
-            colTitle = secciones[j];
-            dataParse = data[colTitle];
-            //console.log(data[colTitle])                   
-            var cajas = dataParse[i] == false ? '' : JSON.parse(dataParse[i]);
-            var cajaKeys = Object.keys(cajas)
-            if (cajaKeys.length !== 0) {
-              //console.log(cajaKeys.length);
-              cajaKeysA = cajaKeys
-            }
-            //console.log(cajaKeys)
-            var arraySection = [];
-            var ObjectID_ALT = [cajaKeys];
-            //console.log(ObjectID_ALT)
-            for (let index = 0; index < cajaKeys.length; index++) {
-              let titleArray = cajaKeys[index]
-              // let jsonString = JSON.stringify(cajas[cajaKeys[index]])
-              //arraySection[titleArray] = jsonString;
-              columns_A = {
-                ...cajas[cajaKeys[index]]
-              }
-              ObjectID_ALT[titleArray] = cajas[cajaKeys[index]];
-              //console.log(ObjectID_ALT)
-            };
-            altura.push({
-              ID: colID[i],
-              ...ObjectID_ALT
-            });
+            //   break;
+            // case "ALTURA":
+            //   var columns_A = {};
+            //   colTitle = secciones[j];
+            //   dataParse = data[colTitle];
+            //   //console.log(data[colTitle])                   
+            //   var cajas = dataParse[i] == false ? '' : JSON.parse(dataParse[i]);
+            //   var cajaKeys = Object.keys(cajas)
+            //   if (cajaKeys.length !== 0) {
+            //     //console.log(cajaKeys.length);
+            //     cajaKeysA = cajaKeys
+            //   }
+            //   //console.log(cajaKeys)
+            //   var arraySection = [];
+            //   var ObjectID_ALT = [cajaKeys];
+            //   //console.log(ObjectID_ALT)
+            //   for (let index = 0; index < cajaKeys.length; index++) {
+            //     let titleArray = cajaKeys[index]
+            //     // let jsonString = JSON.stringify(cajas[cajaKeys[index]])
+            //     //arraySection[titleArray] = jsonString;
+            //     columns_A = {
+            //       ...cajas[cajaKeys[index]]
+            //     }
+            //     ObjectID_ALT[titleArray] = cajas[cajaKeys[index]];
+            //     //console.log(ObjectID_ALT)
+            //   };
+            //   altura.push({
+            //     ID: colID[i],
+            //     ...ObjectID_ALT
+            //   });
 
-            break;
+            //   break;
         }
       }
 
-      
+
     }
     /*----------------------------↓Torque↓--------------------------------------------*/
     //console.log(torque)
     var newTor = {}
     //console.log(cajaKeysT)
     cajaKeysT.unshift("ID")
-    lastArray = cajaKeysT.length-1
+    lastArray = cajaKeysT.length - 1
     for (let torJ = 0; torJ < cajaKeysT.length; torJ++) {
       const boxT = cajaKeysT[torJ];
       arrayT = [];
@@ -1369,11 +1315,10 @@ function descargarHistorial(data) {
           if (boxT !== 'ID') {
             arrayT.push(torque[i][boxT])
           }
-        }else{
+        } else {
           //console.log(cajaKeysT[lastArray])
           torque[i][cajaKeysT[lastArray]] = 0;
-          arrayT.push(torque[i][cajaKeysT[lastArray]]
-          )
+          arrayT.push(torque[i][cajaKeysT[lastArray]])
         }
         //console.log(torque[i][boxT],  'en', boxT)
       }
@@ -1386,7 +1331,7 @@ function descargarHistorial(data) {
     var newAng = {}
     //console.log(cajaKeysAng)
     cajaKeysAng.unshift("ID")
-    lastArray = cajaKeysAng.length-1
+    lastArray = cajaKeysAng.length - 1
     for (let torJ = 0; torJ < cajaKeysAng.length; torJ++) {
       const boxT = cajaKeysAng[torJ];
       arrayT = [];
@@ -1400,11 +1345,10 @@ function descargarHistorial(data) {
           if (boxT !== 'ID') {
             arrayT.push(angulo[i][boxT])
           }
-        }else{
+        } else {
           //console.log(cajaKeysAng[lastArray])
           angulo[i][cajaKeysAng[lastArray]] = 0;
-          arrayT.push(angulo[i][cajaKeysAng[lastArray]]
-          )
+          arrayT.push(angulo[i][cajaKeysAng[lastArray]])
         }
         //console.log(angulo[i][boxT],  'en', boxT)
       }
@@ -1415,8 +1359,7 @@ function descargarHistorial(data) {
     var newIntt = {}
     cajaKeysIntt.unshift("ID")
     //cajaKeysIntt.push("NULO")
-    lastArray = cajaKeysIntt.length-1
-
+    lastArray = cajaKeysIntt.length - 1
     for (let torJ = 0; torJ < cajaKeysIntt.length; torJ++) {
       const boxT = cajaKeysIntt[torJ];
       arrayT = [];
@@ -1430,7 +1373,7 @@ function descargarHistorial(data) {
           if (boxT !== 'ID') {
             arrayT.push(intentos_t[i][boxT])
           }
-        }else{
+        } else {
           //console.log(cajaKeysIntt[lastArray])
           intentos_t[i][cajaKeysIntt[lastArray]] = 0;
           arrayT.push(intentos_t[i][cajaKeysIntt[lastArray]])
@@ -1439,7 +1382,69 @@ function descargarHistorial(data) {
       newIntt[boxT] = [...arrayT];
     };
     //console.log(newIntt)
-
+    //     /*----------------------------↓Vision↓--------------------------------------------*/
+    // //console.log(vision)
+    //     var newVis = {}
+    //     console.log(cajaKeysV)
+    //     cajaKeysV.unshift("ID")
+    //     //cajaKeysV.push("NULO")
+    //     lastArray = cajaKeysV.length-1
+    //     for (let b = 0; b < cajaKeysV.length-1; b++) {
+    //       const boxV = cajaKeysV[b];
+    //       arrayV = [];
+    //       for (var i = 0; i < vision.length; i++) {
+    //         if (vision[i][boxV] !== undefined) {
+    //           if (boxV === "ID" ) {
+    //             arrayV.push({
+    //               'ID': vision[i][boxV]
+    //             })
+    //           }
+    //           if (boxV !== 'ID') {
+    //             arrayV.push(vision[i][boxV])
+    //           }
+    //         }else{
+    //           vision[i][cajaKeysV[lastArray]] = 'N/A'
+    //           arrayV.push({
+    //            'NULO': vision[i][cajaKeysV[lastArray]]
+    //           })
+    //         }
+    //         //console.log(vision[i][boxV],  'en', boxV)
+    //       }
+    //       newVis[boxV] = [...arrayV];
+    //     };
+    //     console.log(newVis)
+    // /*----------------------------↓altura↓--------------------------------------------*/
+    // //console.log(altura)
+    // var newAlt = {}
+    // //console.log(cajaKeysA)
+    // cajaKeysA.unshift("ID")
+    // cajaKeysA.push("NULO")
+    // lastArray = cajaKeysA.length-1
+    // for (let b = 0; b < cajaKeysA.length-1; b++) {
+    //   const boxA = cajaKeysA[b];
+    //   arrayA = [];
+    //   //console.log(altura)
+    //   for (var i = 0; i < altura.length; i++) {
+    //     if (altura[i][boxA] !== undefined) {
+    //       if (boxA === "ID") {
+    //         arrayA.push({
+    //           'ID': altura[i][boxA]
+    //         })
+    //       }
+    //       if (boxA !== 'ID') {
+    //         arrayA.push(altura[i][boxA])
+    //       }
+    //     }else{
+    //       altura[i][cajaKeysA[lastArray]] = 'N/A'
+    //       arrayA.push({
+    //        'NULO': altura[i][cajaKeysA[lastArray]]
+    //       })
+    //     }
+    //     //console.log(cajaKeysA[lastArray])
+    //   }
+    //   newAlt[boxA] = [...arrayA];
+    // };
+    // //console.log(newAlt)
 
     $(document).ready(function () {
       let exportar = document.createElement('button');
@@ -1458,6 +1463,9 @@ function descargarHistorial(data) {
         var table2 = newTor;
         var table3 = newAng;
         var table4 = newIntt;
+        //var table5 = newVis;
+        //var table6 = newAlt;
+        //var table7 = intentos_va;
         let wideValue;
         // convert table to excel sheet
         var wb = XLSX.utils.table_to_book(table, {
@@ -1643,6 +1651,175 @@ function descargarHistorial(data) {
 
 
 
+
+
+        // /************VISION**********/
+        // wb.SheetNames.push("Vision");
+        // var ws5;
+        // cadaCaja = Object.keys(table5) // 8 cajas actualmente
+        // //console.log(cadaCaja)
+        // coordenada = 0
+        // merge = [];
+        // endMerge = -1
+        // startMerge = 0
+        // for (let x = 0; x < cadaCaja.length; x++) {
+        // wideValue = 0
+        // let eachbox = table5[cadaCaja[x]];
+        //   //console.log(eachbox)
+
+        //    for (let u = 0; u < eachbox.length; u++) {
+        //      if (!eachbox[u].hasOwnProperty('NULO')){
+        //        //console.log(eachbox[u])
+        //        wideValue = Object.keys(eachbox[u]).length
+        //        if (wideValue !== 1){
+        //         wideValue += 1;
+        //        }
+        //      }
+        //    }
+        //     //console.log( wideValue)
+
+        //    if (cadaCaja[x] !== 'PDC-RMID') {
+        //      //console.log(eachbox[x])
+        //      encontrarV(coordenada)
+        //    } 
+        //    else {
+        //      abc = 'EX2'
+        //      abcT = 'EX1'
+        //    }
+
+        //   ws5 = XLSX.utils.sheet_add_json(ws5, eachbox, {
+        //     sheet: "Vision",
+        //     origin: abc
+        //   });
+        //   //console.log(eachbox, abc, cadaCaja[x])
+        //   ws5[abcT] = {
+        //     t: 's',
+        //     v: `${cadaCaja[x]}`
+        //   }
+        //   let boxkeys = wideValue
+        //   coordenada += wideValue;
+
+        //   //console.log(coordenada)
+        //   //console.log(abcT)
+        //   if (boxkeys > 1) {
+        //     //console.log('Volumen de la caja: ', boxkeys);
+        //     endMerge += (boxkeys);
+        //   } else {
+        //     //console.log(boxkeys);
+        //     endMerge += 1;
+        //   }
+        //   //console.log(`S: ${startMerge} E: ${endMerge}`)
+
+        //   merge.push({
+        //     s: {
+        //       r: 0,
+        //       c: startMerge
+        //     },
+        //     e: {
+        //       r: 0,
+        //       c: endMerge
+        //     }
+        //   })
+        //   if (wideValue > 1) {
+        //     ///console.log(wideValue);
+        //     startMerge += (wideValue);
+        //   } else {
+        //     startMerge += 1;
+        //   }
+        //   //console.log('----------Vision-----------')
+        // }
+        // ws5['!merges'] = merge;
+        // wb.Sheets["Vision"] = ws5;
+
+
+        // /************ALTURA *******/
+        // wb.SheetNames.push("Altura");
+        // var ws6;
+        // cadaCaja = Object.keys(table6) // 8 cajas actualmente
+        // //console.log(cadaCaja)
+        // coordenada = 0
+        // merge = [];
+        // endMerge = -1
+        // startMerge = 0
+        // for (let x = 0; x < cadaCaja.length; x++) {
+        // wideValue = 0
+        // let eachbox = table6[cadaCaja[x]];
+        //   //console.log(eachbox)
+
+        //    for (let u = 0; u < eachbox.length; u++) {
+        //      if (!eachbox[u].hasOwnProperty('NULO')){
+        //        //console.log(eachbox[u])
+        //        wideValue = Object.keys(eachbox[u]).length
+        //        if (wideValue !== 1){
+        //         wideValue += 1;
+        //        }
+        //      }
+        //    }
+        //     //console.log( wideValue)
+
+        //    if (cadaCaja[x] !== 'PDC-RMID') {
+        //      //console.log(eachbox[x])
+        //      encontrarV(coordenada)
+        //    } 
+        //    else {
+        //      abc = 'EX2'
+        //      abcT = 'EX1'
+        //    }
+
+        //   ws6 = XLSX.utils.sheet_add_json(ws6, eachbox, {
+        //     sheet: "Vision",
+        //     origin: abc
+        //   });
+        //   //console.log(eachbox, abc, cadaCaja[x])
+        //   ws6[abcT] = {
+        //     t: 's',
+        //     v: `${cadaCaja[x]}`
+        //   }
+        //   let boxkeys = wideValue
+        //   coordenada += wideValue;
+
+        //   //console.log(coordenada)
+        //   //console.log(abcT)
+        //   if (boxkeys > 1) {
+        //     //console.log('Volumen de la caja: ', boxkeys);
+        //     endMerge += (boxkeys);
+        //   } else {
+        //     //console.log(boxkeys);
+        //     endMerge += 1;
+        //   }
+        //   //console.log(`S: ${startMerge} E: ${endMerge}`)
+
+        //   merge.push({
+        //     s: {
+        //       r: 0,
+        //       c: startMerge
+        //     },
+        //     e: {
+        //       r: 0,
+        //       c: endMerge
+        //     }
+        //   })
+        //   if (wideValue > 1) {
+        //     ///console.log(wideValue);
+        //     startMerge += (wideValue);
+        //   } else {
+        //     startMerge += 1;
+        //   }
+        //   //console.log('----------Altura-----------')
+        // }
+        // ws6['!merges'] = merge;
+        // wb.Sheets["Altura"] = ws6;
+
+        // /************INTENTOS VA *******/
+        // wb.SheetNames.push("Intentos-va");
+        // var ws7 = XLSX.utils.json_to_sheet(table7, {
+        //   sheet: "Intentos-va"
+        // });
+        // wb.Sheets["Intentos-va"] = ws7;
+
+
+
+
         // wb.SheetNames.push("EJEMPLO")
         // const workers = [{
         //     'Name': 'George',
@@ -1677,14 +1854,14 @@ function descargarHistorial(data) {
         // wb.Sheets["EJEMPLO"] = ws8;
 
         // write sheet to blob
-       var blob = new Blob([s2ab(XLSX.write(wb, {
-         bookType: 'xlsx',
-         type: 'binary'
-       }))], {
-         type: "application/octet-stream"
-       });
-       // return sheet file
-       return saveAs(blob, "Fujikura Automotive México Piedras Negras.xlsx");
+        var blob = new Blob([s2ab(XLSX.write(wb, {
+          bookType: 'xlsx',
+          type: 'binary'
+        }))], {
+          type: "application/octet-stream"
+        });
+        // return sheet file
+        return saveAs(blob, "Fujikura Automotive México Piedras Negras.xlsx");
       };
 
       function s2ab(s) {
@@ -1764,58 +1941,58 @@ $(document).on('click', '.btn-ver-vision', function () {
         let re = /null/g;
         if (data[id_info] == "" || data[id_info] == "{}") {
           var b = document.createElement('b');
-          b.innerHTML="SIN DATOS";
+          b.innerHTML = "SIN DATOS";
           document.getElementById("informacion").appendChild(b);
-        }else{
+        } else {
           // console.log(data);
           dataParse = JSON.parse(data[id_info]);
-          console.log("Convertido a JSON: ",dataParse)
-        // console.log(data[header_info]);
-        dataKeys = Object.keys(dataParse)
-        // console.log("dataKeys: ",dataKeys)
-        let div = document.createElement("div");
-        for (let i = 0; i < dataKeys.length; i++) {
-          let nav = document.createElement("nav");
-          let caja = dataKeys[i];
-          nav.id = "titulo-caja"
-          let cavidades = dataParse[caja];
-          let anulados = 0;
-          // console.log("Aqui esta la CAJA:",caja);
-          //console.log("Aquí en object: ",cavidades)
-          let get_cavidad = Object.getOwnPropertyNames(cavidades);
-          let grid = document.createElement("div");
-          grid.classList = "grid-box";
-          for (let j = 0; j < get_cavidad.length; j++) {
+          console.log("Convertido a JSON: ", dataParse)
+          // console.log(data[header_info]);
+          dataKeys = Object.keys(dataParse)
+          // console.log("dataKeys: ",dataKeys)
+          let div = document.createElement("div");
+          for (let i = 0; i < dataKeys.length; i++) {
+            let nav = document.createElement("nav");
+            let caja = dataKeys[i];
+            nav.id = "titulo-caja"
+            let cavidades = dataParse[caja];
+            let anulados = 0;
+            // console.log("Aqui esta la CAJA:",caja);
+            //console.log("Aquí en object: ",cavidades)
+            let get_cavidad = Object.getOwnPropertyNames(cavidades);
+            let grid = document.createElement("div");
+            grid.classList = "grid-box";
+            for (let j = 0; j < get_cavidad.length; j++) {
 
-            let obj_cavidad = get_cavidad[j];
-            //console.log ("cavidad",obj_cavidad);
-            //console.log ("valor",cavidades[obj_cavidad]);
-            let span = document.createElement("span");
-            span.classlist = "caja-valor";
-            //console.log(cavidades[obj_cavidad])
-            if (cavidades[obj_cavidad] === null || cavidades[obj_cavidad] === 'vacio') {
-              //console.log(cavidades[obj_cavidad]);
-              anulados++
-            }else{
-              let valores = JSON.stringify(cavidades[obj_cavidad]);
-              //console.log("Aqui en string: ",valores)
-              
-            
-              let boxValue = valores.replace(re, 'N/A'); 
-              span.innerHTML = `<p>${obj_cavidad}: ${boxValue}</p>`;
-              grid.appendChild(span);
+              let obj_cavidad = get_cavidad[j];
+              //console.log ("cavidad",obj_cavidad);
+              //console.log ("valor",cavidades[obj_cavidad]);
+              let span = document.createElement("span");
+              span.classlist = "caja-valor";
+              //console.log(cavidades[obj_cavidad])
+              if (cavidades[obj_cavidad] === null || cavidades[obj_cavidad] === 'vacio') {
+                //console.log(cavidades[obj_cavidad]);
+                anulados++
+              } else {
+                let valores = JSON.stringify(cavidades[obj_cavidad]);
+                //console.log("Aqui en string: ",valores)
+
+
+                let boxValue = valores.replace(re, 'N/A');
+                span.innerHTML = `<p>${obj_cavidad}: ${boxValue}</p>`;
+                grid.appendChild(span);
+              }
+            }
+            if (get_cavidad.length !== anulados) {
+              nav.innerHTML = "<b>" + caja + "</b>";
+              div.appendChild(nav);
+              nav.appendChild(grid);
             }
           }
-         if(get_cavidad.length !== anulados){
-           nav.innerHTML = "<b>" + caja + "</b>";
-           div.appendChild(nav);
-           nav.appendChild(grid);
-         }
-        }         
-        document.getElementById("informacion").appendChild(div)
-        //let alturaValue = data[header_info].replace(re, 'N/A');
-        // console.log(alturaValue);
-        //document.getElementById("informacion").innerHTML = alturaValue;
+          document.getElementById("informacion").appendChild(div)
+          //let alturaValue = data[header_info].replace(re, 'N/A');
+          // console.log(alturaValue);
+          //document.getElementById("informacion").innerHTML = alturaValue;
         }
         $('#mostrar').click();
       })
@@ -1827,62 +2004,62 @@ $(document).on('click', '.btn-ver-vision', function () {
       .then(data => data.json())
       .then(data => {
         document.getElementById("informacion").innerHTML = "";
-      let re = /null/g;
-      if (data[header_info] == "" || data[header_info] == "{}") {
-        var b = document.createElement('b');
-        b.innerHTML="SIN DATOS";
-        document.getElementById("informacion").appendChild(b);
-      }else{
-        // console.log(data);
-        dataParse = JSON.parse(data[header_info]);
-        console.log("Convertido a JSON: ",dataParse)
-      // console.log(data[header_info]);
-      dataKeys = Object.keys(dataParse)
-      // console.log("dataKeys: ",dataKeys)
-      let div = document.createElement("div");
-      for (let i = 0; i < dataKeys.length; i++) {
-        let nav = document.createElement("nav");
-        let caja = dataKeys[i];
-        nav.id = "titulo-caja"
-        let cavidades = dataParse[caja];
-        let anulados = 0;
-        // console.log("Aqui esta la CAJA:",caja);
-        //console.log("Aquí en object: ",cavidades)
-        let get_cavidad = Object.getOwnPropertyNames(cavidades);
-        let grid = document.createElement("div");
-        grid.classList = "grid-box";
-        for (let j = 0; j < get_cavidad.length; j++) {
+        let re = /null/g;
+        if (data[header_info] == "" || data[header_info] == "{}") {
+          var b = document.createElement('b');
+          b.innerHTML = "SIN DATOS";
+          document.getElementById("informacion").appendChild(b);
+        } else {
+          // console.log(data);
+          dataParse = JSON.parse(data[header_info]);
+          console.log("Convertido a JSON: ", dataParse)
+          // console.log(data[header_info]);
+          dataKeys = Object.keys(dataParse)
+          // console.log("dataKeys: ",dataKeys)
+          let div = document.createElement("div");
+          for (let i = 0; i < dataKeys.length; i++) {
+            let nav = document.createElement("nav");
+            let caja = dataKeys[i];
+            nav.id = "titulo-caja"
+            let cavidades = dataParse[caja];
+            let anulados = 0;
+            // console.log("Aqui esta la CAJA:",caja);
+            //console.log("Aquí en object: ",cavidades)
+            let get_cavidad = Object.getOwnPropertyNames(cavidades);
+            let grid = document.createElement("div");
+            grid.classList = "grid-box";
+            for (let j = 0; j < get_cavidad.length; j++) {
 
-          let obj_cavidad = get_cavidad[j];
-          //console.log ("cavidad",obj_cavidad);
-          //console.log ("valor",cavidades[obj_cavidad]);
-          let span = document.createElement("span");
-          span.classlist = "caja-valor";
-          //console.log(cavidades[obj_cavidad])
-          if (cavidades[obj_cavidad] === null || cavidades[obj_cavidad] === 'vacio') {
-            //console.log(cavidades[obj_cavidad]);
-            anulados++
-          }else{
-            let valores = JSON.stringify(cavidades[obj_cavidad]);
-            //console.log("Aqui en string: ",valores)
-            
-          
-            let boxValue = valores.replace(re, 'N/A'); 
-            span.innerHTML = `<p>${obj_cavidad}: ${boxValue}</p>`;
-            grid.appendChild(span);
+              let obj_cavidad = get_cavidad[j];
+              //console.log ("cavidad",obj_cavidad);
+              //console.log ("valor",cavidades[obj_cavidad]);
+              let span = document.createElement("span");
+              span.classlist = "caja-valor";
+              //console.log(cavidades[obj_cavidad])
+              if (cavidades[obj_cavidad] === null || cavidades[obj_cavidad] === 'vacio') {
+                //console.log(cavidades[obj_cavidad]);
+                anulados++
+              } else {
+                let valores = JSON.stringify(cavidades[obj_cavidad]);
+                //console.log("Aqui en string: ",valores)
+
+
+                let boxValue = valores.replace(re, 'N/A');
+                span.innerHTML = `<p>${obj_cavidad}: ${boxValue}</p>`;
+                grid.appendChild(span);
+              }
+            }
+            if (get_cavidad.length !== anulados) {
+              nav.innerHTML = "<b>" + caja + "</b>";
+              div.appendChild(nav);
+              nav.appendChild(grid);
+            }
           }
+          document.getElementById("informacion").appendChild(div)
+          //let alturaValue = data[header_info].replace(re, 'N/A');
+          // console.log(alturaValue);
+          //document.getElementById("informacion").innerHTML = alturaValue;
         }
-       if(get_cavidad.length !== anulados){
-         nav.innerHTML = "<b>" + caja + "</b>";
-         div.appendChild(nav);
-         nav.appendChild(grid);
-       }
-      }         
-      document.getElementById("informacion").appendChild(div)
-      //let alturaValue = data[header_info].replace(re, 'N/A');
-      // console.log(alturaValue);
-      //document.getElementById("informacion").innerHTML = alturaValue;
-      }
         $('#mostrar').click();
       })
   }
@@ -1905,68 +2082,67 @@ $(document).on('click', '.btn-ver-altura', function () {
         let re = /null/g;
         if (data[id_info] == "" || data[id_info] == "{}") {
           var b = document.createElement('b');
-          b.innerHTML="SIN DATOS";
+          b.innerHTML = "SIN DATOS";
           document.getElementById("informacion").appendChild(b);
-        }else{
+        } else {
           // console.log(data);
           dataParse = JSON.parse(data[id_info]);
-          console.log("Convertido a JSON: ",dataParse)
-        // console.log(data[header_info]);
-        dataKeys = Object.keys(dataParse)
-        // console.log("dataKeys: ",dataKeys)
-        let div = document.createElement("div");
-        var cajasAnuladas = 0
-        for (let i = 0; i < dataKeys.length; i++) {
-          let nav = document.createElement("nav");
-          let caja = dataKeys[i];
-          nav.id = "titulo-caja"
-          let cavidades = dataParse[caja];
-          let anulados = 0;
-          // console.log("Aqui esta la CAJA:",caja);
-          //console.log("Aquí en object: ",cavidades)
-          let get_cavidad = Object.getOwnPropertyNames(cavidades);
-          let grid = document.createElement("div");
-          grid.classList = "grid-box";
-          for (let j = 0; j < get_cavidad.length; j++) {
+          console.log("Convertido a JSON: ", dataParse)
+          // console.log(data[header_info]);
+          dataKeys = Object.keys(dataParse)
+          // console.log("dataKeys: ",dataKeys)
+          let div = document.createElement("div");
+          var cajasAnuladas = 0
+          for (let i = 0; i < dataKeys.length; i++) {
+            let nav = document.createElement("nav");
+            let caja = dataKeys[i];
+            nav.id = "titulo-caja"
+            let cavidades = dataParse[caja];
+            let anulados = 0;
+            // console.log("Aqui esta la CAJA:",caja);
+            //console.log("Aquí en object: ",cavidades)
+            let get_cavidad = Object.getOwnPropertyNames(cavidades);
+            let grid = document.createElement("div");
+            grid.classList = "grid-box";
+            for (let j = 0; j < get_cavidad.length; j++) {
 
-            let obj_cavidad = get_cavidad[j];
-            //console.log ("cavidad",obj_cavidad);
-            //console.log ("valor",cavidades[obj_cavidad]);
-            let span = document.createElement("span");
-            span.classlist = "caja-valor";
-            //console.log(cavidades[obj_cavidad])
-            if (cavidades[obj_cavidad] === null || cavidades[obj_cavidad] === 'vacio') {
-              //console.log(cavidades[obj_cavidad]);
-              anulados++
-            }else{
-              let valores = JSON.stringify(cavidades[obj_cavidad]);
-              //console.log("Aqui en string: ",valores)
-              
-            
-              let boxValue = valores.replace(re, 'N/A'); 
-              span.innerHTML = `<p>${obj_cavidad}: ${boxValue}</p>`;
-              grid.appendChild(span);
+              let obj_cavidad = get_cavidad[j];
+              //console.log ("cavidad",obj_cavidad);
+              //console.log ("valor",cavidades[obj_cavidad]);
+              let span = document.createElement("span");
+              span.classlist = "caja-valor";
+              //console.log(cavidades[obj_cavidad])
+              if (cavidades[obj_cavidad] === null || cavidades[obj_cavidad] === 'vacio') {
+                //console.log(cavidades[obj_cavidad]);
+                anulados++
+              } else {
+                let valores = JSON.stringify(cavidades[obj_cavidad]);
+                //console.log("Aqui en string: ",valores)
+
+
+                let boxValue = valores.replace(re, 'N/A');
+                span.innerHTML = `<p>${obj_cavidad}: ${boxValue}</p>`;
+                grid.appendChild(span);
+              }
+            }
+            if (get_cavidad.length !== anulados) {
+              nav.innerHTML = "<b>" + caja + "</b>";
+              div.appendChild(nav);
+              nav.appendChild(grid);
+            } else {
+              cajasAnuladas++
             }
           }
-         if(get_cavidad.length !== anulados){
-           nav.innerHTML = "<b>" + caja + "</b>";
-           div.appendChild(nav);
-           nav.appendChild(grid);
+          if (dataKeys.length !== cajasAnuladas) {
+            document.getElementById("informacion").appendChild(div)
+          } else {
+            let b = document.createElement('b')
+            b.innerHTML = 'CAJAS VACIAS'
+            document.getElementById("informacion").appendChild(b)
           }
-           else{
-             cajasAnuladas++
-          }
-        }  
-        if (dataKeys.length !== cajasAnuladas) {
-          document.getElementById("informacion").appendChild(div)
-        }else{
-          let b = document.createElement('b')
-          b.innerHTML = 'CAJAS VACIAS'
-          document.getElementById("informacion").appendChild(b)
-        }
-        //let alturaValue = data[header_info].replace(re, 'N/A');
-        // console.log(alturaValue);
-        //document.getElementById("informacion").innerHTML = alturaValue;
+          //let alturaValue = data[header_info].replace(re, 'N/A');
+          // console.log(alturaValue);
+          //document.getElementById("informacion").innerHTML = alturaValue;
         }
         $('#mostrar').click();
       })
@@ -2124,7 +2300,7 @@ $(document).on('click', '.btn-ver-intentosva', function () {
     fetch(dominio + "/api/get/historial/id/=/" + id_info + "/_/=/_")
       .then(data => data.json())
       .then(data => {
-        
+
         // console.log(data);
         // console.log(data[header_info]);
         document.getElementById("informacion").innerHTML = "";
@@ -2227,54 +2403,54 @@ $(document).on('click', '.btn-ver-torque', function () {
         dataParse = JSON.parse(data[id_info]);
         if (data[id_info] == "" || data[id_info] == "{}") {
           var b = document.createElement('b');
-          b.innerHTML="SIN DATOS";
+          b.innerHTML = "SIN DATOS";
           document.getElementById("informacion").appendChild(b);
-        }else{
-        // console.log(data);
-        // console.log(data[header_info]);
-        let re = /null/g;
-        // console.log("Convertido a JSON: ",dataParse)
-        dataKeys = Object.keys(dataParse)
-        // console.log("dataKeys: ",dataKeys)
-        let div = document.createElement("div");
-        for (let i = 0; i < dataKeys.length; i++) {
-          let nav = document.createElement("nav");
-          let caja = dataKeys[i];
-          nav.id = "titulo-caja"
-          let cavidades = dataParse[caja];
-          let anulados = 0;
-          //console.log("Aqui esta la CAJA:",caja);
-          //console.log("Aqui en object: ",cavidades)
-          let get_cavidad = Object.getOwnPropertyNames(cavidades);
-          let grid = document.createElement("div");
-          grid.classList = "grid-box";
-          for (let j = 0; j < get_cavidad.length; j++) {
-            let obj_cavidad = get_cavidad[j];
-            //console.log ("cavidad",obj_cavidad);
-            //console.log ("valor",cavidades[obj_cavidad]);
-            let span = document.createElement("span");
-            span.classlist = "caja-valor";
-            //console.log(cavidades[obj_cavidad])
-            if (cavidades[obj_cavidad] === null || cavidades[obj_cavidad] === 'vacio') {
-              //console.log(cavidades[obj_cavidad]);
-              anulados++
-            }else{
-              let valores = JSON.stringify(cavidades[obj_cavidad]);
-              //console.log("Aqui en string: ",valores)
-            let boxValue = valores.replace(re, 'N/A'); 
-            let unidadMedida = boxValue === 'N/A' ? '' : 'Nm';
-            span.innerHTML = `<p>${obj_cavidad}: ${boxValue} ${unidadMedida}</p>`;
-            grid.appendChild(span);
+        } else {
+          // console.log(data);
+          // console.log(data[header_info]);
+          let re = /null/g;
+          // console.log("Convertido a JSON: ",dataParse)
+          dataKeys = Object.keys(dataParse)
+          // console.log("dataKeys: ",dataKeys)
+          let div = document.createElement("div");
+          for (let i = 0; i < dataKeys.length; i++) {
+            let nav = document.createElement("nav");
+            let caja = dataKeys[i];
+            nav.id = "titulo-caja"
+            let cavidades = dataParse[caja];
+            let anulados = 0;
+            //console.log("Aqui esta la CAJA:",caja);
+            //console.log("Aqui en object: ",cavidades)
+            let get_cavidad = Object.getOwnPropertyNames(cavidades);
+            let grid = document.createElement("div");
+            grid.classList = "grid-box";
+            for (let j = 0; j < get_cavidad.length; j++) {
+              let obj_cavidad = get_cavidad[j];
+              //console.log ("cavidad",obj_cavidad);
+              //console.log ("valor",cavidades[obj_cavidad]);
+              let span = document.createElement("span");
+              span.classlist = "caja-valor";
+              //console.log(cavidades[obj_cavidad])
+              if (cavidades[obj_cavidad] === null || cavidades[obj_cavidad] === 'vacio') {
+                //console.log(cavidades[obj_cavidad]);
+                anulados++
+              } else {
+                let valores = JSON.stringify(cavidades[obj_cavidad]);
+                //console.log("Aqui en string: ",valores)
+                let boxValue = valores.replace(re, 'N/A');
+                let unidadMedida = boxValue === 'N/A' ? '' : 'Nm';
+                span.innerHTML = `<p>${obj_cavidad}: ${boxValue} ${unidadMedida}</p>`;
+                grid.appendChild(span);
+              }
+            }
+            if (get_cavidad.length !== anulados) {
+              nav.innerHTML = "<b>" + caja + "</b>";
+              div.appendChild(nav);
+              nav.appendChild(grid);
+            }
           }
+          document.getElementById("informacion").appendChild(div)
         }
-         if(get_cavidad.length !== anulados){
-           nav.innerHTML = "<b>" + caja + "</b>";
-           div.appendChild(nav);
-           nav.appendChild(grid);
-         }
-        }
-        document.getElementById("informacion").appendChild(div)
-      }
         $('#mostrar').click();
       })
   } else {
@@ -2346,7 +2522,7 @@ $(document).on('click', '.btn-ver-angulo', function () {
         document.getElementById("informacion").innerHTML = "";
         if (data[id_info] == "") {
           var b = document.createElement('b');
-          b.innerHTML="SIN DATOS";
+          b.innerHTML = "SIN DATOS";
           document.getElementById("informacion").appendChild(b);
         } else {
           let re = /null/g;
@@ -2369,16 +2545,16 @@ $(document).on('click', '.btn-ver-angulo', function () {
               if (cavidades[obj_cavidad] === null || cavidades[obj_cavidad] === 'vacio') {
                 //console.log(cavidades[obj_cavidad]);
                 anulados++
-              }else{
+              } else {
                 let valores = JSON.stringify(cavidades[obj_cavidad]);
                 //console.log("Aqui en string: ",valores)
-              let boxValue = valores.replace(re, 'N/A'); 
-              let unidadMedida = boxValue === 'N/A' ? '' : '°';
-              span.innerHTML = `<p>${obj_cavidad}: ${boxValue} ${unidadMedida}</p>`;
-              grid.appendChild(span);
+                let boxValue = valores.replace(re, 'N/A');
+                let unidadMedida = boxValue === 'N/A' ? '' : '°';
+                span.innerHTML = `<p>${obj_cavidad}: ${boxValue} ${unidadMedida}</p>`;
+                grid.appendChild(span);
+              }
             }
-            }
-            if(get_cavidad.length !== anulados){
+            if (get_cavidad.length !== anulados) {
               nav.innerHTML = "<b>" + caja + "</b>";
               div.appendChild(nav);
               nav.appendChild(grid);
@@ -2462,56 +2638,56 @@ $(document).on('click', '.btn-ver-intentost', function () {
         document.getElementById("informacion").innerHTML = "";
         if (data[headerString] == "" || data[headerString] == "{}") {
           var b = document.createElement('b');
-          b.innerHTML="SIN DATOS";
+          b.innerHTML = "SIN DATOS";
           document.getElementById("informacion").appendChild(b);
-        }else{
-        // console.log(data);
-        // console.log(data[header_info]);
-        let re = /0/g;
-        dataParse = JSON.parse(data[headerString]);
-        // console.log("Convertido a JSON: ",dataParse)
-        dataKeys = Object.keys(dataParse)
-        // console.log("dataKeys: ",dataKeys)
-        let div = document.createElement("div");
-        for (let i = 0; i < dataKeys.length; i++) {
-          let nav = document.createElement("nav");
-          let caja = dataKeys[i];
-          nav.id = "titulo-caja"
-          let cavidades = dataParse[caja];
-          let anulados = 0;
-          //console.log("Aqui esta la CAJA:",caja);
-          //console.log("Aquí en object: ",cavidades)
-          let get_cavidad = Object.getOwnPropertyNames(cavidades);
-          let grid = document.createElement("div");
-          grid.classList = "grid-box";
-          for (let j = 0; j < get_cavidad.length; j++) {
-            let obj_cavidad = get_cavidad[j];
-            //console.log ("cavidad",obj_cavidad);
-            //console.log ("valor",cavidades[obj_cavidad]);
-            let span = document.createElement("span");
-            span.classlist = "caja-valor";
-            //console.log(cavidades[obj_cavidad])
-            if (cavidades[obj_cavidad] === 0) {
-              //console.log(cavidades[obj_cavidad]);
-              anulados++
-            }else{
-              let valores = JSON.stringify(cavidades[obj_cavidad]);
-              //console.log("Aqui en string: ",valores)
-              
-             
-              let boxValue = valores.replace(re, 'N/A'); 
-              span.innerHTML = `<p>${obj_cavidad}: ${boxValue}</p>`;
-              grid.appendChild(span);
+        } else {
+          // console.log(data);
+          // console.log(data[header_info]);
+          let re = /0/g;
+          dataParse = JSON.parse(data[headerString]);
+          // console.log("Convertido a JSON: ",dataParse)
+          dataKeys = Object.keys(dataParse)
+          // console.log("dataKeys: ",dataKeys)
+          let div = document.createElement("div");
+          for (let i = 0; i < dataKeys.length; i++) {
+            let nav = document.createElement("nav");
+            let caja = dataKeys[i];
+            nav.id = "titulo-caja"
+            let cavidades = dataParse[caja];
+            let anulados = 0;
+            //console.log("Aqui esta la CAJA:",caja);
+            //console.log("Aquí en object: ",cavidades)
+            let get_cavidad = Object.getOwnPropertyNames(cavidades);
+            let grid = document.createElement("div");
+            grid.classList = "grid-box";
+            for (let j = 0; j < get_cavidad.length; j++) {
+              let obj_cavidad = get_cavidad[j];
+              //console.log ("cavidad",obj_cavidad);
+              //console.log ("valor",cavidades[obj_cavidad]);
+              let span = document.createElement("span");
+              span.classlist = "caja-valor";
+              //console.log(cavidades[obj_cavidad])
+              if (cavidades[obj_cavidad] === 0) {
+                //console.log(cavidades[obj_cavidad]);
+                anulados++
+              } else {
+                let valores = JSON.stringify(cavidades[obj_cavidad]);
+                //console.log("Aqui en string: ",valores)
+
+
+                let boxValue = valores.replace(re, 'N/A');
+                span.innerHTML = `<p>${obj_cavidad}: ${boxValue}</p>`;
+                grid.appendChild(span);
+              }
+            }
+            if (get_cavidad.length !== anulados) {
+              nav.innerHTML = "<b>" + caja + "</b>";
+              div.appendChild(nav);
+              nav.appendChild(grid);
             }
           }
-         if(get_cavidad.length !== anulados){
-           nav.innerHTML = "<b>" + caja + "</b>";
-           div.appendChild(nav);
-           nav.appendChild(grid);
-         }
+          document.getElementById("informacion").appendChild(div)
         }
-        document.getElementById("informacion").appendChild(div)
-      }
         $('#mostrar').click();
       })
   } else {
@@ -2584,51 +2760,51 @@ $(document).on('click', '.btn-ver-scrap', function () {
         document.getElementById("informacion").innerHTML = "";
         if (data[id_info] == "" || data[id_info] == "{}") {
           var b = document.createElement('b');
-          b.innerHTML="SIN DATOS";
+          b.innerHTML = "SIN DATOS";
           document.getElementById("informacion").appendChild(b);
-        }else{
-        // console.log(data);
-        // console.log(data[header_info]);
-        let re = /0/g;
-        dataParse = JSON.parse(data[id_info]);
-        // console.log("Convertido a JSON: ",dataParse)
-        dataKeys = Object.keys(dataParse)
-        // console.log("dataKeys: ",dataKeys)
-        let div = document.createElement("div");
-        for (let i = 0; i < dataKeys.length; i++) {
-          let nav = document.createElement("nav");
-          let caja = dataKeys[i];
-          nav.id = "titulo-caja"
-          nav.innerHTML = "<b>" + caja + "</b>";
-          div.appendChild(nav);
+        } else {
+          // console.log(data);
+          // console.log(data[header_info]);
+          let re = /0/g;
+          dataParse = JSON.parse(data[id_info]);
+          // console.log("Convertido a JSON: ",dataParse)
+          dataKeys = Object.keys(dataParse)
+          // console.log("dataKeys: ",dataKeys)
+          let div = document.createElement("div");
+          for (let i = 0; i < dataKeys.length; i++) {
+            let nav = document.createElement("nav");
+            let caja = dataKeys[i];
+            nav.id = "titulo-caja"
+            nav.innerHTML = "<b>" + caja + "</b>";
+            div.appendChild(nav);
 
-          // console.log("Aqui esta la CAJA:",caja);
-          let cavidades = dataParse[caja];
-          //console.log("Aquí en object: ",cavidades)
+            // console.log("Aqui esta la CAJA:",caja);
+            let cavidades = dataParse[caja];
+            //console.log("Aquí en object: ",cavidades)
 
-          let get_cavidad = Object.getOwnPropertyNames(cavidades);
+            let get_cavidad = Object.getOwnPropertyNames(cavidades);
 
-          let grid = document.createElement("div");
-          grid.classList = "grid-box";
-          nav.appendChild(grid);
-          for (let j = 0; j < get_cavidad.length; j++) {
+            let grid = document.createElement("div");
+            grid.classList = "grid-box";
+            nav.appendChild(grid);
+            for (let j = 0; j < get_cavidad.length; j++) {
 
-            let obj_cavidad = get_cavidad[j];
-            //console.log ("cavidad",obj_cavidad);
-            //console.log ("valor",cavidades[obj_cavidad]);
-            let span = document.createElement("span");
-            span.classlist = "caja-valor";
-            let valores = JSON.stringify(cavidades[obj_cavidad]);
-            //console.log("Aqui en string: ",valores)
-            let boxValue = valores.replace(re, 'N/A');
+              let obj_cavidad = get_cavidad[j];
+              //console.log ("cavidad",obj_cavidad);
+              //console.log ("valor",cavidades[obj_cavidad]);
+              let span = document.createElement("span");
+              span.classlist = "caja-valor";
+              let valores = JSON.stringify(cavidades[obj_cavidad]);
+              //console.log("Aqui en string: ",valores)
+              let boxValue = valores.replace(re, 'N/A');
 
-            span.innerHTML = `<p>${obj_cavidad}: ${boxValue}</p>`;
-            grid.appendChild(span);
+              span.innerHTML = `<p>${obj_cavidad}: ${boxValue}</p>`;
+              grid.appendChild(span);
+            }
           }
-        }
 
-        document.getElementById("informacion").appendChild(div)
-      }
+          document.getElementById("informacion").appendChild(div)
+        }
         $('#mostrar').click();
       })
   } else {
@@ -5247,54 +5423,56 @@ $('#HM').on('keypress', function (e) {
   }
 });
 
+
 /**Grafico**/
-let activo_T = 0; 
+let activo_T = 0;
 $(document).on('click', '.pes_T', function () {
   const ctx = document.getElementById('graph_T');
   activo_T++
   if (activo_T === 2) {
-  activo_T = 0
-  document.getElementById('grafico_T').style.width = '0px'
-  document.getElementById('grafico_T').style.height = '0px'
+    activo_T = 0
+    document.getElementById('grafico_T').style.width = '0px'
+    document.getElementById('grafico_T').style.height = '0px'
 
-  ctx.style.height = '0px'
-  ctx.style.width = '0px'
-}else{
-  document.getElementById('grafico_T').style.width = '650px'
-  document.getElementById('grafico_T').style.height = '400px'
- 
-  ctx.style.height = '400px'
-  ctx.style.width = '650px'
-}
+    ctx.style.height = '0px'
+    ctx.style.width = '0px'
+  } else {
+    document.getElementById('grafico_T').style.width = '650px'
+    document.getElementById('grafico_T').style.height = '400px'
+
+    ctx.style.height = '400px'
+    ctx.style.width = '650px'
+  }
 })
 
 
 
 
 var logArray = []
-function pedidoValue(hm){  
+
+function pedidoValue(hm) {
   var reintento = 0;
   var reintento_t = 0;
   const pedidoChart = hm.value
   var Jvalue = JSON.parse(pedidoChart)
 
-  if(hm.checked == true){    
+  if (hm.checked == true) {
     logArray.push(Jvalue['ID'])
     //console.log(logArray);
   }
   if (hm.checked === false) {
-    logArray.splice(logArray.indexOf(Jvalue['ID']),1)
+    logArray.splice(logArray.indexOf(Jvalue['ID']), 1)
   }
 
   chartColumns_T = []
 
-  if (logArray.length === 0 ) {
+  if (logArray.length === 0) {
     graficar(true, true)
   }
 
 
   logArray.forEach(id => {
-      fetch(dominio + "/api/get/historial/id/=/" + id + "/_/=/_")
+    fetch(dominio + "/api/get/historial/id/=/" + id + "/_/=/_")
       .then(data => data.json())
       .then(data => {
         jParse_t = JSON.parse(data['INTENTOS_T'])
@@ -5306,53 +5484,56 @@ function pedidoValue(hm){
 
 
 
-/*INTENTOS T*/
-for (let i = 0; i < dataKeys_t.length; i++) {
-  //console.log(dataKeys_t[i]);
-  const valueKey = jParse_t[dataKeys_t[i]];
-  const caja = dataKeys_t[i]
-  var bar;
-  //console.log(caja); // Nombre-caja
-  var cajaKeys = Object.keys(valueKey)
-  //console.log(estacionKeys)
-    for (let k = 0; k < cajaKeys.length; k++) {
-       const cavidad = cajaKeys[k];
-       //console.log(cavidad);
-       reintento_t = valueKey[cajaKeys[k]] //Valor Cavidad
+        /*INTENTOS T*/
+        for (let i = 0; i < dataKeys_t.length; i++) {
+          //console.log(dataKeys_t[i]);
+          const valueKey = jParse_t[dataKeys_t[i]];
+          const caja = dataKeys_t[i]
+          var bar;
+          //console.log(caja); // Nombre-caja
+          var cajaKeys = Object.keys(valueKey)
+          //console.log(estacionKeys)
+          for (let k = 0; k < cajaKeys.length; k++) {
+            const cavidad = cajaKeys[k];
+            //console.log(cavidad);
+            reintento_t = valueKey[cajaKeys[k]] //Valor Cavidad
 
 
-      const findIt = chartColumns_T.findIndex(object => { //El FindIndex busca el numero de posicion del object HM guardado en la variable ColGraph
-        return object.label === `${cavidad}-${caja}`;
-      })
-      //console.log(findIt);
-      if (findIt >= 0) {
-        chartColumns_T[findIt].y += reintento_t
-      }else{
-        if (reintento_t > 0) {
-          var bar_t = {'label':`${cavidad}-${caja}`, 'y':reintento_t};
-          chartColumns_T.push(bar_t);
+            const findIt = chartColumns_T.findIndex(object => { //El FindIndex busca el numero de posicion del object HM guardado en la variable ColGraph
+              return object.label === `${cavidad}-${caja}`;
+            })
+            //console.log(findIt);
+            if (findIt >= 0) {
+              chartColumns_T[findIt].y += reintento_t
+            } else {
+              if (reintento_t > 0) {
+                var bar_t = {
+                  'label': `${cavidad}-${caja}`,
+                  'y': reintento_t
+                };
+                chartColumns_T.push(bar_t);
+              }
+            }
+
+          }
+          //console.log(chartColumns_T);
         }
-      }
 
-  }
-      //console.log(chartColumns_T);
-}
-      
-          graficar();
+        graficar();
       })
-    }); 
-      
-     
-    }   
-  
+  });
 
-   
+
+}
 
 
 
-    
 
-function graficar () {
+
+
+
+
+function graficar() {
   //console.log(chartColumns)
   for (let i = 0; i < chartColumns_T.length; i++) {
     chartColumns_T[i]['x'] = i;
@@ -5361,21 +5542,19 @@ function graficar () {
   var chart_t = new CanvasJS.Chart("graph_T", {
     theme: "light2", //"light1" "light2", "dark1", "dark2"
     animationEnabled: true, // change to true		
-    title:{
+    title: {
       text: "Reintentos por pedido de Torque"
     },
     axisX: {
-      labelAutoFit : true //change to false
+      labelAutoFit: true //change to false
     },
     width: 650,
     height: 400,
-    data: [
-    {
+    data: [{
       // Change type to "bar", "area", "spline", "pie",etc.
       type: "column",
       dataPoints: chartColumns_T
-    }
-    ]
+    }]
   });
   chart_t.render();
 

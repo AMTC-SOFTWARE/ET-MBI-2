@@ -31,7 +31,9 @@ Primary use:
 [7] Project Single
 [8] Sticky checktime
 ==========================================================================*/
-
+html{
+    background-color: #252525;
+}
 /**==================== Header ======================**/
  .headertop {
      padding: 28px 0 33px;
@@ -1830,7 +1832,6 @@ thead tr:first-child Th{
     top: 11rem;
     background: white;
   }
-  
   .fixed-section{
     position: fixed;
     
@@ -1881,5 +1882,9 @@ thead tr:first-child Th{
 }
 
 .canvasjs-chart-credit{
+    display: none;
+}
+
+  .none{
     display: none;
 }

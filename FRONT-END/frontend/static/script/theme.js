@@ -119,8 +119,10 @@ Primary use:
                 var scrollTop = $(window).scrollTop();
                 if (scrollTop > scrollTrigger) {
                     $('#backToTop').addClass('showit');
+                    $('#backToTop').removeClass('none');
                 } else {
                     $('#backToTop').removeClass('showit');
+                    $('#backToTop').addClass('none');
                 }
             };
         backToTop();
