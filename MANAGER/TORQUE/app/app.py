@@ -24,7 +24,7 @@ if __name__ == "__main__":
     import sys
 
 
-    os.startfile('C:\\WINDOWS\\system32\\cmd.exe')
+    #os.startfile('C:\\WINDOWS\\system32\\cmd.exe')
 
     app = QApplication(sys.argv)
     gui_1 = MainWindow(name = "Interior 1.1", topic = "gui")

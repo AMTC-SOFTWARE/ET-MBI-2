@@ -18,6 +18,9 @@ class Model (object):
         self.serial = "ET-MBI-2"
         self.id_HM = None
 
+        self.tareas_actuales = {}
+        self.llave = False
+
         ###############################
         #3: cajas terminadas en ciclo, 2:cajas que requieren QR, 1:cajas que no requieren QR, 0:cajas que no solicita el ciclo
         self.cajas_habilitadas = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
@@ -292,7 +295,7 @@ class Model (object):
 
         self.torque_cycles = {
             "PDC-P": {
-                "E1": ["tool1",2,"6mm Nut"]},
+                "E1": ["tool1",2,"6mm Nut"]},   ########## REPITE
             "PDC-D": {
                 "E1": ["tool1",2,"6mm Nut"]},
             "BATTERY": {
@@ -328,7 +331,7 @@ class Model (object):
                 "A25": ["tool3",3,"8mm Nut"], 
                 "A26": ["tool1",6,"6mm Nut"], 
                 "A27": ["tool1",10,"6mm Nut"], 
-                "A28": ["tool1",11,"6mm Nut"], 
+                "A28": ["tool1",11,"6mm Nut"],  ########## REPITE
                 "A29": ["tool1",9,"6mm Nut"], 
                 "A30": ["tool3",8,"8mm Nut"]},
             "PDC-R": {

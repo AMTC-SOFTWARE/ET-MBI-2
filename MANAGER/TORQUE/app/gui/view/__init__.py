@@ -72,6 +72,12 @@ class MainWindow (QMainWindow):
         self.ui.lineEdit.setFocus()
         self.ui.lineEdit.setVisible(False)
 
+        self.ui.lineEditKey.setPlaceholderText("QR Key")
+        self.ui.lineEditKey.setFocus(True)
+        self.ui.lineEditKey.setVisible(False)
+        #para mantener contraseña oculta al escribir en el LineEdit
+        self.ui.lineEditKey.setEchoMode(QLineEdit.Password)
+
         menu = self.ui.menuMenu
         actionLogin = QAction("Login",self)
         actionLogout = QAction("Logout",self)
@@ -86,6 +92,7 @@ class MainWindow (QMainWindow):
         menu.triggered[QAction].connect(self.menuProcess)
 
 
+        self.ui.lineEditKey.returnPressed.connect(self.QR)
         self.ui.lineEdit.returnPressed.connect(self.qrBoxes)
         self.qw_login.ui.lineEdit.returnPressed.connect( self.login)
         self.qw_login.ui.btn_ok.clicked.connect(self.login)
@@ -194,6 +201,18 @@ class MainWindow (QMainWindow):
             print("scanner exception:", ex)
 
     @pyqtSlot()
+    def QR (self):
+        try:
+            text = self.ui.lineEditKey.text().upper()
+            text = text.replace("\n","")
+            if len(text) > 0: 
+                self.output.emit({"codeQR":text})
+            self.ui.lineEditKey.clear()
+
+        except Exception as ex:
+            print("QR exception:", ex)
+
+    @pyqtSlot()
     def qrBoxes (self):
         try:
             text = self.ui.lineEdit.text().upper()
@@ -240,6 +259,12 @@ class MainWindow (QMainWindow):
                     self.ui.lineEdit.setFocus(True)
                 if message["lineEdit"] == False:
                     self.ui.lineEdit.setVisible(False)
+
+            if "lineEditKey" in message:
+                if message["lineEditKey"] == True:
+                    self.ui.lineEditKey.setVisible(True)
+                if message["lineEditKey"] == False:
+                    self.ui.lineEditKey.setVisible(False)
 
             ######### Modificación para etiqueta PDC-R #########
             if "lbl_boxPDCR" in message:

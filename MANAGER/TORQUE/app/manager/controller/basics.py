@@ -190,7 +190,8 @@ class StartCycle (QState):
     def onEntry(self, event):
 
         command = {
-                "lineEdit" : False
+                "lineEdit" : False,
+                "lineEditKey" : True,
                 }
         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         print("lineEdit desactivado")

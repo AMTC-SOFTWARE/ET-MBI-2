@@ -528,6 +528,18 @@ class Ui_main(object):
         self.lineEdit.setMaximumSize(QtCore.QSize(300, 16777215))
         self.lineEdit.setObjectName("lineEdit")
         self.verticalLayout_4.addWidget(self.lineEdit)
+
+        self.lineEditKey = QtWidgets.QLineEdit(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.lineEditKey.sizePolicy().hasHeightForWidth())
+        self.lineEditKey.setSizePolicy(sizePolicy)
+        self.lineEditKey.setMinimumSize(QtCore.QSize(50, 50))
+        self.lineEditKey.setMaximumSize(QtCore.QSize(300, 16777215))
+        self.lineEditKey.setObjectName("lineEditKey")
+        self.verticalLayout_4.addWidget(self.lineEditKey)
+
         self.gridLayout_2.addLayout(self.verticalLayout_4, 0, 1, 1, 1)
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")

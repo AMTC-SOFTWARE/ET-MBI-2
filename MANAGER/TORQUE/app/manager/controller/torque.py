@@ -204,6 +204,7 @@ class NewTool2 (QState):
         self.zone_palpador.addTransition(self.model.transitions.zone_tool2, self.zone_palpador)
         self.zone_palpador.addTransition(self.model.transitions.zone_tool4, self.zone_palpador)
         self.zone_palpador.addTransition(self.zone_palpador.wait_pin, self.waiting_pin)
+        self.zone_palpador.addTransition(self.zone_palpador.bypass, self.zone_palpador)#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         self.waiting_pin.addTransition(self.waiting_pin.continuar,self.zone_palpador)
         self.waiting_pin.addTransition(self.model.transitions.pin,self.zone_palpador)
@@ -627,6 +628,8 @@ class CheckZone (QState):
             #print("Valores de los raffi",self.model.raffi)
             #print("Valor actual del raffi para esta caja current_trq[0]: ",self.model.raffi[current_trq[0]])
 
+            self.model.tareas_actuales[self.tool] = current_trq[1]
+            print("RUBENSSSSSSS: ",current_trq[1])
 
             #si el raffi no está habilitado (su valor es 0)
             if self.model.raffi[current_trq[0]] == 0:
@@ -1942,6 +1945,7 @@ class WaitingPin (QState):
 
 class CheckZonePalpador (QState):
 
+    bypass               = pyqtSignal()
     end                  = pyqtSignal()
     wait_pin             = pyqtSignal()
     
@@ -1982,7 +1986,7 @@ class CheckZonePalpador (QState):
             candado_encoder = self.model.input_data["plc"]["encoder_2"]["candado"]
             current_height = self.model.input_data["plc"]["encoder_4"]["candado"]
 
-            #BYPASS para estación 2
+            #BYPASS para estación 2 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             current_height = "height"
 
         except Exception as ex:
@@ -2003,9 +2007,11 @@ class CheckZonePalpador (QState):
         #si el valor de current_task_candado es None (por el momento está vacío)
         if current_task_candado == None:
             
+            print("aqui dentro")
             #si aún hay candados en cola pendientes por hacer para esa herramienta
             if len(self.candadosQueue):
 
+                print("aqui dentro2")
                 #se iguala el current_task_candado a la tarea en cola (la ultima) con el valor de la caja , terminal, profile, y tuerca !!!!!!!!!!
                 #SE ASIGNA LA ULTIMA TAREA DE ESTA HERRAMIENTA EN current_task_candado!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 current_task_candado = self.candadosQueue[0] # ["s1","s2",...]
@@ -2037,19 +2043,27 @@ class CheckZonePalpador (QState):
                 #variable para indicar que ya inició el palpador y si se vuelve al estado inicial no borrar la imagen con fuseconnvalidation.jpg
                 self.model.palpador_iniciado = True
 
+                self.bypass.emit()#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
             #SI NO HAY TAREAS EN COLA PARA ESTA HERRAMIENTA (pero se pueden agregar más)
             else:
-                #se emite un Finish de CheckZonePalpador -  que se conecta a FINISH de NewTool3 ... FINISH!!!!!!!!!!!!!!!!!
+                #se emite un Finish de CheckZonePalpador -  que se conecta a FINISH de NewTool3 ... FINISH
                 print("||||||| Se emite el Finish; PROCESO DEL PALPADOR COMPLETADO |||||||")
                 self.finish()
                 return
 
         #############################################################################
+            
 
         ##si esta variable contiene elementos
         else:
 
+            print("self.model.current_task_candado: ",self.model.current_task_candado)
+
             command = {}
+
+            #BYPASS para estación 2 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            candado_encoder = current_task_candado
 
             #si el raffi no está habilitado (su valor es 0)
             if self.model.raffi["PDC-R"] == 0:
@@ -2078,8 +2092,8 @@ class CheckZonePalpador (QState):
                             if current_height == "height":
 
                                 command = {
-                                    "lbl_result" : {"text": "Herramienta en PDC-R: " + candado_encoder, "color": "green"},
-                                    "lbl_steps" : {"text": "Empuja la herramienta hacia el candado para validar", "color": "black"}
+                                    "lbl_result" : {"text": "Verificar candado: " + candado_encoder +" en PDC-R", "color": "green"},
+                                    "lbl_steps" : {"text": 'Presiona "Espacio" en el teclado para validar', "color": "black"}
                                     }
 
                                 #se bloquea el uso de este raffi
