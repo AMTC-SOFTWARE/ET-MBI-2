@@ -295,7 +295,7 @@ class Model (object):
 
         self.torque_cycles = {
             "PDC-P": {
-                "E1": ["tool1",2,"6mm Nut"]},   ########## REPITE
+                "E1": ["tool1",2,"6mm Nut"]},
             "PDC-D": {
                 "E1": ["tool1",2,"6mm Nut"]},
             "BATTERY": {
@@ -331,7 +331,7 @@ class Model (object):
                 "A25": ["tool3",3,"8mm Nut"], 
                 "A26": ["tool1",6,"6mm Nut"], 
                 "A27": ["tool1",10,"6mm Nut"], 
-                "A28": ["tool1",11,"6mm Nut"],  ########## REPITE
+                "A28": ["tool1",11,"6mm Nut"],
                 "A29": ["tool1",9,"6mm Nut"], 
                 "A30": ["tool3",8,"8mm Nut"]},
             "PDC-R": {

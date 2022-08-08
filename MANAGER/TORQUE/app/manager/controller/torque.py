@@ -629,7 +629,6 @@ class CheckZone (QState):
             #print("Valor actual del raffi para esta caja current_trq[0]: ",self.model.raffi[current_trq[0]])
 
             self.model.tareas_actuales[self.tool] = current_trq[1]
-            print("RUBENSSSSSSS: ",current_trq[1])
 
             #si el raffi no está habilitado (su valor es 0)
             if self.model.raffi[current_trq[0]] == 0:
@@ -2007,11 +2006,9 @@ class CheckZonePalpador (QState):
         #si el valor de current_task_candado es None (por el momento está vacío)
         if current_task_candado == None:
             
-            print("aqui dentro")
             #si aún hay candados en cola pendientes por hacer para esa herramienta
             if len(self.candadosQueue):
 
-                print("aqui dentro2")
                 #se iguala el current_task_candado a la tarea en cola (la ultima) con el valor de la caja , terminal, profile, y tuerca !!!!!!!!!!
                 #SE ASIGNA LA ULTIMA TAREA DE ESTA HERRAMIENTA EN current_task_candado!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 current_task_candado = self.candadosQueue[0] # ["s1","s2",...]
@@ -2043,7 +2040,7 @@ class CheckZonePalpador (QState):
                 #variable para indicar que ya inició el palpador y si se vuelve al estado inicial no borrar la imagen con fuseconnvalidation.jpg
                 self.model.palpador_iniciado = True
 
-                self.bypass.emit()#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                Timer(1.0, self.bypass.emit).start()#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
             #SI NO HAY TAREAS EN COLA PARA ESTA HERRAMIENTA (pero se pueden agregar más)
             else:
