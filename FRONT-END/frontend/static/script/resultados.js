@@ -1088,19 +1088,19 @@ function descargarHistorial(data) {
             td.appendChild(document.createTextNode(`${duracion}`));
             break;
           case "FIN":
-            dateStamp = moment.utc((data[colnames[j]][i])).format("MM/DD/YYYY");
+            dateStamp = moment.utc(new Date(data[colnames[j]][i])).format("MM/DD/YYYY");
             td.appendChild(document.createTextNode(dateStamp));
             break;
           case "HORA_FINAL":
-            dateStamp_inicio = moment.utc((data["FIN"][i])).format("HH:mm:ss")
+            dateStamp_inicio = moment.utc(new Date(data["FIN"][i])).format("HH:mm:ss")
             td.appendChild(document.createTextNode(dateStamp_inicio));
             break;
           case "HORA_INICIAL":
-            dateStamp_inicio = moment.utc((data["INICIO"][i])).format("HH:mm:ss")
+            dateStamp_inicio = moment.utc(new Date(data["INICIO"][i])).format("HH:mm:ss")
             td.appendChild(document.createTextNode(dateStamp_inicio));
             break;
           case "INICIO":
-            dateStamp_inicio = moment.utc((data[colnames[j]][i])).format("MM/DD/YYYY");
+            dateStamp_inicio = moment.utc(new Date(data[colnames[j]][i])).format("MM/DD/YYYY");
             td.appendChild(document.createTextNode(dateStamp_inicio));
             break;
           default:
