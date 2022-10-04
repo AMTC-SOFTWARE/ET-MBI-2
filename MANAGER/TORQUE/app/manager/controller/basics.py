@@ -9,6 +9,7 @@ from copy import copy
 from os import system
 import requests
 import json
+from time import sleep
 
 from toolkit.admin import Admin
 
@@ -486,6 +487,16 @@ class CheckQr (QState):
                                     "NAMETORQUE": self.model.serial
                                     }
                                 endpointUpdate = "http://{}/seghm/update/seghm/{}".format(self.model.server,self.model.id_HM)
+                                respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(entTrazabilidad))
+                                respTrazabilidad = respTrazabilidad.json()
+                                print("respTrazabilidad del update: ",respTrazabilidad)
+
+                                sleep(0.1)
+                                respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(entTrazabilidad))
+                                respTrazabilidad = respTrazabilidad.json()
+                                print("respTrazabilidad del update: ",respTrazabilidad)
+
+                                sleep(0.1)
                                 respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(entTrazabilidad))
                                 respTrazabilidad = respTrazabilidad.json()
                                 print("respTrazabilidad del update: ",respTrazabilidad)
@@ -1108,12 +1119,35 @@ class Finish (QState):
                     respTrazabilidad = respTrazabilidad.json()
                     print("respTrazabilidad del update: ",respTrazabilidad)
 
+                    sleep(0.1)
+                    respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(salTrazabilidad))
+                    respTrazabilidad = respTrazabilidad.json()
+                    print("respTrazabilidad del update: ",respTrazabilidad)
+
+                    sleep(0.1)
+                    respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(salTrazabilidad))
+                    respTrazabilidad = respTrazabilidad.json()
+                    print("respTrazabilidad del update: ",respTrazabilidad)
+
                     print("||Realizando el POST de valores en FAMX2")
                     historial["INICIO"] = self.model.datetime.strftime("%Y/%m/%d %H:%M:%S") #Se modifica el formato de la fecha de Inicio, para que coincida con el esperado por el servidor
                     endpointPost = "http://{}/seghm/post/seghm_valores".format(self.model.server)
                     respPost = requests.post(endpointPost, data=json.dumps(historial))
                     respPost = respPost.json()
                     print("respuesta del POST a FAMX2 Valores: ",respPost)
+
+                    sleep(0.1)
+                    if "exception" in respPost:
+                        respPost = requests.post(endpointPost, data=json.dumps(historial))
+                        respPost = respPost.json()
+                        print("respuesta del POST a FAMX2 Valores: ",respPost)
+
+                        sleep(0.1)
+                        if "exception" in respPost:
+                            respPost = requests.post(endpointPost, data=json.dumps(historial))
+                            respPost = respPost.json()
+                            print("respuesta del POST a FAMX2 Valores: ",respPost)
+
                 except Exception as ex:
                     print("Excepción al momento de guardar datos en FAMX2", ex)
         #### Trazabilidad FAMX2 Update de Información
@@ -1134,14 +1168,17 @@ class Finish (QState):
                     label[i] = i + ": " + str(temp)
 
                 #publish.single(self.model.pub_topics["printer"], json.dumps(label), hostname='127.0.0.1', qos = 2)
+                for tool in self.model.cont_error:
+                    self.model.cont_error[tool] = 0
+                    print("en el finish",self.model.cont_error[tool])
                 
-                if "0011936" in self.model.qr_codes["HM"]:
+                if "HM000000011936" in self.model.qr_codes["HM"]:
                     self.model.config_data["trazabilidad"] = True
                         
-                if "0011925" in self.model.qr_codes["HM"]:
+                if "HM000000011925" in self.model.qr_codes["HM"]:
                     self.model.config_data["trazabilidad"] = True
 
-                if "0011920" in self.model.qr_codes["HM"]:
+                if "HM000000011920" in self.model.qr_codes["HM"]:
                     self.model.config_data["trazabilidad"] = True
 
 
@@ -1194,13 +1231,16 @@ class Reset (QState):
 
     def onEntry(self, event):
 
-        if "0011936" in self.model.qr_codes["HM"]:
+        for tool in self.model.cont_error:
+            self.model.cont_error[tool] = 0
+            print(self.model.cont_error[tool])
+        if "HM000000011936" in self.model.qr_codes["HM"]:
             self.model.config_data["trazabilidad"] = True
                         
-        if "0011925" in self.model.qr_codes["HM"]:
+        if "HM000000011925" in self.model.qr_codes["HM"]:
             self.model.config_data["trazabilidad"] = True
 
-        if "0011920" in self.model.qr_codes["HM"]:
+        if "HM000000011920" in self.model.qr_codes["HM"]:
             self.model.config_data["trazabilidad"] = True
 
 

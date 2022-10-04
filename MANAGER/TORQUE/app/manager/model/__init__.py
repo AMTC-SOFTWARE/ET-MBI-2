@@ -66,6 +66,11 @@ class Model (object):
         #variable para indicar la tecla "F" que se presionó correspondiente al actual raffi activado
         self.keyboard_raffi_pressed = ""
 
+        self.cont_error = {"tool1":0,
+                           "tool2":0,
+                           "tool3":0}
+
+
         #Variable para bloquear la activación de los raffis según la caja
         self.active_lock = {"PDC-P": False,"PDC-D": False,"MFB-P1": False,"MFB-P2": False,"PDC-R": False,"PDC-RMID": False,"BATTERY": False,"BATTERY-2": False,"MFB-S": False,"MFB-E": False}
         #variable para bloequear la activación de los raffi según la herramienta activa
