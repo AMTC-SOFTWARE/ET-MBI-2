@@ -75,6 +75,9 @@ class MainWindow (QMainWindow):
         self.ui.lineEditKey.setPlaceholderText("QR Key")
         self.ui.lineEditKey.setFocus(True)
         self.ui.lineEditKey.setVisible(False)
+
+        self.ui.lbl_cant.setVisible(False)
+        self.ui.lcdNumber.setVisible(False)
         #para mantener contraseña oculta al escribir en el LineEdit
         self.ui.lineEditKey.setEchoMode(QLineEdit.Password)
 
@@ -225,7 +228,7 @@ class MainWindow (QMainWindow):
             #self.ui.lineEdit.setFocus()
         except Exception as ex:
             print("qrBoxes exception:", ex)
-
+    
     @pyqtSlot(dict)
     def input(self, message):
         try:
@@ -252,6 +255,13 @@ class MainWindow (QMainWindow):
                 self.ui.lbl_boxTITLE.setText(message["lbl_boxTITLE"]["text"])
                 if "color" in message["lbl_boxTITLE"]:
                     self.ui.lbl_boxTITLE.setStyleSheet("color: " + message["lbl_boxTITLE"]["color"])
+            if "lcdNumber" in message:
+                if "value" in message["lcdNumber"]:
+                    self.ui.lcdNumber.display(message["lcdNumber"]["value"])
+                if "visible" in message["lcdNumber"]:
+                    #### Visualizacion del LCD
+                    self.ui.lbl_cant.setVisible(True)
+                    self.ui.lcdNumber.setVisible(True)
 
             if "lineEdit" in message:
                 if message["lineEdit"] == True:
@@ -265,7 +275,6 @@ class MainWindow (QMainWindow):
                     self.ui.lineEditKey.setVisible(True)
                 if message["lineEditKey"] == False:
                     self.ui.lineEditKey.setVisible(False)
-
             ######### Modificación para etiqueta PDC-R #########
             if "lbl_boxPDCR" in message:
                 self.ui.lbl_boxPDCR.setText(message["lbl_boxPDCR"]["text"])

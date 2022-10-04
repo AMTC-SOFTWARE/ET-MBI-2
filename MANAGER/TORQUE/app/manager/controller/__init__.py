@@ -5,6 +5,8 @@ from manager.model import Model
 from paho.mqtt import publish
 from threading import Timer
 import json
+import requests
+from datetime import datetime, timedelta, date, time
 from PyQt5.QtCore import QThread    # Librería para ejecuciones en paralelo
 from time import sleep              # Para usar la función sleep(segundos)
 
@@ -33,8 +35,12 @@ class Controller (QObject):
         self.qr_rework      = basics.QrRework(self.model)
         self.torquing       = torque.Torquing(self.model)
         self.finish         = basics.Finish(model = self.model, parent = self.process)
-        #self.objeto_mythread        = MyThread(model = self.model, parent = self.process)
-        #self.objeto_mythread.start()
+        ##################  ###################################################
+
+
+
+        self.objeto_mythread        = MyThread(model = self.model, parent = self.process)
+        self.objeto_mythread.start()
         
         
         self.powerup.addTransition(self.client.conn_ok, self.startup)
@@ -233,13 +239,133 @@ class MyThread(QThread):
     def run(self):
 
         while 1:
-
-            #tiempo de espera para no alentar las ejecuciones de otros procesos
-            sleep(10)  
-
-            command = {
-                "lineEdit" : True
+             sleep(5)
+             command = {
+                "lineEdit" : True, 
+                "lcdNumber": {"visible": True}
                 }
-            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-            print("Focus de lineEdit enviado")
+
+             publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+             print("Focus de lineEdit enviado")
+             try:
+                print("Corriendo en Paralelo")
+                #endpoint = "http://{}/api/get/tableros/ID/>/0/_/_/_".format(self.model.server)
+                #print("Endpoint: ",endpoint)
+                #response = requests.get(endpoint).json()
+                #print("Response: \n",response)
+
+                #data = []
+                #if "items" in response:
+                #    #print("no hay tableros en la base de datos local")
+                #    pass
+                #else:
+                #    if isinstance(response["TABLERO"],str):
+                #        temp = []
+                #        #temp.append(response["ID"])
+                #        temp.append(response["HM"])
+                #        temp.append("      "+response["TABLERO"])
+                #        response["DATETIME"] = self.translate_day(response["DATETIME"])
+                #        temp.append(response["DATETIME"])
+                #        data.append(temp)
+                #    if isinstance(response["TABLERO"],list):
+                #        filas = len(response["ID"])
+                #        #print("Cantidad de filas: ",filas)
+                #        for fila in range(filas):
+                #            temp = []
+                #            #temp.append(response["ID"][fila])
+                #            temp.append(response["HM"][fila])
+                #            temp.append("      "+response["TABLERO"][fila])
+                #            response["DATETIME"][fila] = self.translate_day(response["DATETIME"][fila])
+                #            temp.append(response["DATETIME"][fila])
+                #            #print(temp)
+                #            data.append(temp)
+                #print("DATA FINAL: ", data)
+                #command = {
+                #    "tbl_info" : {"clear":True}
+                #}
+                #publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                #command = {
+                #    "tbl_info" : {"data":data}
+                #}
+                #publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+
+                ############################################ CONTADOR DE PIEZAS #####################################
+             #fecha actual
+                fechaActual = datetime.today()
+                #delta time de un día
+                td = timedelta(1)
+                #afterfechaActual es la fecha actual mas un día (mañana)
+                afterfechaActual = fechaActual + td
+                #beforefechaActual es la fecha actual menos un día (ayer)
+                beforefechaActual = fechaActual - td
+
+                #se obtiene la hora actual (int)
+                horaActual = datetime.today().hour
+                print("hora Actual: ",horaActual)
+
+                #si la hora actual es menor de las 7am
+                if horaActual < 7:
+                    dia_inicial = beforefechaActual.strftime('%Y-%m-%d')
+                    dia_final = fechaActual.strftime('%Y-%m-%d')
+                else:
+                    dia_inicial = fechaActual.strftime('%Y-%m-%d')
+                    dia_final = afterfechaActual.strftime('%Y-%m-%d')    
+                    
+                        
+                dia_inicial = str(dia_inicial) + "-07"
+                dia_final = str(dia_final) + "-07"
+
+                print("Fecha actual: ",dia_inicial)
+                print("Fecha mañana: ",dia_final)
+
+                ########################################## Consulta Local ##################################
+                endpoint = "http://{}/api/get/et_mbi_2/historial/fin/>/{}/</{}_/_".format(self.model.server,dia_inicial,dia_final)
+                contresponse = requests.get(endpoint).json()
+                #print(contresponse)
+                #No existen coincidencias
+                if "items" in contresponse: ## LOCAL
+                    print("No se han liberado arneses el día de hoy")
+                    command = {
+                            "lcdNumber" : {"value": 0}
+                            }
+                    publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+
+                #si la respuesta es un entero, quiere decir que solo hay un arnés
+                elif isinstance(contresponse["ID"],int):
+                    command = {
+                            "lcdNumber" : {"value": 1}
+                            }
+                    publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+
+                #Si existe más de un registro (contresponse["ID"] es una lista)
+                else:
+                    #se eliminan los que se repiten en la búsqueda, para solo contar los arneses diferentes que hayan pasado
+                    result = []
+                    for item in contresponse["HM"]:
+                        #ejemplo: "AMTC - HM000000000003" ó "HM000000000003 - AMTC", se convierten en "HM00000000003"
+                        indice = item.index("HM")
+                        item = item[indice:indice+14]
+                        
+                        #si el arnés no está en la lista anteriormente, no suma
+                        if item not in result:
+                            result.append(item)
+
+                    #si el contador revasa los 999, se seguirá mostrando este número, ya que si no se reinicia a 0
+                    if len(result) > 999:
+                        command = {
+                                "lcdNumber" : {"value": 999}
+                                }
+                    else:
+                        command = {
+                                "lcdNumber" : {"value": len(result)} ## cantidad de arneses sin repetirse que han liberado el día de hoy
+                                }
+                        
+                        publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                ############################################################################################################
+              
+             except Exception as ex:
+                print("Excepción al consultar los tableros en DB LOCAL Paralelo: ", ex)
+
+                "
+            
             
