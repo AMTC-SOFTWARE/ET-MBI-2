@@ -63,6 +63,7 @@ class Startup(QState):
             "lbl_instructions" : {"text": "                                 ", "color": "black"},
             "img_nuts" : "blanco.jpg",
             "lbl_nuts"  : {"text": "", "color": "black"},
+            "lcdNumber": {"value": 0},
             "img_toolCurrent" : "blanco.jpg",
             "lbl_toolCurrent"  : {"text": "", "color": "black"},
             "position" : {"text": "POSICIÓN 1", "color": "black"},
