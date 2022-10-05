@@ -241,12 +241,12 @@ class MyThread(QThread):
         while 1:
              sleep(5)
              command = {
-                "lineEdit" : True, 
+                #"lineEdit" : True, 
                 "lcdNumber": {"visible": True}
                 }
 
-             publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-             print("Focus de lineEdit enviado")
+             #publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+             #print("Focus de lineEdit enviado")
              try:
                 print("Corriendo en Paralelo")
                 #endpoint = "http://{}/api/get/tableros/ID/>/0/_/_/_".format(self.model.server)
@@ -366,6 +366,6 @@ class MyThread(QThread):
              except Exception as ex:
                 print("Excepción al consultar los tableros en DB LOCAL Paralelo: ", ex)
 
-                "
+                
             
             

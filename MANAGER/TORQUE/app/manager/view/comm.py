@@ -415,18 +415,18 @@ class MqttClient (QObject):
                             if box in self.model.input_data["plc"]["clamps"]:
                                 self.model.input_data["plc"]["clamps"].pop(self.model.input_data["plc"]["clamps"].index(box))
 
-                if "key" in payload:
-                    if payload["key"] == True:
-                        # si la variable es True, quiere decir que hubo un mal torqueo y se requiere llave para habilitar la reversa
-                        if self.model.reintento_torque == True:
-                            #esta llave solo es para proceso
-                            print("key_process.emit()")
-                            self.key_process.emit()
-                        # si la variable es False, quiere decir que estás en otra parte del proceso y la llave reiniciará el ciclo
-                        elif self.model.reintento_torque == False:
-                            command = {"popOut":"¿Seguro que desea dar llave?\n Presione Esc. para salir, Enter para continuar..."}
-                            self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
-                            self.llave = True
+                #if "key" in payload:
+                #    if payload["key"] == True:
+                #        # si la variable es True, quiere decir que hubo un mal torqueo y se requiere llave para habilitar la reversa
+                #        if self.model.reintento_torque == True:
+                #            #esta llave solo es para proceso
+                #            print("key_process.emit()")
+                #            self.key_process.emit()
+                #        # si la variable es False, quiere decir que estás en otra parte del proceso y la llave reiniciará el ciclo
+                #        elif self.model.reintento_torque == False:
+                #            command = {"popOut":"¿Seguro que desea dar llave?\n Presione Esc. para salir, Enter para continuar..."}
+                #            self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                #            self.llave = True
 
                 if "button" in payload:
                     if payload["button"] == True:

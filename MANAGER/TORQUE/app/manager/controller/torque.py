@@ -100,8 +100,6 @@ class NewTool1 (QState):
         #al recibir un torque con result NOK vas al estado de error
         self.chk_response.addTransition(self.chk_response.nok, self.NOK)
 
-
-
         #al recibir un torque con result NOK vas al estado de error
         self.chk_response.addTransition(self.chk_response.quality, self.qintervention)
         #al dar una llave key_process() (que solo se puede mandar si self.model.reintento_torque = True, vas al estado de reversa
@@ -114,9 +112,6 @@ class NewTool1 (QState):
 
         #cuando estás en el estado de la clase error, y se utiliza el boton de reintento, te manda a el estado de reversa
         #self.NOK.addTransition(self.NOK.ok, self.backward)
-
-        #cuando estás en el estado de la clase error, te manda a el estado de reversa si el reintento es menor al maximo de reintentos permitidos
-        self.NOK.addTransition(self.NOK.ok, self.backward)
 
         #al dar una llave key_process() (que solo se puede mandar si self.model.reintento_torque = True, vas al estado de reversa
         self.NOK.addTransition(self.model.transitions.key_process, self.backward)
@@ -232,8 +227,6 @@ class NewTool2 (QState):
         self.qgafet.addTransition(self.qgafet.ok, self.backward)
         self.qgafet.addTransition(self.qgafet.nok, self.qintervention)
 
-        #cuando estás en el estado de la clase error, te manda a el estado de reversa si el reintento es menor al maximo de reintentos permitidos
-        self.NOK.addTransition(self.NOK.ok, self.backward)
 
         self.NOK.addTransition(self.model.transitions.key_process, self.backward)
         self.backward.addTransition(self.model.transitions.key_process, self.backward)
@@ -313,9 +306,6 @@ class NewTool3 (QState):
         self.qintervention.addTransition(self.model.transitions.ID, self.qgafet)
         self.qgafet.addTransition(self.qgafet.ok, self.backward)
         self.qgafet.addTransition(self.qgafet.nok, self.qintervention)
-
-        #cuando estás en el estado de la clase error, te manda a el estado de reversa si el reintento es menor al maximo de reintentos permitidos
-        self.NOK.addTransition(self.NOK.ok, self.backward)
 
         #REVERSA DE HERRAMIENTA
         self.NOK.addTransition(self.model.transitions.key_process, self.backward)
@@ -902,7 +892,6 @@ class CheckResponse (QState):
 
                 #Si el resultado del torque es correcto (OK) o está en modo reversa
                 if response["result"] == 1 or self.model.config_data["untwist"]:
-                    self.model.cont_error[self.tool] = 0 
                     self.model.imgs[box] = self.model.drawBB(
                     img = self.model.imgs[box], BB =[box, current_trq[1]] , color = (0, 255, 0))
                     imwrite(self.model.imgs_path + self.tool + ".jpg", self.model.imgs[box])
@@ -971,8 +960,8 @@ class CheckResponse (QState):
                         else:
                             self.model.local_data["nuts_scrap"][box] = {current_trq[1]: 1}
 
-                    if self.model.tries[box][current_trq[1]] == 5:
-                        print("||||||||5 REINTENTOS EN UNA POSICIÓN, CAMBIAR CAJA")
+                    if self.model.tries[box][current_trq[1]] == 4:
+                        print("||||||||4 REINTENTOS EN UNA POSICIÓN, CAMBIAR CAJA")
                         #se emite la señal de que se requiere la intervención de Calidad para decidir si cancelar la pieza o continuar (quality)
                         Timer(self.delay1, self.quality.emit).start()
                     else:           
@@ -1095,25 +1084,17 @@ class Error (QState):
         self.model.reintento_torque = True
         #################################
 
-        self.model.cont_error[self.tool] += 1
-        if self.model.cont_error[self.tool] >= 3:
-            command = {
+        #if self.model.config_data["retry_btn_mode"][self.tool] == True:
+        #     command = {
+        #                "lbl_steps" : {"text": "Gira la llave o presiona el boton de reintento", "color": "black"}
+        #               }
+        #     if self.model.input_data["plc"]["retry_btn"] == True:
+        #         Timer(0.05, self.ok.emit).start()
+        #else:
+        command = {
                 "lbl_steps" : {"text": "Gira la llave para reintentar", "color": "black"}
                 }
-            publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-        else:
-            if self.model.cont_error[self.tool] ==1:
-                print("self.model.cont_error[self.tool]",self.model.cont_error[self.tool])
-                command = {
-                        "lbl_steps" : {"text": "Intento 2/3", "color": "black"}
-                        }
-            if self.model.cont_error[self.tool]==2:
-                print("self.model.cont_error[self.tool]",self.model.cont_error[self.tool])
-                command = {
-                        "lbl_steps" : {"text": "Intento 3/3", "color": "black"}
-                        }
-            publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-            Timer(2, self.ok.emit).start()
+        publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
 class QualityIntervention (QState):
     ok      = pyqtSignal()

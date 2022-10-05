@@ -262,7 +262,7 @@ class MainWindow (QMainWindow):
                     #### Visualizacion del LCD
                     self.ui.lbl_cant.setVisible(True)
                     self.ui.lcdNumber.setVisible(True)
-
+            
             if "lineEdit" in message:
                 if message["lineEdit"] == True:
                     self.ui.lineEdit.setVisible(True)
