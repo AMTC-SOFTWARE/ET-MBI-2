@@ -1,7 +1,7 @@
 host = "127.0.0.1"
 user = "admin"
 password = "4dm1n_001"
-database = "interior"
+database = "et_mbi_2"
 
 serverp2 = "naapnx-famx2"
 dbp2 = "agrucomb_prod"
