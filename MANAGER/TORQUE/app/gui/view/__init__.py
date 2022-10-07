@@ -257,11 +257,13 @@ class MainWindow (QMainWindow):
                     self.ui.lbl_boxTITLE.setStyleSheet("color: " + message["lbl_boxTITLE"]["color"])
             if "lcdNumber" in message:
                 if "value" in message["lcdNumber"]:
+
+                    print("mememe mensaje: ",message["lcdNumber"])
                     self.ui.lcdNumber.display(message["lcdNumber"]["value"])
-                if "visible" in message["lcdNumber"]:
+                #if "visible" in message["lcdNumber"]:
                     #### Visualizacion del LCD
-                    self.ui.lbl_cant.setVisible(True)
-                    self.ui.lcdNumber.setVisible(True)
+                    #self.ui.lbl_cant.setVisible(message["lcdNumber"]["visible"])
+                    #self.ui.lcdNumber.setVisible(message["lcdNumber"]["visible"])
             
             if "lineEdit" in message:
                 if message["lineEdit"] == True:

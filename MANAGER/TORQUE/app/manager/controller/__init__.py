@@ -39,8 +39,8 @@ class Controller (QObject):
 
 
 
-        self.objeto_mythread        = MyThread(model = self.model, parent = self.process)
-        self.objeto_mythread.start()
+        #self.objeto_mythread        = MyThread(model = self.model, parent = self.process)
+        #self.objeto_mythread.start()
         
         
         self.powerup.addTransition(self.client.conn_ok, self.startup)
@@ -239,58 +239,18 @@ class MyThread(QThread):
     def run(self):
 
         while 1:
-             sleep(5)
-             command = {
-                #"lineEdit" : True, 
-                "lcdNumber": {"visible": True}
-                }
 
-             #publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-             #print("Focus de lineEdit enviado")
-             try:
+            sleep(5)
+            command = {"lcdNumber": {"visible": True}}
+            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            command = {"lcdNumber": {"visible": False}}
+            publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+
+            try:
                 print("Corriendo en Paralelo")
-                #endpoint = "http://{}/api/get/tableros/ID/>/0/_/_/_".format(self.model.server)
-                #print("Endpoint: ",endpoint)
-                #response = requests.get(endpoint).json()
-                #print("Response: \n",response)
-
-                #data = []
-                #if "items" in response:
-                #    #print("no hay tableros en la base de datos local")
-                #    pass
-                #else:
-                #    if isinstance(response["TABLERO"],str):
-                #        temp = []
-                #        #temp.append(response["ID"])
-                #        temp.append(response["HM"])
-                #        temp.append("      "+response["TABLERO"])
-                #        response["DATETIME"] = self.translate_day(response["DATETIME"])
-                #        temp.append(response["DATETIME"])
-                #        data.append(temp)
-                #    if isinstance(response["TABLERO"],list):
-                #        filas = len(response["ID"])
-                #        #print("Cantidad de filas: ",filas)
-                #        for fila in range(filas):
-                #            temp = []
-                #            #temp.append(response["ID"][fila])
-                #            temp.append(response["HM"][fila])
-                #            temp.append("      "+response["TABLERO"][fila])
-                #            response["DATETIME"][fila] = self.translate_day(response["DATETIME"][fila])
-                #            temp.append(response["DATETIME"][fila])
-                #            #print(temp)
-                #            data.append(temp)
-                #print("DATA FINAL: ", data)
-                #command = {
-                #    "tbl_info" : {"clear":True}
-                #}
-                #publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-                #command = {
-                #    "tbl_info" : {"data":data}
-                #}
-                #publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
                 ############################################ CONTADOR DE PIEZAS #####################################
-             #fecha actual
+                #fecha actual
                 fechaActual = datetime.today()
                 #delta time de un día
                 td = timedelta(1)
@@ -303,24 +263,34 @@ class MyThread(QThread):
                 horaActual = datetime.today().hour
                 print("hora Actual: ",horaActual)
 
-                #si la hora actual es menor de las 7am
-                if horaActual < 7:
+                #si la hora actual es mayor de las 7am   
+                if horaActual >19 and horaActual < 7:
+                    print("Segundo turno")
+
                     dia_inicial = beforefechaActual.strftime('%Y-%m-%d')
                     dia_final = fechaActual.strftime('%Y-%m-%d')
-                else:
+
+                    dia_inicial = str(dia_inicial) + "-19"
+                    dia_final = str(dia_final) + "-07"
+                    print("dia_inicial",dia_inicial)
+                    print("dia_final")
+                    ########################################## Consulta Local ##################################
+                    endpoint = "http://{}/api/get/et_mbi_2/historial/fin/>/{}/</{}_/_".format(self.model.server,dia_inicial,dia_final)
+                    contresponse = requests.get(endpoint).json()
+                if horaActual >7 and horaActual < 19:
+                    #Primer turno
                     dia_inicial = fechaActual.strftime('%Y-%m-%d')
-                    dia_final = afterfechaActual.strftime('%Y-%m-%d')    
-                    
-                        
-                dia_inicial = str(dia_inicial) + "-07"
-                dia_final = str(dia_final) + "-07"
+                    dia_final = fechaActual.strftime('%Y-%m-%d')
 
-                print("Fecha actual: ",dia_inicial)
-                print("Fecha mañana: ",dia_final)
+                    dia_inicial = str(dia_inicial) + "-7"
+                    dia_final = str(dia_final) + "-19"
+                    ########################################## Consulta Local ##################################
+                    endpoint = "http://{}/api/get/et_mbi_2/historial/fin/>/{}/</{}_/_".format(self.model.server,dia_inicial,dia_final)
+                    contresponse = requests.get(endpoint).json()
+                print("dia_inicial: ",dia_inicial)
+                print("dia_final: ",dia_final)
 
-                ########################################## Consulta Local ##################################
-                endpoint = "http://{}/api/get/et_mbi_2/historial/fin/>/{}/</{}_/_".format(self.model.server,dia_inicial,dia_final)
-                contresponse = requests.get(endpoint).json()
+                
                 #print(contresponse)
                 #No existen coincidencias
                 if "items" in contresponse: ## LOCAL
@@ -363,7 +333,7 @@ class MyThread(QThread):
                         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                 ############################################################################################################
               
-             except Exception as ex:
+            except Exception as ex:
                 print("Excepción al consultar los tableros en DB LOCAL Paralelo: ", ex)
 
                 

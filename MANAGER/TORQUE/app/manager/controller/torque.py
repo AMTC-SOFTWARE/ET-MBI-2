@@ -96,14 +96,17 @@ class NewTool1 (QState):
 
         #al recibir un torque con result OK regresas al estado de zone
         self.chk_response.addTransition(self.chk_response.ok, self.zone)
-
         #al recibir un torque con result NOK vas al estado de error
         self.chk_response.addTransition(self.chk_response.nok, self.NOK)
 
         #al recibir más de ciertos reintentos pedirá acceso de calidad para continuar o cambio de caja
         self.NOK.addTransition(self.NOK.quality, self.qintervention)
+        #cuando estás en el estado de la clase error, te manda a el estado de reversa si el reintento es menor al maximo de reintentos permitidos
+        self.NOK.addTransition(self.NOK.reintento, self.backward)
         #al dar una llave key_process() (que solo se puede mandar si self.model.reintento_torque = True, vas al estado de reversa
         self.NOK.addTransition(self.model.transitions.key_process, self.backward)
+        
+
 
         #al dar una llave key_process() (que solo se puede mandar si self.model.reintento_torque = True, vas al estado de reversa
         self.qintervention.addTransition(self.model.transitions.ID, self.qgafet)
