@@ -298,7 +298,18 @@ class MqttClient (QObject):
     def on_message(self, client, userdata, message):
         try:
             payload = json.loads(message.payload)
-            print ("   " + message.topic + " ", payload) 
+
+
+            string_payload = str(payload)
+            ignorar = False
+            if "encoder" in string_payload:
+                ignorar = True
+            if "bin" in string_payload:
+                ignorar = True
+            if "output" in string_payload:
+                ignorar = True
+            if ignorar == False:
+                print ("   " + message.topic + " ", payload)
 
             if message.topic == self.model.sub_topics["plc"]:
                 if "emergency" in payload:
