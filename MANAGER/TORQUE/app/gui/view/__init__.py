@@ -76,8 +76,8 @@ class MainWindow (QMainWindow):
         self.ui.lineEditKey.setFocus(True)
         self.ui.lineEditKey.setVisible(False)
 
-        self.ui.lbl_cant.setVisible(False)
-        self.ui.lcdNumber.setVisible(False)
+        self.ui.lbl_cant.setVisible(True)
+        self.ui.lcdNumber.setVisible(True)
         #para mantener contraseña oculta al escribir en el LineEdit
         self.ui.lineEditKey.setEchoMode(QLineEdit.Password)
 
@@ -260,10 +260,10 @@ class MainWindow (QMainWindow):
 
                     print("mememe mensaje: ",message["lcdNumber"])
                     self.ui.lcdNumber.display(message["lcdNumber"]["value"])
-                #if "visible" in message["lcdNumber"]:
+                if "visible" in message["lcdNumber"]:
                     #### Visualizacion del LCD
-                    #self.ui.lbl_cant.setVisible(message["lcdNumber"]["visible"])
-                    #self.ui.lcdNumber.setVisible(message["lcdNumber"]["visible"])
+                    self.ui.lbl_cant.setVisible(message["lcdNumber"]["visible"])
+                    self.ui.lcdNumber.setVisible(message["lcdNumber"]["visible"])
             
             if "lineEdit" in message:
                 if message["lineEdit"] == True:

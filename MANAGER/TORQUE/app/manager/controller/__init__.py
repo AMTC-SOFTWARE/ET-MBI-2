@@ -39,8 +39,8 @@ class Controller (QObject):
 
 
 
-        #self.objeto_mythread        = MyThread(model = self.model, parent = self.process)
-        #self.objeto_mythread.start()
+        self.objeto_mythread        = MyThread(model = self.model, parent = self.process)
+        self.objeto_mythread.start()
         
         
         self.powerup.addTransition(self.client.conn_ok, self.startup)
@@ -262,36 +262,42 @@ class MyThread(QThread):
                 #se obtiene la hora actual (int)
                 horaActual = datetime.today().hour
                 print("hora Actual: ",horaActual)
+                dia_inicial =''
+                dia_final =''
 
                 #si la hora actual es mayor de las 7am   
-                if horaActual >19 and horaActual < 7:
+                if horaActual >= 19 or horaActual < 7:
                     print("Segundo turno")
 
                     dia_inicial = beforefechaActual.strftime('%Y-%m-%d')
+                    #print('BEFORE: ',dia_inicial)
                     dia_final = fechaActual.strftime('%Y-%m-%d')
-
+                    #print('AFTER: ',dia_final)
                     dia_inicial = str(dia_inicial) + "-19"
                     dia_final = str(dia_final) + "-07"
                     print("dia_inicial",dia_inicial)
-                    print("dia_final")
+                    print("dia_final", dia_final)
                     ########################################## Consulta Local ##################################
-                    endpoint = "http://{}/api/get/et_mbi_2/historial/fin/>/{}/</{}_/_".format(self.model.server,dia_inicial,dia_final)
-                    contresponse = requests.get(endpoint).json()
-                if horaActual >7 and horaActual < 19:
-                    #Primer turno
+                    #endpoint = "http://{}/api/get/et_mbi_2/historial/fin/>/{}/</{}_/_".format(self.model.server,dia_inicial,dia_final)
+                    #contresponse = requests.get(endpoint).json()
+                elif horaActual < 19 or horaActual >= 7:
+                    print("Primer turno")
                     dia_inicial = fechaActual.strftime('%Y-%m-%d')
                     dia_final = fechaActual.strftime('%Y-%m-%d')
 
                     dia_inicial = str(dia_inicial) + "-7"
                     dia_final = str(dia_final) + "-19"
+                    print("dia_inicial",dia_inicial)
+                    print("dia_final", dia_final)
                     ########################################## Consulta Local ##################################
-                    endpoint = "http://{}/api/get/et_mbi_2/historial/fin/>/{}/</{}_/_".format(self.model.server,dia_inicial,dia_final)
-                    contresponse = requests.get(endpoint).json()
-                print("dia_inicial: ",dia_inicial)
-                print("dia_final: ",dia_final)
+                #endpoint = "http://{}/api/get/historial/fin/>/{}/</{}_/_".format(self.model.server,dia_inicial,dia_final)
+                endpoint = "http://{}//json2/historial/fin/>/{}/</{}".format(self.model.server,dia_inicial,dia_final)
+                contresponse = requests.get(endpoint).json()
+                #print("dia_inicial: ",dia_inicial)
+                #print("dia_final: ",dia_final)
 
                 
-                #print(contresponse)
+                #print(contresponse, 'AAAAAAAAAAAAAAAAAAAAAAAAAAA')
                 #No existen coincidencias
                 if "items" in contresponse: ## LOCAL
                     print("No se han liberado arneses el día de hoy")
@@ -304,7 +310,7 @@ class MyThread(QThread):
                 elif isinstance(contresponse["ID"],int):
                     command = {
                             "lcdNumber" : {"value": 1}
-                            }
+                            }   
                     publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
                 #Si existe más de un registro (contresponse["ID"] es una lista)
