@@ -241,9 +241,9 @@ class MyThread(QThread):
         while 1:
 
             sleep(5)
-            command = {"lcdNumber": {"visible": True}}
-            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
             command = {"lcdNumber": {"visible": False}}
+            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            command = {"lcdNumber": {"visible": True}}
             publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
             try:
@@ -269,12 +269,26 @@ class MyThread(QThread):
                 if horaActual >= 19 or horaActual < 7:
                     print("Segundo turno")
 
-                    dia_inicial = beforefechaActual.strftime('%Y-%m-%d')
-                    #print('BEFORE: ',dia_inicial)
-                    dia_final = fechaActual.strftime('%Y-%m-%d')
-                    #print('AFTER: ',dia_final)
-                    dia_inicial = str(dia_inicial) + "-19"
-                    dia_final = str(dia_final) + "-07"
+                    if horaActual < 7:
+                       dia_inicial = beforefechaActual.strftime('%Y-%m-%d')
+                       #print('BEFORE: ',dia_inicial)
+                       dia_final = fechaActual.strftime('%Y-%m-%d')
+                       #print('AFTER: ',dia_final)
+                       dia_inicial = str(dia_inicial) + "-19"
+                       ##Estamos hablando que ayer ya paso y estamos en el dia que sigue el turno de la tarde
+                       dia_final = str(dia_final) + "-07"
+                       endpoint = "http://{}//json2/historial/fin/>/{}/</{}".format(self.model.server,dia_inicial,dia_final)
+                    else: 
+                       dia_inicial = fechaActual.strftime('%Y-%m-%d')
+
+                       dia_final = fechaActual.strftime('%Y-%m-%d')
+                       #print('AFTER: ',dia_final)
+                       dia_inicial = str(dia_inicial) + "-19"
+                       ##Estamos hablando que ayer ya paso y estamos en el dia que sigue el turno de la tarde
+                       dia_final = str(dia_final) + "-07"
+                       endpoint = "http://{}//json2/historial/fin/>=/{}/_/_".format(self.model.server,dia_inicial)
+
+                    
                     print("dia_inicial",dia_inicial)
                     print("dia_final", dia_final)
                     ########################################## Consulta Local ##################################
@@ -286,17 +300,19 @@ class MyThread(QThread):
                     dia_final = fechaActual.strftime('%Y-%m-%d')
 
                     dia_inicial = str(dia_inicial) + "-7"
-                    dia_final = str(dia_final) + "-19"
+                    dia_final = str(dia_final) + "-7"
                     print("dia_inicial",dia_inicial)
                     print("dia_final", dia_final)
+                    endpoint = "http://{}//json2/historial/fin/>/{}/</{}".format(self.model.server,dia_inicial,dia_final)
+
                     ########################################## Consulta Local ##################################
                 #endpoint = "http://{}/api/get/historial/fin/>/{}/</{}_/_".format(self.model.server,dia_inicial,dia_final)
-                endpoint = "http://{}//json2/historial/fin/>/{}/</{}".format(self.model.server,dia_inicial,dia_final)
+                #endpoint = "http://{}//json2/historial/fin/>/{}/</{}".format(self.model.server,dia_inicial,dia_final)
+                print(endpoint)
                 contresponse = requests.get(endpoint).json()
                 #print("dia_inicial: ",dia_inicial)
                 #print("dia_final: ",dia_final)
 
-                
                 #print(contresponse, 'AAAAAAAAAAAAAAAAAAAAAAAAAAA')
                 #No existen coincidencias
                 if "items" in contresponse: ## LOCAL
@@ -304,14 +320,14 @@ class MyThread(QThread):
                     command = {
                             "lcdNumber" : {"value": 0}
                             }
-                    publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                    publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
                 #si la respuesta es un entero, quiere decir que solo hay un arnés
                 elif isinstance(contresponse["ID"],int):
                     command = {
                             "lcdNumber" : {"value": 1}
                             }   
-                    publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                    publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
                 #Si existe más de un registro (contresponse["ID"] es una lista)
                 else:
@@ -336,7 +352,7 @@ class MyThread(QThread):
                                 "lcdNumber" : {"value": len(result)} ## cantidad de arneses sin repetirse que han liberado el día de hoy
                                 }
                         
-                        publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                        publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                 ############################################################################################################
               
             except Exception as ex:
