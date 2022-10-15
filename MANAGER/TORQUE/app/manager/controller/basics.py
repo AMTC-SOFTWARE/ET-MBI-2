@@ -3,7 +3,7 @@ from paho.mqtt import publish
 from datetime import datetime
 from threading import Timer
 from os.path import exists
-from time import strftime
+from time import strftime, sleep
 from pickle import load
 from copy import copy
 from os import system
@@ -487,6 +487,13 @@ class CheckQr (QState):
                                     "NAMETORQUE": self.model.serial
                                     }
                                 endpointUpdate = "http://{}/seghm/update/seghm/{}".format(self.model.server,self.model.id_HM)
+
+                                respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(entTrazabilidad))
+                                respTrazabilidad = respTrazabilidad.json()
+                                sleep(0.1)
+                                respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(entTrazabilidad))
+                                respTrazabilidad = respTrazabilidad.json()
+                                sleep(0.1)
                                 respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(entTrazabilidad))
                                 respTrazabilidad = respTrazabilidad.json()
                                 print("respTrazabilidad del update: ",respTrazabilidad)
@@ -1105,6 +1112,12 @@ class Finish (QState):
                         "NAMETORQUE": self.model.serial
                         }
                     endpointUpdate = "http://{}/seghm/update/seghm/{}".format(self.model.server,self.model.id_HM)
+                    respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(salTrazabilidad))
+                    respTrazabilidad = respTrazabilidad.json()
+                    sleep(0.1)
+                    respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(salTrazabilidad))
+                    respTrazabilidad = respTrazabilidad.json()
+                    sleep(0.1)
                     respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(salTrazabilidad))
                     respTrazabilidad = respTrazabilidad.json()
                     print("respTrazabilidad del update: ",respTrazabilidad)
