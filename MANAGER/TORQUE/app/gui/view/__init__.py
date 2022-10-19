@@ -498,6 +498,9 @@ class Login (QDialog):
         self.ui.btn_ok.setFocusPolicy(Qt.NoFocus)
         self.ui.lineEdit.setFocus()
 
+    def closeEvent(self, event):
+        event.ignore() 
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             print("Escape key was pressed")
