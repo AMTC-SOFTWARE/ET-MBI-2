@@ -332,24 +332,23 @@ class MyThread(QThread):
                 #Si existe más de un registro (contresponse["ID"] es una lista)
                 else:
                     #se eliminan los que se repiten en la búsqueda, para solo contar los arneses diferentes que hayan pasado
-                    result = []
-                    for item in contresponse["HM"]:
+                    result = 0
+                    for item in contresponse["RESULTADO"]:
                         #ejemplo: "AMTC - HM000000000003" ó "HM000000000003 - AMTC", se convierten en "HM00000000003"
-                        indice = item.index("HM")
-                        item = item[indice:indice+14]
+                        
                         
                         #si el arnés no está en la lista anteriormente, no suma
-                        if item not in result:
-                            result.append(item)
+                        if item > 0:
+                            result += 1
 
                     #si el contador revasa los 999, se seguirá mostrando este número, ya que si no se reinicia a 0
-                    if len(result) > 999:
+                    if result > 999:
                         command = {
                                 "lcdNumber" : {"value": 999}
                                 }
                     else:
                         command = {
-                                "lcdNumber" : {"value": len(result)} ## cantidad de arneses sin repetirse que han liberado el día de hoy
+                                "lcdNumber" : {"value": result} ## cantidad de arneses sin repetirse que han liberado el día de hoy
                                 }
                         
                         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)

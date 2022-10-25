@@ -640,10 +640,12 @@ class Ui_main(object):
         self.lbl_cant.setFont(font)
         self.lbl_cant.setAlignment(QtCore.Qt.AlignCenter)
         self.lbl_cant.setObjectName("lbl_cant")
+        self.lbl_cant.setStyleSheet("color: #214562; font-size:20px; border-radius:20px; background-color: #a7c3d1; margin-bottom: 5px"  )
         self.gridLayout_3.addWidget(self.lbl_cant, 0, 0, 1, 1)
         self.lcdNumber = QtWidgets.QLCDNumber(self.centralwidget)
         self.lcdNumber.setMinimumSize(QtCore.QSize(147, 0))
         self.lcdNumber.setObjectName("lcdNumber")
+        self.lcdNumber.setStyleSheet("border-style: none")
         self.gridLayout_3.addWidget(self.lcdNumber, 1, 0, 1, 1)
         self.horizontalLayout.addLayout(self.gridLayout_3)
         self.gridLayout_2.addLayout(self.horizontalLayout, 1, 0, 1, 4)
@@ -693,7 +695,7 @@ class Ui_main(object):
         self.lbl_result.setText(_translate("main", "RESULTADOS"))
         self.lbl_steps.setText(_translate("main", "PASOS"))
         self.lbl_info2.setText(_translate("main", "INFO2"))
-        self.lbl_cant.setText(_translate("main", "CANT. PZ"))
+        self.lbl_cant.setText(_translate("main", "PIEZAS"))
         self.menuMenu.setTitle(_translate("main", "Menu"))
 
 
