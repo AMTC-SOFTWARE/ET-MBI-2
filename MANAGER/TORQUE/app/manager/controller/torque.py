@@ -222,8 +222,6 @@ class NewTool2 (QState):
         #cuando estás en el estado de la clase error, te manda a el estado de reversa si el reintento es menor al maximo de reintentos permitidos
         self.NOK.addTransition(self.NOK.reintento, self.backward)
         self.NOK.addTransition(self.NOK.quality, self.qintervention)
-        #al recibir un torque con result NOK vas al estado de error
-        self.chk_response.addTransition(self.chk_response.nok, self.NOK)
         #al dar una llave key_process() (que solo se puede mandar si self.model.reintento_torque = True, vas al estado de reversa
         self.NOK.addTransition(self.model.transitions.key_process, self.backward)
 
@@ -856,31 +854,37 @@ class CheckResponse (QState):
                 else:
                     info1 = self.model.local_data["lbl_info1_text"]
 
+                #se lee el torque final obtenido
+                print("response[torque]: ",response["torque"])
+                response["torque"] = "%.2f" % response["torque"]
+                response["torque"] = float(response["torque"])
+
+                #se lee el angulo final obtenido
+                response["angle"] = round(response["angle"],2)
+
+                #si viene el torque mínimo...
                 if "torque_min" in response:
                     response["torque_min"] = round(response["torque_min"],2)
                 else:
                     response["torque_min"] = 0.00
-
-                print("response[torque]: ",response["torque"])
-                #print("Tipo de dato response[torque]: ", type(response["torque"]))
-                response["torque"] = "%.2f" % response["torque"]
-                response["torque"] = float(response["torque"])
-                #print("Tipo de dato Final a base de datos: ", type(response["torque"]))
-
+                #si viene el torque máximo...
                 if "torque_max" in response:
                     response["torque_max"] = round(response["torque_max"],2)
                 else:
                     response["torque_max"] = 0.00
-
+                #si viene el ángulo mínimo...
                 if "angle_min" in response:
                     response["angle_min"] = int(response["angle_min"])
                 else:
                     response["angle_min"] = 0.00
-                response["angle"] = round(response["angle"],2)
+                #si viene el ángulo máximo...
                 if "angle_max" in response :
                     response["angle_max"] = int(response["angle_max"])
                 else:
                     response["angle_max"] = 0.00
+
+                
+
 
                 trq_zone = box + ":" +  current_trq[1]
                 trq_min = str(response["torque_min"])
