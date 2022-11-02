@@ -1128,6 +1128,19 @@ class Finish (QState):
                     respPost = requests.post(endpointPost, data=json.dumps(historial))
                     respPost = respPost.json()
                     print("respuesta del POST a FAMX2 Valores: ",respPost)
+
+                    sleep(0.1)
+                    if "exception" in respPost:
+                        respPost = requests.post(endpointPost, data=json.dumps(historial))
+                        respPost = respPost.json()
+                        print("respuesta del POST a FAMX2 Valores: ",respPost)
+
+                        sleep(0.1)
+                        if "exception" in respPost:
+                            respPost = requests.post(endpointPost, data=json.dumps(historial))
+                            respPost = respPost.json()
+                            print("respuesta del POST a FAMX2 Valores: ",respPost)
+
                 except Exception as ex:
                     print("Excepción al momento de guardar datos en FAMX2", ex)
         #### Trazabilidad FAMX2 Update de Información
@@ -1149,13 +1162,13 @@ class Finish (QState):
 
                 #publish.single(self.model.pub_topics["printer"], json.dumps(label), hostname='127.0.0.1', qos = 2)
                 
-                if "0011936" in self.model.qr_codes["HM"]:
+                if "HM000000011936" in self.model.qr_codes["HM"]:
                     self.model.config_data["trazabilidad"] = True
                         
-                if "0011925" in self.model.qr_codes["HM"]:
+                if "HM000000011925" in self.model.qr_codes["HM"]:
                     self.model.config_data["trazabilidad"] = True
 
-                if "0011920" in self.model.qr_codes["HM"]:
+                if "HM000000011920" in self.model.qr_codes["HM"]:
                     self.model.config_data["trazabilidad"] = True
 
 
@@ -1208,13 +1221,13 @@ class Reset (QState):
 
     def onEntry(self, event):
 
-        if "0011936" in self.model.qr_codes["HM"]:
+        if "HM000000011936" in self.model.qr_codes["HM"]:
             self.model.config_data["trazabilidad"] = True
                         
-        if "0011925" in self.model.qr_codes["HM"]:
+        if "HM000000011925" in self.model.qr_codes["HM"]:
             self.model.config_data["trazabilidad"] = True
 
-        if "0011920" in self.model.qr_codes["HM"]:
+        if "HM000000011920" in self.model.qr_codes["HM"]:
             self.model.config_data["trazabilidad"] = True
 
 
