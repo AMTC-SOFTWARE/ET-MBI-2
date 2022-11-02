@@ -37,11 +37,8 @@ class Controller (QObject):
         self.finish         = basics.Finish(model = self.model, parent = self.process)
         ##################  ###################################################
 
-
-
-        self.objeto_mythread        = MyThread(model = self.model, parent = self.process)
-        self.objeto_mythread.start()
-        
+        #self.objeto_mythread        = MyThread(model = self.model, parent = self.process)
+        #self.objeto_mythread.start()
         
         self.powerup.addTransition(self.client.conn_ok, self.startup)
         self.startup.addTransition(self.startup.ok, self.show_login)
