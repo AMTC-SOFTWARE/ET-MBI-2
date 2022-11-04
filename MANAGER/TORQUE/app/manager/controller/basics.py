@@ -62,15 +62,40 @@ class Startup(QState):
             "lbl_instructions" : {"text": "                                 ", "color": "black"},
             "img_nuts" : "blanco.jpg",
             "lbl_nuts"  : {"text": "", "color": "black"},
-            "lcdNumber": {"value": 0},
+            "lcdNumber": {"value": 0, "visible": False},
             "img_toolCurrent" : "blanco.jpg",
             "lbl_toolCurrent"  : {"text": "", "color": "black"},
             "position" : {"text": "POSICIÓN 1", "color": "black"},
             "img_center" : "logo.jpg"
             }
+         
         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-        command["position"]["text"] = "POSICIÓN 2"
+        
+        #command["position"]["text"] = "POSICIÓN 2"
+
+        command = {"position":{"text": "POSICIÓN 2"}, 
+                   "lcdNumber": {"value": 0, "visible": True},
+                   }
         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+        try:
+            turnos = {
+            "1":["07-00","18-59"],
+            "2":["19-00","06-59"],
+            }
+
+            endpoint = "http://{}/contar/historial/FIN".format(self.model.server)
+            response = requests.get(endpoint, data=json.dumps(turnos))
+            response = response.json()
+            print("response: ",response)
+            print("He aqui el elefante de la habitacion")
+
+            command = {
+                    "lcdNumber" : {"value": response["conteo"]}
+                    }
+
+            publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+        except Exception as ex:
+            print("Error en el conteo ", ex)
 
         QTimer.singleShot(10, self.stopTorque)
         QTimer.singleShot(15, self.kioskMode)
@@ -1208,6 +1233,21 @@ class Finish (QState):
             }
         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+        turnos = {
+                "1":["07-00","18-59"],
+                "2":["19-00","06-59"],
+                }
+
+        endpoint = "http://{}/contar/historial/FIN".format(self.model.server)
+        response = requests.get(endpoint, data=json.dumps(turnos))
+        response = response.json()
+        #print("response: ",response)
+
+        command = {
+                "lcdNumber" : {"text": response["conteo"]}
+                }
+        publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+
 
 
 
@@ -1327,4 +1367,21 @@ class Reset (QState):
                         }
                     publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                     publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+
+                turnos = {
+                    "1":["07-00","18-59"],
+                    "2":["19-00","06-59"],
+                }
+
+                endpoint = "http://{}/contar/historial/FIN".format(self.model.server)
+                response = requests.get(endpoint, data=json.dumps(turnos))
+                response = response.json()
+                #print("response: ",response)
+
+                command = {
+                        "lcdNumber" : {"text": response["conteo"]}
+                        }
+                publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+
+
         QTimer.singleShot(500,self.ok.emit)
