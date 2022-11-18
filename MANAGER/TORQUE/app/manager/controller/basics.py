@@ -97,6 +97,7 @@ class Startup(QState):
         except Exception as ex:
             print("Error en el conteo ", ex)
 
+
         QTimer.singleShot(10, self.stopTorque)
         QTimer.singleShot(15, self.kioskMode)
         self.ok.emit()
@@ -304,12 +305,38 @@ class StartCycle (QState):
         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         command.pop("shutdown", None)
         command.pop("show", None)
+
         command["position"]["text"] = "POSICIÓN 2"
         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+
+        #command["position"]["text"] = "POSICIÓN 2"
+      
+        turnos = {
+            "1":["07-00","18-59"],
+            "2":["19-00","06-59"],
+            }
+
+        endpoint = "http://{}/contar/historial/FIN".format(self.model.server)
+        response = requests.get(endpoint, data=json.dumps(turnos))
+        response = response.json()
+        print("response: ",response)
+        print("He aqui el elefante de la habitacion")
+
+        command = {
+                "lcdNumber" : {"value": response["conteo"]},
+                    "position" : {"text": response["conteo"]}
+                }
+
+        publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+        
         QTimer.singleShot(100, self.stopTorque)
 
         if not(self.model.shutdown):
             self.ok.emit()
+        
+    
+            
+
 
     def torqueClamp (self):
         command = {}
@@ -1252,6 +1279,8 @@ class Finish (QState):
 
 
 
+
+
 class Reset (QState):
     ok      = pyqtSignal()
     nok     = pyqtSignal()
@@ -1298,7 +1327,7 @@ class Reset (QState):
         self.model.reintento_torque = False
 
         self.model.cajas_habilitadas = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
-        self.model.raffi = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
+        self.model.raffi =             {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
         for i in self.model.raffi:
             raffi_clear = {f"raffi_{i}":False, f"DISABLE_{i}":False, i:False}
             publish.single(self.model.pub_topics["plc"],json.dumps(raffi_clear),hostname='127.0.0.1', qos = 2)

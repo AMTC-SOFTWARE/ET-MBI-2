@@ -518,7 +518,7 @@ class CheckZone (QState):
                     #se recorren las tareas en cola para ver si es igual a alguna de las tareas pendientes
                     for i in range(len(self.queue)):
                         if not(self.flex_BB_drawed):
-                            #se agrega el bounding box para pintarlo
+                            #se agrega el para pintarlo
                             flex_BB_array.append([self.queue[i][0], self.queue[i][1]])
 
                         #si la caja que marca actualmente el encoder es igual a la caja de la tarea en cola actual...
@@ -1353,7 +1353,7 @@ class ToolsManager (QState):
     ok1      = pyqtSignal()
     ok2      = pyqtSignal()
     ok3      = pyqtSignal()
-    finish  = pyqtSignal()
+    finish   = pyqtSignal()
 
     def __init__(self, model = None, parent = None):
         super().__init__(parent)
