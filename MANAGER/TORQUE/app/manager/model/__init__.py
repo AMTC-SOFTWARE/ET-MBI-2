@@ -324,16 +324,21 @@ class Model (object):
                 "A2": ["tool3",15,"8mm Nut"]},
             "MFB-P2": {
                 "A20": ["tool3",7,"8mm Nut"],
-                "A21": ["tool1",8,"6mm Nut"],
-                "A22": ["tool1",5,"6mm Nut"],
-                "A23": ["tool1",4,"6mm Nut"],
-                "A24": ["tool1",7,"6mm Nut"],
                 "A25": ["tool3",3,"8mm Nut"], 
-                "A26": ["tool1",6,"6mm Nut"], 
-                "A27": ["tool1",10,"6mm Nut"], 
-                "A28": ["tool1",11,"6mm Nut"],
-                "A29": ["tool1",9,"6mm Nut"], 
                 "A30": ["tool3",8,"8mm Nut"]},
+
+                "A21": ["tool1",8,"6mm Nut"],
+                "A26": ["tool1",6,"6mm Nut"], 
+
+                "A22": ["tool1",5,"6mm Nut"],
+                "A27": ["tool1",10,"6mm Nut"], 
+
+                "A23": ["tool1",4,"6mm Nut"],
+                "A28": ["tool1",11,"6mm Nut"],
+
+                "A24": ["tool1",7,"6mm Nut"],
+                "A29": ["tool1",9,"6mm Nut"], 
+                
             "PDC-R": {
                 "E1": ["tool3",11,"8mm Nut"]},
             "PDC-RS": {
