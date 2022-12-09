@@ -5,6 +5,7 @@
 
 ###############################################################################
 command to exe generation:
+        python -m PyInstaller --icon=icon.ico --add-data data;data app.py
         pyinstaller --icon=icon.ico --add-data data;data app.py
         pyinstaller --noconsole --icon=icon.ico --add-data data;data app.py
 commands for User Experience:
