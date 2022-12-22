@@ -71,11 +71,13 @@ class Startup(QState):
          
         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         
-        #command["position"]["text"] = "POSICIÓN 2"
+        command["position"]["text"] = "POSICIÓN 2"
+        command["lcdNumber"]["value"] = "0"
+        command["lcdNumber"]["visible"] = True
 
-        command = {"position":{"text": "POSICIÓN 2"}, 
-                   "lcdNumber": {"value": 0, "visible": True},
-                   }
+        #command = {"position":{"text": "POSICIÓN 2"}, 
+        #           "lcdNumber": {"value": 0, "visible": True},
+        #           }
         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         try:
             turnos = {
@@ -888,6 +890,53 @@ class CheckQr (QState):
                     serie = ""
                     if i == "MFB-P2":
                         serie = self.model.mfbp2_serie
+
+                        
+                        #print("ANTES")
+                        #print(self.model.input_data["database"]["modularity"][i])
+                        if i == "MFB-P2":
+                            serie = self.model.mfbp2_serie
+
+                        #print("ANTES")
+                        #print(self.model.input_data["database"]["modularity"][i])
+                        for terminal in self.model.input_data["database"]["modularity"][i]:
+                            
+                            if 'A29' in self.model.input_data["database"]["modularity"][i]:
+                                self.model.input_data["database"]["modularity"][i]
+                                self.model.input_data["database"]["modularity"][i].pop(self.model.input_data["database"]["modularity"][i].index("A29"))
+                                self.model.input_data["database"]["modularity"][i].append("A29")                           
+                            if 'A22' in self.model.input_data["database"]["modularity"][i]:
+                                self.model.input_data["database"]["modularity"][i]
+                                self.model.input_data["database"]["modularity"][i].pop(self.model.input_data["database"]["modularity"][i].index("A22"))
+                                self.model.input_data["database"]["modularity"][i].append("A22")
+                            if 'A27' in self.model.input_data["database"]["modularity"][i]:
+                                self.model.input_data["database"]["modularity"][i]
+                                self.model.input_data["database"]["modularity"][i].pop(self.model.input_data["database"]["modularity"][i].index("A27"))
+                                self.model.input_data["database"]["modularity"][i].append("A27")
+                            if 'A23' in self.model.input_data["database"]["modularity"][i]:
+                                self.model.input_data["database"]["modularity"][i]
+                                self.model.input_data["database"]["modularity"][i].pop(self.model.input_data["database"]["modularity"][i].index("A23"))
+                                self.model.input_data["database"]["modularity"][i].append("A23")
+                            if 'A26' in self.model.input_data["database"]["modularity"][i]:
+                                self.model.input_data["database"]["modularity"][i]
+                                self.model.input_data["database"]["modularity"][i].pop(self.model.input_data["database"]["modularity"][i].index("A26"))
+                                self.model.input_data["database"]["modularity"][i].append("A26")
+                            if 'A21' in self.model.input_data["database"]["modularity"][i]:
+                                self.model.input_data["database"]["modularity"][i]
+                                self.model.input_data["database"]["modularity"][i].pop(self.model.input_data["database"]["modularity"][i].index("A21"))
+                                self.model.input_data["database"]["modularity"][i].append("A21")
+                            if 'A24' in self.model.input_data["database"]["modularity"][i]:
+                                self.model.input_data["database"]["modularity"][i]
+                                self.model.input_data["database"]["modularity"][i].pop(self.model.input_data["database"]["modularity"][i].index("A24"))
+                                self.model.input_data["database"]["modularity"][i].append("A24")
+                            if 'A28' in self.model.input_data["database"]["modularity"][i]:
+                                self.model.input_data["database"]["modularity"][i]
+                                self.model.input_data["database"]["modularity"][i].pop(self.model.input_data["database"]["modularity"][i].index("A28"))
+                                self.model.input_data["database"]["modularity"][i].append("A28")
+                      
+                    #print(self.model.input_data["database"]["modularity"][i])     
+                    #print('I love YOU')   
+
                     if "PDC-R" in i:
                         serie = self.model.pdcr_serie
 

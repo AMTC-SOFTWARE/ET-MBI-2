@@ -1309,10 +1309,10 @@ def info_cajas(arnes,type_pts,caja):
 def data_count(table, column):
         
     turnos = request.get_json(force=True)
-    #turnos = {
-    #        "1":["07-00","18-59"],
-    #        "2":["19-00","06-59"],
-    #        }
+    turnos = {
+            "1":["07-00","18-59"],
+            "2":["19-00","06-59"],
+            }
 
     print("turnos:",turnos)
     ####### REVISAR EN QUÉ TURNO ESTÁ LA HORA ACTUAL

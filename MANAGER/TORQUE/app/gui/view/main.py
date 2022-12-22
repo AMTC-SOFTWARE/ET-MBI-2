@@ -639,7 +639,6 @@ class Ui_main(object):
         font.setWeight(75)
         self.lbl_cant.setAlignment(QtCore.Qt.AlignCenter)
         self.lbl_cant.setObjectName("lbl_cant")
-
         #self.lbl_cant.setStyleSheet("font-size:20px; margin-bottom: 5px")
         self.lbl_cant.setStyleSheet("color: #214562; font-size:20px; border-radius:20px; background-color: #a7c3d1; margin-bottom: 5px")
         self.gridLayout_3.addWidget(self.lbl_cant, 0, 0, 1, 1)
