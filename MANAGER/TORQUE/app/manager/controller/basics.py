@@ -528,6 +528,16 @@ class CheckQr (QState):
                                 publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                                 self.nok.emit()
                                 return
+                            if famx2response["REFERENCIA"] !=self.model.qr_codes["REF"]:
+                                print("La REFERENCIA no coincide con Trazabilidad, NO puede entrar a Torque")
+                                command = {
+                                "lbl_result" : {"text": "REFERENCIA de etiqueta no coincide con trazabilidad", "color": "red"},
+                                "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
+                                }
+                                publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                                publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                                self.nok.emit()
+                                return
                             else:
                                 #Se guarda el id del arnés de FAMX2 en el modelo para realizar updates en el servidor de FAMX2.
                                 self.model.id_HM = famx2response["id"]
