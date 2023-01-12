@@ -740,6 +740,9 @@ class MqttClient (QObject):
                 if "codeQR" in payload:
 
                     print("llego un codigo qr")
+                    if "CENTERLLAVE" in str(payload):
+                        self.key.emit()
+
 
                     if "CENTERKEY" in str(payload):
 
