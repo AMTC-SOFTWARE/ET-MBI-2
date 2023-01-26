@@ -55,6 +55,7 @@ class Startup(QState):
             "lbl_boxMFBS" : {"text": "", "color": "black"},
             "lbl_boxBATTERY" : {"text": "", "color": "black"},
             "lbl_boxBATTERY2" : {"text": "", "color": "black"},
+            "lbl_boxNEW" : {"text": "", "color": "black"},
             "lbl_result" : {"text": "Se requiere un login para continuar", "color": "green"},
             "lbl_steps" : {"text": "Ingresa tu código de acceso", "color": "black"},
             "img_user" : "blanco.jpg",
@@ -272,6 +273,7 @@ class StartCycle (QState):
             "lbl_boxMFBS" : {"text": "", "color": "black"},
             "lbl_boxBATTERY" : {"text": "", "color": "black"},
             "lbl_boxBATTERY2" : {"text": "", "color": "black"},
+            "lbl_boxNEW" : {"text": "", "color": "black"},
             "lbl_result" : {"text": "Esperando nuevo ciclo", "color": "green"},
             "lbl_steps" : {"text": "Escanea la etiqueta FET", "color": "black"},
             "lbl_instructions" : {"text": "                                 ", "color": "black"},
@@ -631,7 +633,7 @@ class CheckQr (QState):
             pdcrVariantes = requests.get(endpoint).json()
             print("Lista Final de Variantes PDC-R:\n",pdcrVariantes)
 
-            endpoint = "http://{}/api/get/historial/HM/=/{}/RESULTADO/=/1".format(self.model.server, self.model.qr_codes["HM"])
+            endpoint = "http://{}/api/get/historial/HM/=/{}/_/_/_".format(self.model.server, self.model.qr_codes["HM"])
             response = requests.get(endpoint).json()
 
             if ("items" in response and not(response["items"])) or self.model.local_data["qr_rework"] or self.model.config_data["untwist"] or self.model.config_data["flexible_mode"]:
@@ -1173,6 +1175,7 @@ class Finish (QState):
             "lbl_boxMFBS" : {"text": "", "color": "black"},
             "lbl_boxBATTERY" : {"text": "", "color": "black"},
             "lbl_boxBATTERY2" : {"text": "", "color": "black"},
+            "lbl_boxNEW" : {"text": "", "color": "black"},
             }
         publish.single(self.model.pub_topics["gui"],json.dumps(lblbox_clean),hostname='127.0.0.1', qos = 2)
         publish.single(self.model.pub_topics["gui_2"],json.dumps(lblbox_clean),hostname='127.0.0.1', qos = 2)
@@ -1408,6 +1411,7 @@ class Reset (QState):
             "lbl_boxMFBS" : {"text": "", "color": "black"},
             "lbl_boxBATTERY" : {"text": "", "color": "black"},
             "lbl_boxBATTERY2" : {"text": "", "color": "black"},
+            "lbl_boxNEW" : {"text": "", "color": "black"},
             }
         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)

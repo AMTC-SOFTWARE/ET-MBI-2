@@ -66,7 +66,7 @@ class Admin (QDialog):
         self.ui.btn_off.setEnabled(False)
 
         #self.ui.btn_torque.clicked.connect(self.qw_torques.show)
-        self.ui.btn_torque.clicked.connect(self.manualTorque)
+        #self.ui.btn_torque.clicked.connect(self.manualTorque)
         self.ui.btn_reset.clicked.connect(self.resetMachine)
         self.ui.btn_off.clicked.connect(self.poweroff)
 
@@ -88,7 +88,7 @@ class Admin (QDialog):
         if self.user_type == "SUPERUSUARIO":
             self.ui.btn_off.setEnabled(True)
             self.ui.btn_reset.setEnabled(True)
-            self.ui.btn_torque.setEnabled(True)
+            #self.ui.btn_torque.setEnabled(True)
             self.ui.checkBox_1.setEnabled(True)
             self.ui.checkBox_2.setEnabled(True)
             self.ui.checkBox_3.setEnabled(True)
@@ -98,7 +98,7 @@ class Admin (QDialog):
         elif self.user_type == "CALIDAD":
             self.ui.btn_off.setEnabled(False)
             self.ui.btn_reset.setEnabled(True)
-            self.ui.btn_torque.setEnabled(True)
+            #self.ui.btn_torque.setEnabled(True)
             self.ui.checkBox_1.setEnabled(True)
             self.ui.checkBox_2.setEnabled(False)
             self.ui.checkBox_3.setEnabled(False)
@@ -107,7 +107,7 @@ class Admin (QDialog):
         elif self.user_type == "MANTENIMIENTO":
             self.ui.btn_off.setEnabled(True)
             self.ui.btn_reset.setEnabled(True)
-            self.ui.btn_torque.setEnabled(False)
+            #self.ui.btn_torque.setEnabled(False)
             self.ui.checkBox_1.setEnabled(True)
             self.ui.checkBox_2.setEnabled(False)
             self.ui.checkBox_3.setEnabled(False)
@@ -116,7 +116,7 @@ class Admin (QDialog):
         elif self.user_type == "PRODUCCION":
             self.ui.btn_off.setEnabled(False)
             self.ui.btn_reset.setEnabled(True)
-            self.ui.btn_torque.setEnabled(False)
+            #self.ui.btn_torque.setEnabled(False)
             self.ui.checkBox_1.setEnabled(True)
             self.ui.checkBox_2.setEnabled(False)
             self.ui.checkBox_3.setEnabled(False)

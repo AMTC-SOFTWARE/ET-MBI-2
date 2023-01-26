@@ -292,7 +292,7 @@ class MqttClient (QObject):
                 print("Manager MQTT client connections fail:\n" + connection["fails"])
                 self.conn_nok.emit()
         except Exception as ex:
-            print("Manager MQTT client connection fail. Exception: ", ex)
+            print("Manager MQTT client connection fail. Exception: ", ex) 
             self.conn_nok.emit()
 
     def on_message(self, client, userdata, message):

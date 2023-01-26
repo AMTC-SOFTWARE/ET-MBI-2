@@ -635,6 +635,14 @@ class CheckZone (QState):
 
             self.model.tareas_actuales[self.tool] = current_trq[1]
 
+            print("CUURRETN_TRQ",current_trq[0])
+            if current_trq[0] == "PDC-RMID" or current_trq[0] == "PDC-R" or current_trq[0] == "PDC-RS":
+                command = {
+                    "lbl_boxNEW" : {"text": "RETIRE CUALQUIER\nCONTAMINANTE\nEN LOS CANDADOS\nQUE EXISTA", "color": "red"}
+                    }
+                publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+
+
             #si el raffi no está habilitado (su valor es 0)
             if self.model.raffi[current_trq[0]] == 0:
 
@@ -799,6 +807,7 @@ class CheckZone (QState):
             "img_nuts" : "blanco.jpg",
             "img_toolCurrent" : "blanco.jpg",
             "lbl_result" : {"text": f"Torques {self.tool} aplicados correctamente", "color": "green"},
+            "lbl_boxNEW" : {"text": "", "color": "black"},
             "lbl_steps" : {"text": f"{self.tool} OK", "color": "black"}
             }
         #publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
@@ -1409,6 +1418,7 @@ class ToolsManager (QState):
             "lbl_boxMFBS" : {"text": "", "color": "black"},
             "lbl_boxBATTERY" : {"text": "", "color": "black"},
             "lbl_boxBATTERY2" : {"text": "", "color": "black"},
+            "lbl_boxNEW" : {"text": "", "color": "black"},
             "lbl_result" : {"text": "Cajas Terminadas", "color": "green"},
             "lbl_steps" : {"text": "Esperando Posición 2", "color": "black"},
             "lbl_instructions" : {"text": "                                 ", "color": "black"},
@@ -1435,6 +1445,7 @@ class ToolsManager (QState):
             "lbl_boxMFBS" : {"text": "", "color": "black"},
             "lbl_boxBATTERY" : {"text": "", "color": "black"},
             "lbl_boxBATTERY2" : {"text": "", "color": "black"},
+            "lbl_boxNEW" : {"text": "", "color": "black"},
             "lbl_result" : {"text": "Cajas Terminadas", "color": "green"},
             "lbl_steps" : {"text": "Esperando Posición 1", "color": "black"},
             "lbl_instructions" : {"text": "                                 ", "color": "black"},
@@ -2307,6 +2318,7 @@ class CheckZonePalpador (QState):
                 "img_toolCurrent" : "blanco.jpg",
                 "img_center" : "logo.jpg",
                 "lbl_result" : {"text": f"Validación de candados finalizada con éxito", "color": "green"},
+                "lbl_boxNEW" : {"text": "", "color": "black"},
                 "lbl_steps" : {"text": f"Candados OK", "color": "black"}
                 }
             publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
