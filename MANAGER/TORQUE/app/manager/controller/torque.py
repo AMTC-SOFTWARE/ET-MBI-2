@@ -839,7 +839,7 @@ class CheckResponse (QState):
         self.queue = self.model.torque_data[self.tool]["queue"]
 
     def onEntry(self, event):
-        print("chkresponse°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°")
+        print("°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°chkresponse°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°")
         try:
             if self.model.torque_data[self.tool]["rqst"] == False or self.model.input_data["torque"][self.tool] == {}:
                 self.ok.emit()
@@ -913,9 +913,27 @@ class CheckResponse (QState):
 
                 print("resultado::::::::::::::::: ",response["result"])
 
+                resultado = "Malo"
+                if response["result"] == 1:
+                    tolerancia = 8
+                    if self.tool == "tool3":
+                        tolerancia = 16.0
+                    if box == "BATTERY" or box == "BATTERY-2":
+                        tolerancia = 6.5
+                    tol_min = tolerancia - (10*tolerancia)/100
+                    tol_max = tolerancia + (10*tolerancia)/100
+
+                    print("tolerancia mínima: ",tol_min)
+                    print("tolerancia máxima: ",tol_max)
+                    print("resultado de torque: ",response["torque"])
+                    if tol_min < response["torque"] and response["torque"] < tol_max:
+                        resultado = "Bueno"
+
+                print("resultado: ",resultado)
 
                 #Si el resultado del torque es correcto (OK) o está en modo reversa
-                if response["result"] == 1 or self.model.config_data["untwist"]:
+                if resultado == "Bueno" or self.model.config_data["untwist"]:
+
                     self.model.imgs[box] = self.model.drawBB(
                     img = self.model.imgs[box], BB =[box, current_trq[1]] , color = (0, 255, 0))
                     imwrite(self.model.imgs_path + self.tool + ".jpg", self.model.imgs[box])
