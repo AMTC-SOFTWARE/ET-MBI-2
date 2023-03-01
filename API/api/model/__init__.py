@@ -10,6 +10,8 @@ passwordp2 = "pJ0rge2021"
 #userp2 = "pnx-atmc"
 #passwordp2 = "fujikuraamtc" #Antiguas credenciales Limitadas (No funcionan para Trazabilidad)
 
+path_folders = "..\\"
+
 """
 user = "root"
 password = "root_amtc_001"

@@ -16,10 +16,32 @@ class Model (object):
         self.imgs = {}
         self.server = "127.0.0.1:5000"
         self.serial = "ET-MBI-2"
+
+        self.server_ET1="10.71.83.75:5000"
+        self.server_ET2="10.71.88.100:5000"
+        self.server_ET3="10.71.82.52:5000"
+
+        #se guarda la respuesta obtenida del historial del arnés
+        self.HM_historial = ""
+
+        #guarda la respuesta de trazabilidad del arnés
+        self.famx2response = ""
+
+        #guarda el ID en el que se encontró en trazabilidad el arnés para el momento de hacer el update de trazabilidad se accede a ese id
         self.id_HM = None
 
-        self.tareas_actuales = {}
+        #guarda las tareas de las herramientas actuales (caja y tuerca)
+        self.tareas_actuales = {"tool1":{"key":"sinTareas","value":"sinTareas"},
+                                "tool2":{"key":"sinTareas","value":"sinTareas"},
+                                "tool3":{"key":"sinTareas","value":"sinTareas"}}
+
+        #variable para preguntar por mensaje de seguro que desea dar llave al ciclo
         self.llave = False
+
+        #izquierda o derecha
+        self.conduccion = ""
+        #296 o 294
+        self.numero = ""
 
         ###############################
         #3: cajas terminadas en ciclo, 2:cajas que requieren QR, 1:cajas que no requieren QR, 0:cajas que no solicita el ciclo
@@ -393,6 +415,7 @@ class Model (object):
             },
             "untwist": False,
             "flexible_mode": False,
+            "untangle_mode": False,
             "trazabilidad": True
         }
 

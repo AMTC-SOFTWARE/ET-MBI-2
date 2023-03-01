@@ -51,31 +51,41 @@ class Admin (QDialog):
         #                self.ui.checkBox_2.setChecked(False)
         #else:
         #    self.config["untwist"] = False
+
         if self.data.config_data["untwist"]:
             self.ui.checkBox_4.setChecked(True)
         else:
             self.ui.checkBox_4.setChecked(False)
+
         if self.data.config_data["flexible_mode"]:
             self.ui.checkBox_5.setChecked(True)
         else:
             self.ui.checkBox_5.setChecked(False)
+
         if self.data.config_data["trazabilidad"]:
             self.ui.checkBox_6.setChecked(True)
         else:
             self.ui.checkBox_6.setChecked(False)
-        self.ui.btn_off.setEnabled(False)
 
-        #self.ui.btn_torque.clicked.connect(self.qw_torques.show)
-        #self.ui.btn_torque.clicked.connect(self.manualTorque)
-        self.ui.btn_reset.clicked.connect(self.resetMachine)
-        self.ui.btn_off.clicked.connect(self.poweroff)
+        if self.data.config_data["untangle_mode"]:
+            self.ui.checkBox_3.setChecked(True)
+        else:
+            self.ui.checkBox_3.setChecked(False)
 
-        self.ui.checkBox_1.stateChanged.connect(self.onClicked_1)
-        self.ui.checkBox_2.stateChanged.connect(self.onClicked_2)
-        self.ui.checkBox_3.stateChanged.connect(self.onClicked_3)
-        self.ui.checkBox_4.stateChanged.connect(self.onClicked_4)
-        self.ui.checkBox_5.stateChanged.connect(self.onClicked_5)
-        self.ui.checkBox_6.stateChanged.connect(self.onClicked_6)  #Descomentar el día que se habilite el envío de info al servidor de P2
+
+        self.ui.btn_off.setEnabled(False) 
+
+        self.ui.btn_torque.clicked.connect(self.qw_torques.show)
+        self.ui.btn_torque.clicked.connect(self.manualTorque)       #botón de TorqueManual "profile": 10 para calibración de Calidad
+        self.ui.btn_reset.clicked.connect(self.resetMachine)        #botón de Reinicio de PC
+        self.ui.btn_off.clicked.connect(self.poweroff)              #botón de Apagado de PC
+
+        self.ui.checkBox_1.stateChanged.connect(self.onClicked_1)   #checkBox_1 = Abrir Carpetas                                (Abrir Explorador Windows)
+        self.ui.checkBox_2.stateChanged.connect(self.onClicked_2)   #checkBox_2 = Ocultar/Mostrar GDI                           (GraphicalDeviceInterface)
+        self.ui.checkBox_3.stateChanged.connect(self.onClicked_3)   #checkBox_3 = self.data.config_data["untangle_mode"] = True (RETRABAJO TERMINALES INVERTIDAS)
+        self.ui.checkBox_4.stateChanged.connect(self.onClicked_4)   #checkBox_4 = self.data.config_data["untwist"] = True       (MODO DESAPRIETE)
+        self.ui.checkBox_5.stateChanged.connect(self.onClicked_5)   #checkBox_5 = self.data.config_data["flexible_mode"] = True (RETRABAJO CON CAMBIO DE CAJA)
+        self.ui.checkBox_6.stateChanged.connect(self.onClicked_6)   #checkBox_6 = self.data.config_data["trazabilidad"] = True  (TRAZABILIDAD)
         
         self.rcv.connect(self.qw_torques.input)
         self.permissions()
@@ -85,43 +95,56 @@ class Admin (QDialog):
         #self.ui.btn_off.clicked.connect(self.show_rework)
 
     def permissions (self):
-        if self.user_type == "SUPERUSUARIO":
-            self.ui.btn_off.setEnabled(True)
-            self.ui.btn_reset.setEnabled(True)
-            #self.ui.btn_torque.setEnabled(True)
-            self.ui.checkBox_1.setEnabled(True)
-            self.ui.checkBox_2.setEnabled(True)
-            self.ui.checkBox_3.setEnabled(True)
-            self.ui.checkBox_4.setEnabled(True)
-            self.ui.checkBox_5.setEnabled(True)
-            self.ui.checkBox_6.setEnabled(True)    #Descomentar el día que se habilite el envío de info al servidor de P2
-        elif self.user_type == "CALIDAD":
-            self.ui.btn_off.setEnabled(False)
-            self.ui.btn_reset.setEnabled(True)
-            #self.ui.btn_torque.setEnabled(True)
-            self.ui.checkBox_1.setEnabled(True)
-            self.ui.checkBox_2.setEnabled(False)
-            self.ui.checkBox_3.setEnabled(False)
-            self.ui.checkBox_4.setEnabled(True)
-            self.ui.checkBox_5.setEnabled(True)
+        if self.user_type == "SUPERUSUARIO" or self.user_type == "AMTC":
+            self.ui.btn_off.setEnabled(True)        #power off PC
+            self.ui.btn_reset.setEnabled(True)      #reset PC
+            self.ui.btn_torque.setEnabled(True)     #torque manual (profile 10)
+            self.ui.checkBox_1.setEnabled(True)     #Abrir Explorador Windows
+            self.ui.checkBox_2.setEnabled(True)     #GDI
+            self.ui.checkBox_3.setEnabled(True)     #retrabajo de terminales
+            self.ui.checkBox_4.setEnabled(True)     #desapriete
+            self.ui.checkBox_5.setEnabled(True)     #retrabajo con cambio de caja
+            self.ui.checkBox_6.setEnabled(True)     #trazabilidad
+        elif self.user_type == "CALIDAD" or self.user_type == "SUPCALIDAD":
+            self.ui.btn_off.setEnabled(False)       #power off PC
+            self.ui.btn_reset.setEnabled(False)     #reset PC
+            self.ui.btn_torque.setEnabled(True)     #torque manual (profile 10)
+            self.ui.checkBox_1.setEnabled(False)    #Abrir Explorador Windows
+            self.ui.checkBox_2.setEnabled(False)    #GDI
+            self.ui.checkBox_3.setEnabled(True)     #retrabajo de terminales
+            self.ui.checkBox_4.setEnabled(True)     #desapriete
+            self.ui.checkBox_5.setEnabled(True)     #retrabajo con cambio de caja
+            self.ui.checkBox_6.setEnabled(False)    #trazabilidad
         elif self.user_type == "MANTENIMIENTO":
-            self.ui.btn_off.setEnabled(True)
-            self.ui.btn_reset.setEnabled(True)
-            #self.ui.btn_torque.setEnabled(False)
-            self.ui.checkBox_1.setEnabled(True)
-            self.ui.checkBox_2.setEnabled(False)
-            self.ui.checkBox_3.setEnabled(False)
-            self.ui.checkBox_4.setEnabled(True)
-            self.ui.checkBox_5.setEnabled(True)
+            self.ui.btn_off.setEnabled(True)        #power off PC
+            self.ui.btn_reset.setEnabled(True)      #reset PC
+            self.ui.btn_torque.setEnabled(True)     #torque manual (profile 10)
+            self.ui.checkBox_1.setEnabled(True)     #Abrir Explorador Windows
+            self.ui.checkBox_2.setEnabled(True)     #GDI
+            self.ui.checkBox_3.setEnabled(False)    #retrabajo de terminales
+            self.ui.checkBox_4.setEnabled(False)    #desapriete
+            self.ui.checkBox_5.setEnabled(False)    #retrabajo con cambio de caja
+            self.ui.checkBox_6.setEnabled(False)    #trazabilidad
         elif self.user_type == "PRODUCCION":
-            self.ui.btn_off.setEnabled(False)
-            self.ui.btn_reset.setEnabled(True)
-            #self.ui.btn_torque.setEnabled(False)
-            self.ui.checkBox_1.setEnabled(True)
-            self.ui.checkBox_2.setEnabled(False)
-            self.ui.checkBox_3.setEnabled(False)
-            self.ui.checkBox_4.setEnabled(True)
-            self.ui.checkBox_5.setEnabled(False)
+            self.ui.btn_off.setEnabled(False)       #power off PC
+            self.ui.btn_reset.setEnabled(True)      #reset PC
+            self.ui.btn_torque.setEnabled(False)    #torque manual (profile 10)
+            self.ui.checkBox_1.setEnabled(False)    #Abrir Explorador Windows
+            self.ui.checkBox_2.setEnabled(True)     #GDI
+            self.ui.checkBox_3.setEnabled(True)     #retrabajo de terminales
+            self.ui.checkBox_4.setEnabled(False)    #desapriete
+            self.ui.checkBox_5.setEnabled(True)     #retrabajo con cambio de caja
+            self.ui.checkBox_6.setEnabled(False)    #trazabilidad
+        elif self.user_type == "OPERADOR":
+            self.ui.btn_off.setEnabled(False)       #power off PC
+            self.ui.btn_reset.setEnabled(False)     #reset PC
+            self.ui.btn_torque.setEnabled(False)    #torque manual (profile 10)
+            self.ui.checkBox_1.setEnabled(False)    #Abrir Explorador Windows
+            self.ui.checkBox_2.setEnabled(False)    #GDI
+            self.ui.checkBox_3.setEnabled(False)    #retrabajo de terminales
+            self.ui.checkBox_4.setEnabled(False)    #desapriete
+            self.ui.checkBox_5.setEnabled(False)    #retrabajo con cambio de caja
+            self.ui.checkBox_6.setEnabled(False)    #trazabilidad
         self.show()
 
     #def show_rework (self):
@@ -169,7 +192,7 @@ class Admin (QDialog):
             self.ui.btn_torque.setStyleSheet("background-color : green") 
             self.torques = True
             command = {
-                        "profile": 10               # Perfil de torque para calibraci[on de calidad
+                        "profile": 10               # Perfil de torque para calibración de calidad
                       }
             for i in self.data.pub_topics["torque"]:
                 publish.single(self.data.pub_topics["torque"][i],json.dumps(command),hostname='127.0.0.1', qos = 2)
@@ -192,36 +215,76 @@ class Admin (QDialog):
         else:
             pass
 
+    #Abrir Explorador Windows
     def onClicked_1(self):
         if self.ui.checkBox_1.isChecked() and self.kiosk_mode:
             system("start explorer.exe")
             self.kiosk_mode = False
 
+    #Mostrar, Ocultar GDI
     def onClicked_2(self):
         if self.ui.checkBox_2.isChecked():
-            self.client.publish("modules/set",json.dumps({"window" : True}), qos = 2)
+            self.client.publish("GDI",json.dumps({"Mostrar" : "wacks"}), qos = 2)
+            print("Mostrando GDI")
+            self.pop_out.setText("Mostrando Software GDI")
+            self.pop_out.setWindowTitle("Acción Realizada")
+            QTimer.singleShot(2000, self.pop_out.button(QMessageBox.Ok).click)
+            self.pop_out.exec()
         else:
-            self.client.publish("modules/set",json.dumps({"window" : False}), qos = 2)
+            self.client.publish("GDI",json.dumps({"Esconder" : "wacks"}), qos = 2)
+            print("Ocultando GDI")
+            self.pop_out.setText("Ocultando Software GDI")
+            self.pop_out.setWindowTitle("Acción Realizada")
+            QTimer.singleShot(2000, self.pop_out.button(QMessageBox.Ok).click)
+            self.pop_out.exec()
 
+    #Retrabajo (sin Cambio de Caja, desenredar terminales)
     def onClicked_3(self):
         if self.ui.checkBox_3.isChecked():
-            self.client.publish("visycam/set",json.dumps({"window" : True}), qos = 2)
+            if self.ui.checkBox_5.isChecked() or self.ui.checkBox_4.isChecked():
+                self.ui.checkBox_3.setChecked(False)
+                print("solo se permite un modo")
+                self.pop_out.setText("Solo se permite seleccionar un Modo")
+                self.pop_out.setWindowTitle("Error")
+                QTimer.singleShot(3000, self.pop_out.button(QMessageBox.Ok).click)
+                self.pop_out.exec()
+            else:
+                self.data.config_data["untangle_mode"] = True
         else:
-            self.client.publish("visycam/set",json.dumps({"window" : False}), qos = 2)
-            
+            self.data.config_data["untangle_mode"] = False
+    
+    #modo Desapriete
     def onClicked_4(self):
         if self.ui.checkBox_4.isChecked():
-            self.data.config_data["untwist"] = True
+            if self.ui.checkBox_3.isChecked() or self.ui.checkBox_5.isChecked():
+                self.ui.checkBox_4.setChecked(False)
+                print("solo se permite un modo")
+                self.pop_out.setText("Solo se permite seleccionar un Modo")
+                self.pop_out.setWindowTitle("Error")
+                QTimer.singleShot(3000, self.pop_out.button(QMessageBox.Ok).click)
+                self.pop_out.exec()
+            else:
+                self.data.config_data["untwist"] = True
         else:
             self.data.config_data["untwist"] = False
 
+    #Retrabajo (con Cambio de Caja)
     def onClicked_5(self):
         if self.ui.checkBox_5.isChecked():
-            self.data.config_data["flexible_mode"] = True
+            if self.ui.checkBox_3.isChecked() or self.ui.checkBox_4.isChecked():
+                self.ui.checkBox_5.setChecked(False)
+                print("solo se permite un modo")
+                self.pop_out.setText("Solo se permite seleccionar un Modo")
+                self.pop_out.setWindowTitle("Error")
+                QTimer.singleShot(3000, self.pop_out.button(QMessageBox.Ok).click)
+                self.pop_out.exec()
+            else:
+                self.data.config_data["flexible_mode"] = True
         else:
             self.data.config_data["flexible_mode"] = False
-
-    def onClicked_6(self):     #Descomentar el día que se habilite el envío de info al servidor de P2
+    
+    #trazabilidad
+    def onClicked_6(self):
         if self.ui.checkBox_6.isChecked():
             self.data.config_data["trazabilidad"] = True
             print("Sistema de Trazabilidad Habilitado")

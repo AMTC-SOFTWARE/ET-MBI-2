@@ -11,7 +11,7 @@
     <OutputPath>.</OutputPath>
     <Name>app</Name>
     <RootNamespace>app</RootNamespace>
-    <InterpreterId>Global|VisualStudio|mercedesBenz</InterpreterId>
+    <InterpreterId>Global|VisualStudio|Main Environment</InterpreterId>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -138,9 +138,7 @@
     <Folder Include="toolkit\simulations\" />
   </ItemGroup>
   <ItemGroup>
-    <InterpreterReference Include="Global|VisualStudio|MercedesBenz" />
-    <InterpreterReference Include="Global|VisualStudio|mercedesBenz" />
-    <InterpreterReference Include="Global|VisualStudio|Scripts" />
+    <InterpreterReference Include="Global|VisualStudio|Main Environment" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

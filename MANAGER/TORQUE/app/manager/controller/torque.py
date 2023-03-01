@@ -527,7 +527,7 @@ class CheckZone (QState):
                             #si la terminal actual por el encoder es igual a la terminal de la tarea en cola
                             if zone[1] == self.queue[i][1]:
 
-                                #current trq es igual a esa tarea pendiente de la que es igual la caja y la terminal
+                                #current trq es igual a esa tarea pendiente de la que es igual la caja y la terminal MODO PUNTUAL ASIGNA LA CURRENT_TRQ a la que está puesta
                                 current_trq = self.queue[i]
                                 if self.flex_BB_drawed:
                                     break
@@ -633,7 +633,9 @@ class CheckZone (QState):
             #print("Valores de los raffi",self.model.raffi)
             #print("Valor actual del raffi para esta caja current_trq[0]: ",self.model.raffi[current_trq[0]])
 
-            self.model.tareas_actuales[self.tool] = current_trq[1]
+            #se guarda la caja actual y la tuerca actual de las tareas
+            self.model.tareas_actuales[self.tool]["key"] = current_trq[0]
+            self.model.tareas_actuales[self.tool]["value"] = current_trq[1]
 
             print("CUURRETN_TRQ",current_trq[0])
             if current_trq[0] == "PDC-RMID" or current_trq[0] == "PDC-R" or current_trq[0] == "PDC-RS":

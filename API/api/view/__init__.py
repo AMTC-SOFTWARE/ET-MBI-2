@@ -1,4 +1,4 @@
-from model import host, user, password, database, serverp2, dbp2, userp2, passwordp2
+from model import host, user, password, database, serverp2, dbp2, userp2, passwordp2, path_folders
 from werkzeug.utils import secure_filename
 from flask import Flask, request
 from datetime import datetime, timedelta, date, time
@@ -8,6 +8,10 @@ from pickle import load
 import pymysql
 import json
 import os
+from os.path import exists  #para saber si existe una carpeta o archivo
+from shutil import rmtree   #para eliminar carpeta con archivos dentro: rmtree("carpeta_con_archivos")
+from os import remove       #para eliminar archivo único: remove("archivo.txt")
+from os import rmdir        #para eliminar carpeta vacía: rmdir("carpeta_vacia")
 import requests
 from paho.mqtt import publish
 import pyodbc
@@ -103,6 +107,15 @@ def uploadRef():
                     filename.rsplit('.', 1)[1].lower() == "dat"
         if file and allowed_file:
             filename = secure_filename(file.filename)
+
+            #mientras(no exista la carpeta)
+            while(not(os.path.isdir(path_folders+"ILX"))):
+                #se hace un try para intentar crear la carpeta
+                try:
+                    os.mkdir(path_folders+"ILX")
+                except OSError as error:
+                    print("ERROR AL CREAR CARPETA:::\n",error)
+
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], "ILX", filename))
             response["items"] = 1
     except Exception as ex:
@@ -136,6 +149,15 @@ def updateModules():
                     filename.rsplit('.', 1)[1].lower() in ['xls', 'xlsx']
         if file and allowed_file:
             filename = secure_filename(file.filename)
+
+            #mientras(no exista la carpeta)
+            while(not(os.path.isdir(path_folders+"modules"))):
+                #se hace un try para intentar crear la carpeta
+                try:
+                    os.mkdir(path_folders+"modules")
+                except OSError as error:
+                    print("ERROR AL CREAR CARPETA:::\n",error)
+
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], "modules", filename))
             auto_modularities.refreshModules(data)
             excelnew = {
@@ -172,6 +194,15 @@ def updateDeterminantes():
                     filename.rsplit('.', 1)[1].lower() in ['xls', 'xlsx']
         if file and allowed_file:
             filename = secure_filename(file.filename)
+
+            #mientras(no exista la carpeta)
+            while(not(os.path.isdir(path_folders+"determinantes"))):
+                #se hace un try para intentar crear la carpeta
+                try:
+                    os.mkdir(path_folders+"determinantes")
+                except OSError as error:
+                    print("ERROR AL CREAR CARPETA:::\n",error)
+
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], "determinantes", filename))
             auto_modularities.refreshDeterminantes(data,usuario)
             response["items"] = 1
@@ -687,7 +718,11 @@ def eventos():
         return {"exception": ex.args}
     try:
         with connection.cursor() as cursor:
+
+
+            #query es "SHOW DATABASES" para mostrar una lista de las bases de datos existentes
             items = cursor.execute("SHOW DATABASES")
+
             l = cursor.fetchall()
             #print ("Lista de dbs: ",l)
             x = []

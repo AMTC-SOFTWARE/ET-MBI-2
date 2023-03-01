@@ -308,8 +308,10 @@ class MqttClient (QObject):
                 ignorar = True
             if "output" in string_payload:
                 ignorar = True
-            if ignorar == False:
-                print ("   " + message.topic + " ", payload)
+            if ignorar == False: #para no mostrar en consola los mensajes que contengan las partes anteriores
+                if not(self.keyboard_key in payload): #para solamente mostrar teclas cuando sean diferentes y no una sola presionada
+                    print ("   " + message.topic + " ", payload)
+
 
             if message.topic == self.model.sub_topics["plc"]:
                 if "emergency" in payload:
@@ -579,7 +581,6 @@ class MqttClient (QObject):
                 for i in self.nido:
                     self.mensajes_clamp(i,payload)
 
-
             if message.topic == self.model.sub_topics["torque_1"]:
 
                 payload_str = json.dumps(payload)
@@ -669,7 +670,6 @@ class MqttClient (QObject):
                     else:
                         print("torque no emit, saliendo de reversa")
 
-
             if message.topic == self.model.sub_topics["torque_3"]:
 
                 payload_str = json.dumps(payload)
@@ -712,7 +712,6 @@ class MqttClient (QObject):
                     else:
                         print("torque no emit, saliendo de reversa")
                 
-
             if message.topic == self.model.sub_topics["gui"]:
                 if "request" in payload:
                     self.model.input_data["gui"]["request"] = payload["request"]
@@ -722,32 +721,13 @@ class MqttClient (QObject):
                         self.logout.emit()
                     elif payload["request"] == "config":
                         self.config.emit()
-                    elif payload["request"] == "gdi":
-
-                        print("USUARIO TIPO:", self.model.local_data["user"]["type"])
-                        
-                        if self.model.local_data["user"]["type"] == "CALIDAD" or self.model.local_data["user"]["type"] == "SUPERUSUARIO":
-
-                            if self.mostrar_gdi == True:
-                                self.mostrar_gdi = False
-                                self.client.publish("GDI",json.dumps({"Esconder":"window"}), qos = 2)
-                                print("Escondiendo GDI")
-                            elif self.mostrar_gdi == False:
-                                self.mostrar_gdi = True
-                                self.client.publish("GDI",json.dumps({"Mostrar":"window"}), qos = 2)
-                                print("Mostrando GDI")
 
                 if "codeQR" in payload:
-
                     print("llego un codigo qr")
                     if "CENTERLLAVE" in str(payload):
                         self.key.emit()
-
-
                     if "CENTERKEY" in str(payload):
-
                         print("es una llave del AMTC")
-
                         # si la variable es True, quiere decir que hubo un mal torqueo y se requiere llave para habilitar la reversa
                         if self.model.reintento_torque == True:
                             #esta llave solo es para proceso
@@ -758,11 +738,11 @@ class MqttClient (QObject):
                             command = {"popOut":"¿Seguro que desea dar llave?\n Presione Esc. para salir, Click Derecho para continuar..."}
                             self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                             self.model.llave = True
-
                 if "ID" in payload:
                     self.model.input_data["gui"]["ID"] = payload["ID"]
                     self.ID.emit()
                 if "code" in payload:
+                    #QR para etiqueta de FET
                     self.model.input_data["gui"]["code"] = payload["code"]
                     self.code.emit()
                 if "visible" in payload:
@@ -778,7 +758,10 @@ class MqttClient (QObject):
                         self.model.shutdown = True
 
             if message.topic == self.model.sub_topics["gui"] or message.topic == self.model.sub_topics["gui_2"]:
+                #QR para escaneo de cajas
                 if "qr_box" in payload:
+                    #se eliminan los espacios de los QR's por algún espacio o "enter"
+                    payload["qr_box"] = payload["qr_box"].replace(" ","")
                     self.qr_box.emit(payload["qr_box"])  
 
         except Exception as ex:

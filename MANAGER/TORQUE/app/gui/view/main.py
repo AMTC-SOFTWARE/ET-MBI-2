@@ -190,8 +190,8 @@ class Ui_main(object):
         self.lbl_user.setObjectName("lbl_user")
         self.verticalLayout_3.addWidget(self.lbl_user)
         self.lbl_info3 = QtWidgets.QLabel(self.centralwidget)
-        self.lbl_info3.setMinimumSize(QtCore.QSize(110, 110))
-        self.lbl_info3.setMaximumSize(QtCore.QSize(110, 16777215))
+        self.lbl_info3.setMinimumSize(QtCore.QSize(120, 110))
+        self.lbl_info3.setMaximumSize(QtCore.QSize(120, 16777215))
         font = QtGui.QFont()
         font.setPointSize(14)
         font.setBold(True)
@@ -676,8 +676,7 @@ class Ui_main(object):
         _translate = QtCore.QCoreApplication.translate
         main.setWindowTitle(_translate("main", "MainWindow"))
         self.lbl_user.setText(_translate("main", "Usuario"))
-        self.lbl_info3.setText(_translate("main", "MODO\n"
-"ADMIN"))
+        self.lbl_info3.setText(_translate("main", "MODO\nADMIN"))
         self.lbl_boxTITLE.setText(_translate("main", "||Cajas a utilizar||"))
         self.lbl_boxPDCR.setText(_translate("main", "PDC-RMID 12239061602"))
         self.lbl_boxPDCP.setText(_translate("main", "lbl_boxPDCP"))

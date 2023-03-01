@@ -84,16 +84,30 @@ class Controller (QObject):
         self.check_qr.ok.connect(self.torquing.clean)
 
         #se conecta la señal qr_box = pyqtSignal(str) que contiene un string, al método chkQrBoxes
+        #CADA VEZ QUE SE UTILICE el LineEdit en la GUI dedicado a los QRboxes, se accederá a la función chkQrBoxes
         self.client.qr_box.connect(self.chkQrBoxes)
 
     @pyqtSlot(str)
     def chkQrBoxes(self, qr_box):
         try:
-            if len(self.model.input_data["database"]["pedido"]):
+            #si está habilitado el estado de los candados...
+            if self.model.estado_candados == True:
+                print("CANDADOS INCIADOS, no se puede clampear otra caja hasta terminar")
+                command = {
+                    "lbl_steps" : {"text": "Terminar CANDADOS para poder clampear cajas", "color": "red"}
+                    }
+                self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+
+            #si hay tareas en el pedido y no está en el estado de candados...
+            if len(self.model.input_data["database"]["pedido"]) and self.model.estado_candados == False:
                 master_qr_boxes = json.loads(self.model.input_data["database"]["pedido"]["QR_BOXES"])
                 rework_qr_boxes = self.model.input_data["database"]["qr_retrabajo"]
+                
+                #inicia estando incorrecto
                 ok = False
                 ok_rework = False
+
                 # Si la estación está en Modo Puntual Flexible o retrabajo:
                 if self.model.config_data["flexible_mode"] or self.model.config_data["untwist"]:
                     print("Qr_retrabajo desde modelo: ",self.model.input_data["database"]["qr_retrabajo"])
@@ -117,7 +131,7 @@ class Controller (QObject):
                                     self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                                 if i in self.model.boxPos2:
                                     self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
-                                Timer(10, self.boxTimeout, args = (i, qr_box)).start()
+                                Timer(15, self.boxTimeout, args = (i, qr_box)).start()
 
                                 copy_i = i
                                 #caja adecuada:
@@ -137,17 +151,20 @@ class Controller (QObject):
                             "lbl_steps" : {"text": "El código escaneado no pertenece a ninguna caja del arnés", "color": "red"}
                             }
                         self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
-                # Si la estación está en cualquier modo diferente a Puntual Flexible:
+                
+                # Si la estación no está en modo flexible ni desapriete
                 else:
                     for i in master_qr_boxes:
-                        # i para buscar en todas las cajas master_qr_boxes[i][0],  si ahí existe lo que escaneaste "qr_box" y aparte este es "true" entonces...
+                        # i para buscar en todas las cajas master_qr_boxes[i][0](seriales maestros),  si ahí existe algo similar a lo que escaneaste "qr_box"(serial) y aparte este es "true" entonces...
                         if master_qr_boxes[i][0] in qr_box and master_qr_boxes[i][1]:
-                            # si la caja i (PDCR por ejemplo) está en plc clamps y en database modularity
+                            # si la caja i (PDCR por ejemplo) NO está en plc clamps y existe en el contenido de database modularity (si ya se torqueó ya no estará aquí)
                             if not(i in self.model.input_data["plc"]["clamps"]) and i in self.model.input_data["database"]["modularity"]:
                                 ok = True
-                                print("QR ACEPTADO: ")
-                                print(qr_box)
-                                print("Colocar Caja para clampear: ",i)
+                                #serial de la caja
+                                print("------QR ACEPTADO: "+str(qr_box))
+                                print("------Colocar Caja "+ str(i) +" para clampear: ")
+
+                                #SE Habilita desde la GDI en el PLC el nido, solamente el PDCS pasa a ser PDCRMID
                                 if i == "PDC-RS":
                                     self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"PDC-RMID": True}), qos = 2)
                                 else:
@@ -159,34 +176,38 @@ class Controller (QObject):
                                     self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                                 if i in self.model.boxPos2:
                                     self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
-                                Timer(10, self.boxTimeout, args = (i, qr_box)).start()
 
-                                copy_i = i
                                 #caja adecuada:
                                 if "PDC-R" in i:
                                     if self.model.smallflag == True:
-                                        copy_i = "PDC-RMID"
+                                        i = "PDC-RMID"
                                     if self.model.mediumflag == True:
-                                        copy_i = "PDC-RMID"
+                                        i = "PDC-RMID"
                                     elif self.model.largeflag == True:
-                                        copy_i = "PDC-R"
-                                #se avisa a la variable de cajas_habilitadas que ya se escaneó la caja
-                                self.model.cajas_habilitadas[copy_i] = 1
+                                        i = "PDC-R"
+                                #se avisa a la variable de cajas_habilitadas que ya se escaneó la caja (Funcionalidad de Raffis)
+                                self.model.cajas_habilitadas[i] = 1
                                 print("cajas habilitadas: ",self.model.cajas_habilitadas)
+
+                                #variable donde se guardan los seriales de cada caja (si se acaba el tiempo se reemplazará al escanear nuevamente para clampear)
+                                self.model.qr_codes[i] = qr_box
+
+                                Timer(15, self.boxTimeout, args = (i, qr_box)).start()
+
                             break
                     if not(ok):
                         command = {
                             "lbl_steps" : {"text": "CAJA INCORRECTA, VUELVA A INTENTARLO", "color": "red"}
                             }
                         self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
-                for item in self.model.torque_data:
-                    if not(len(self.model.torque_data[item]["queue"])):
-                       #self.client.client.publish(self.model.torque_data[item]["gui"],json.dumps(command), qos = 2)
-                       pass
+
         except Exception as ex:
             print ("manager.controller.chkQrBoxes Exception: ", ex)
 
     def boxTimeout(self, i, qr_box):
+
+        #la variable self.model.input_data["plc"]["clamps"] guarda lo que está clampeado
+        #si cuando se activa esta función aún NO se ha clampeado la caja, se vuelve a deshabilitar el Nido
         if not(i in self.model.input_data["plc"]["clamps"]):
             print("Caja DESCLAMPEADA: ",i)
             if i == "PDC-RS":
@@ -214,13 +235,6 @@ class Controller (QObject):
             #se avisa a la variable de cajas_habilitadas que se requiere escanear la caja
             self.model.cajas_habilitadas[copy_i] = 2
             print("cajas habilitadas: ",self.model.cajas_habilitadas)
-
-            for item in self.model.torque_data:
-                if not(len(self.model.torque_data[item]["queue"])):
-                    #self.client.client.publish(self.model.torque_data[item]["gui"],json.dumps(command), qos = 2)
-                    pass
-        else:
-            self.model.qr_codes[i] = qr_box
           
 
 #EJECUCIÓN EN PARALELO
@@ -237,7 +251,7 @@ class MyThread(QThread):
 
         while 1:
 
-            sleep(5)
+            
             #command = {"lcdNumber": {"visible": False}}
             #publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
             #command = {"lcdNumber": {"visible": True}}
@@ -264,6 +278,6 @@ class MyThread(QThread):
             #except Exception as ex:
             #    print("Excepción al consultar los tableros en DB LOCAL Paralelo: ", ex)
 
-                
+            sleep(5)
             
             

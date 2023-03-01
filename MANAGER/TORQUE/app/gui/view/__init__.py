@@ -88,13 +88,11 @@ class MainWindow (QMainWindow):
         actionLogin = QAction("Login",self)
         actionLogout = QAction("Logout",self)
         actionConfig = QAction("Config",self)
-        actionWEB = QAction("WEB",self)
-        actionGDI = QAction("GDI",self)
+        actionWEB = QAction("PÁGINA WEB",self)
         menu.addAction(actionLogin)
         menu.addAction(actionLogout)
         menu.addAction(actionConfig)
         menu.addAction(actionWEB)
-        menu.addAction(actionGDI)
         menu.triggered[QAction].connect(self.menuProcess)
 
 
@@ -131,8 +129,6 @@ class MainWindow (QMainWindow):
                     self.pop_out.setWindowTitle("Warning")
                     QTimer.singleShot(2000, self.pop_out.button(QMessageBox.Ok).click)
                     self.pop_out.exec()
-            elif case == "GDI":
-                self.output.emit({"request":"gdi"})
             elif case == "Config":
                 if self.cycle_started == False:
                     self.output.emit({"request":"config"})
