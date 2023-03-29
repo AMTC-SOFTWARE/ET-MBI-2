@@ -667,7 +667,8 @@ class CheckQr (QState):
                         if famx2response["SALFET"] != None:
                             print("||El arnés ya tiene registro de fecha de FET")
                             #Si la ubicación del HM del Arnés es SALIDA_DE_FET
-                            if famx2response["UBICACION"] == "SALIDA_DE_FET" or famx2response["UBICACION"] == "ENTRADA_A_TORQUE":
+
+                            if ubicacion_str == "SALIDA_DE_FET" or ubicacion_str == "ENTRADA_A_TORQUE":
                                 print("||La ubicación del arnés es SALIDA_DE_FET o ENTRADA_A_TORQUE")
                                 #Arnés con fecha SALFET, ubicación: SALIDA_DE_FET, y la referencia de trazabilidad y etiqueta coinciden
                                 if famx2response["REFERENCIA"] == self.model.qr_codes["REF"]:
