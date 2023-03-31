@@ -351,7 +351,7 @@ class Ui_main(object):
         sizePolicy.setHeightForWidth(self.lbl_boxMFBP2.sizePolicy().hasHeightForWidth())
         self.lbl_boxMFBP2.setSizePolicy(sizePolicy)
         self.lbl_boxMFBP2.setMinimumSize(QtCore.QSize(320, 0))
-        self.lbl_boxMFBP2.setMaximumSize(QtCore.QSize(380, 60))
+        self.lbl_boxMFBP2.setMaximumSize(QtCore.QSize(380, 100))
         font = QtGui.QFont()
         font.setFamily("Century Schoolbook")
         font.setPointSize(20)

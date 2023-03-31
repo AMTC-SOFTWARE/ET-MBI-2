@@ -140,7 +140,16 @@ class Controller (QObject):
                 # Si la estación está en cualquier modo diferente a Puntual Flexible:
                 else:
                     for i in master_qr_boxes:
+                          #si se trata de la caja MFB-P2, inicia esta bandera en False, solo se activa si es una caja nueva de derecha
+                        bandera_mfbp2_derecha_nueva = False
+                        if i == "MFB-P2":
+                            #si trae en los qr master el qr perteneciente a la caja de derecha
+                            if "12975407216" in  master_qr_boxes["MFB-P2"][0]:
+                                if "12975407830" in qr_box:
+                                    bandera_mfbp2_derecha_nueva = True
+                                    qr_box = qr_box.replace("12975407830","12975407216")         
                         # i para buscar en todas las cajas master_qr_boxes[i][0],  si ahí existe lo que escaneaste "qr_box" y aparte este es "true" entonces...
+                        
                         if master_qr_boxes[i][0] in qr_box and master_qr_boxes[i][1]:
                             # si la caja i (PDCR por ejemplo) está en plc clamps y en database modularity
                             if not(i in self.model.input_data["plc"]["clamps"]) and i in self.model.input_data["database"]["modularity"]:
@@ -173,6 +182,10 @@ class Controller (QObject):
                                 #se avisa a la variable de cajas_habilitadas que ya se escaneó la caja
                                 self.model.cajas_habilitadas[copy_i] = 1
                                 print("cajas habilitadas: ",self.model.cajas_habilitadas)
+                                if bandera_mfbp2_derecha_nueva == True:
+                                    bandera_mfbp2_derecha_nueva = False
+                                    qr_box = qr_box.replace("12975407216","12975407830")
+
                             break
                     if not(ok):
                         command = {

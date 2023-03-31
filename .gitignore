@@ -350,3 +350,4 @@ MigrationBackup/
 .ionide/
 API/api/api.pyproj
 API/api/build
+MANAGER/TORQUE/app/app.pyproj
