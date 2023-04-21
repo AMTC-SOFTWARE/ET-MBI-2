@@ -93,6 +93,28 @@ def etiqueta():
         return response
 
 #####################################  Upload Files Services ####################################
+@app.route('/delete/filesmodularities', methods=['POST'])
+def delRef():
+    response = {"items": 0}
+    try:
+        path_carpeta = "..\\ILX";
+        #se obtiene true si existe la carpeta
+        existe_carpeta = os.path.isdir(path_carpeta)
+        if existe_carpeta == True:
+            try:
+                #Eliminar la carpeta (con archivos dentro) anteriormente generada, (pueden quedarse por algún error de la matriz al tratar de cargar un formato inválido)
+                #rmtree(path_carpeta)#para eliminar archivo único: from os import remove | remove("archivo.txt") ; para eliminar carpeta vacía: from os import rmdir | rmdir("carpeta_vacia")
+                print("se elimina la carpeta")
+                response = {"path" : 'Carpeta Eliminada desde la API,'}
+            except OSError as error:
+                print("ERROR AL ELIMINAR CARPETA:::\n",error)
+                response = {"exception" : ex.args}
+    except Exception as ex:
+        print("uploadRef Exception: ", ex)
+        response = {"exception" : ex.args}
+        return response
+
+
 @app.route('/upload/modularities', methods=['POST'])
 def uploadRef():
     response = {"items": 0}
@@ -116,6 +138,14 @@ def uploadRef():
                 except OSError as error:
                     print("ERROR AL CREAR CARPETA:::\n",error)
 
+            path = os.path.join(app.config['UPLOAD_FOLDER'], 'ILX')
+            print(path, 'ACAAAAAAAA esta la ubicacion que se necesita subir')
+
+            isExist = os.path.exists(path)
+            if not isExist:
+                # Create a new directory because it does not exist 
+                os.makedirs(path)
+                print("The new directory is created!", path)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], "ILX", filename))
             response["items"] = 1
     except Exception as ex:
@@ -137,6 +167,17 @@ def updateModules():
     allowed_file = False
     file = None
     try:
+        path_carpeta = "..\\modules";
+        #se obtiene true si existe la carpeta
+        existe_carpeta = os.path.isdir(path_carpeta)
+        if existe_carpeta == True:
+            try:
+                #Eliminar la carpeta (con archivos dentro) anteriormente generada, (pueden quedarse por algún error de la matriz al tratar de cargar un formato inválido)
+                rmtree(path_carpeta)#para eliminar archivo único: from os import remove | remove("archivo.txt") ; para eliminar carpeta vacía: from os import rmdir | rmdir("carpeta_vacia")
+                print("se elimina la carpeta")
+            except OSError as error:
+                print("ERROR AL ELIMINAR CARPETA:::\n",error)
+
         data = request.form['DBEVENT']
         print("DB a la que se carga la Info: ",data)
         usuario = request.form['USUARIO']
@@ -157,6 +198,13 @@ def updateModules():
                     os.mkdir(path_folders+"modules")
                 except OSError as error:
                     print("ERROR AL CREAR CARPETA:::\n",error)
+            path = os.path.join(app.config['UPLOAD_FOLDER'], "modules")
+            #print(path, 'ACAAAAAAAA esta la ubicacion que se necesita subir')
+            isExist = os.path.exists(path)
+            if not isExist:
+                # Create a new directory because it does not exist 
+                os.makedirs(path)
+                print("The new directory is created!", path)
 
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], "modules", filename))
             auto_modularities.refreshModules(data)
@@ -182,6 +230,17 @@ def updateDeterminantes():
     allowed_file = False
     file = None
     try:
+        path_carpeta = "..\\determinantes";
+        #se obtiene true si existe la carpeta
+        existe_carpeta = os.path.isdir(path_carpeta)
+        if existe_carpeta == True:
+            try:
+                #Eliminar la carpeta (con archivos dentro) anteriormente generada, (pueden quedarse por algún error de la matriz al tratar de cargar un formato inválido)
+                rmtree(path_carpeta)#para eliminar archivo único: from os import remove | remove("archivo.txt") ; para eliminar carpeta vacía: from os import rmdir | rmdir("carpeta_vacia")
+                print("se elimina la carpeta")
+            except OSError as error:
+                print("ERROR AL ELIMINAR CARPETA:::\n",error)
+
         data = request.form['DBEVENT']
         print("DB a la que se carga la Info: ",data)
         usuario = request.form['USUARIO']
@@ -202,6 +261,13 @@ def updateDeterminantes():
                     os.mkdir(path_folders+"determinantes")
                 except OSError as error:
                     print("ERROR AL CREAR CARPETA:::\n",error)
+            path = os.path.join(app.config['UPLOAD_FOLDER'], "determinantes")
+            print(path, 'ACAAAAAAAA esta la ubicacion que se necesita subir')
+            isExist = os.path.exists(path)
+            if not isExist:
+                # Create a new directory because it does not exist 
+                os.makedirs(path)
+                print("The new directory is created!", path)
 
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], "determinantes", filename))
             auto_modularities.refreshDeterminantes(data,usuario)
