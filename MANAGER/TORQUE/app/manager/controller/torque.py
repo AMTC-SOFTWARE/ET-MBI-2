@@ -35,9 +35,6 @@ class Torquing (QState):
         self.manager.ok2.connect(self.tool2.trigger.emit)
         self.manager.ok3.connect(self.tool3.trigger.emit)
 
-        #Al emitir "goPalpador" señal desde la NewTool3, se lanza un trigger que inicia todo lo relacionado al palpador en la NewTool2
-        self.tool3.goPalpador.connect(self.tool2.triggerPalpador.emit)
-
         #señal de finish de que finaliza el ciclo (viene desde la clase ToolsManager)
         self.manager.finish.connect(self.finish.emit)
 
@@ -96,23 +93,20 @@ class NewTool1 (QState):
 
         #al recibir un torque con result OK regresas al estado de zone
         self.chk_response.addTransition(self.chk_response.ok, self.zone)
+
         #al recibir un torque con result NOK vas al estado de error
         self.chk_response.addTransition(self.chk_response.nok, self.NOK)
 
+        self.NOK.addTransition(self.NOK.reintento, self.backward)
         #al recibir más de ciertos reintentos pedirá acceso de calidad para continuar o cambio de caja
         self.NOK.addTransition(self.NOK.quality, self.qintervention)
-        #cuando estás en el estado de la clase error, te manda a el estado de reversa si el reintento es menor al maximo de reintentos permitidos
-        self.NOK.addTransition(self.NOK.reintento, self.backward)
         #al dar una llave key_process() (que solo se puede mandar si self.model.reintento_torque = True, vas al estado de reversa
         self.NOK.addTransition(self.model.transitions.key_process, self.backward)
-        
-
 
         #al dar una llave key_process() (que solo se puede mandar si self.model.reintento_torque = True, vas al estado de reversa
         self.qintervention.addTransition(self.model.transitions.ID, self.qgafet)
         self.qgafet.addTransition(self.qgafet.ok, self.backward)
         self.qgafet.addTransition(self.qgafet.nok, self.qintervention)
-
 
 
         #si estás en backward llave te lleva a mensaje de backward
@@ -181,9 +175,7 @@ class NewTool2 (QState):
         self.raffi_key_palpador     = RaffiKey(tool = self.tool, model = self.model, parent = self)
         self.raffi_message_palpador = RaffiMessage(tool = self.tool, model = self.model, parent = self)
         self.chk_profile    = CheckProfile(tool = self.tool, model = self.model, parent = self)
-        self.palpador       = Palpador(tool = self.tool, model = self.model, parent = self)
-        self.zone_palpador  = CheckZonePalpador(tool = self.tool, model = self.model, parent = self)
-        self.waiting_pin    = WaitingPin(tool = self.tool, model = self.model, parent = self)
+        
 
         self.zone.addTransition(self.model.transitions.raffi_on, self.raffi_message)
         self.raffi_message.addTransition(self.raffi_message.process_continue, self.zone)
@@ -192,45 +184,28 @@ class NewTool2 (QState):
         self.raffi_key.addTransition(self.model.transitions.raffi_off,self.zone)
 
         self.standby.addTransition(self.trigger, self.zone)
-        self.standby.addTransition(self.triggerPalpador, self.palpador)
+        
         self.zone.addTransition(self.zone.nok, self.standby)
         self.zone.addTransition(self.model.transitions.zone_tool2, self.zone)
         self.zone.addTransition(self.model.transitions.torque2, self.chk_response)
 
-        #PALPADOR
-        #self.zone.addTransition(self.zone.chk_candados, self.palpador)
-        self.palpador.addTransition(self.palpador.continuar, self.zone_palpador)
-        self.zone_palpador.addTransition(self.model.transitions.zone_tool2, self.zone_palpador)
-        self.zone_palpador.addTransition(self.model.transitions.zone_tool4, self.zone_palpador)
-        self.zone_palpador.addTransition(self.zone_palpador.wait_pin, self.waiting_pin)
-        self.zone_palpador.addTransition(self.zone_palpador.bypass, self.zone_palpador)#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+       
 
-        self.waiting_pin.addTransition(self.waiting_pin.continuar,self.zone_palpador)
-        self.waiting_pin.addTransition(self.model.transitions.pin,self.zone_palpador)
-        self.waiting_pin.addTransition(self.model.transitions.zone_tool2,self.zone_palpador)
-        self.waiting_pin.addTransition(self.model.transitions.zone_tool4,self.zone_palpador)
-
-        #RAFFI EN ZONE_PALPADOR
-        self.zone_palpador.addTransition(self.model.transitions.raffi_on, self.raffi_message_palpador)
-        self.raffi_message_palpador.addTransition(self.raffi_message_palpador.process_continue, self.zone_palpador)
-        self.raffi_message_palpador.addTransition(self.model.transitions.key_process, self.raffi_key_palpador)
-        self.raffi_message_palpador.addTransition(self.model.transitions.raffi_off, self.zone_palpador)
-        self.raffi_key_palpador.addTransition(self.model.transitions.raffi_off,self.zone_palpador)
-
+       
         self.chk_response.addTransition(self.chk_response.ok, self.zone)
+        #al recibir un torque con result NOK vas al estado de error
         self.chk_response.addTransition(self.chk_response.nok, self.NOK)
+
         #cuando estás en el estado de la clase error, te manda a el estado de reversa si el reintento es menor al maximo de reintentos permitidos
         self.NOK.addTransition(self.NOK.reintento, self.backward)
         self.NOK.addTransition(self.NOK.quality, self.qintervention)
         #al dar una llave key_process() (que solo se puede mandar si self.model.reintento_torque = True, vas al estado de reversa
         self.NOK.addTransition(self.model.transitions.key_process, self.backward)
-
+        
         self.qintervention.addTransition(self.model.transitions.ID, self.qgafet)
         self.qgafet.addTransition(self.qgafet.ok, self.backward)
         self.qgafet.addTransition(self.qgafet.nok, self.qintervention)
 
-
-        self.NOK.addTransition(self.model.transitions.key_process, self.backward)
         self.backward.addTransition(self.model.transitions.key_process, self.backward)
         self.backward.addTransition(self.model.transitions.zone_tool2, self.backward)
         #self.backward.addTransition(self.model.transitions.torque2, self.zone)
@@ -242,7 +217,7 @@ class NewTool2 (QState):
         self.addTransition(self.finish, self.standby)
 
         self.zone.ok.connect(self.finished)
-        self.zone_palpador.end.connect(self.finished)
+        
         #self.NOK.entered.connect(self.error)
         #self.NOK.exited.connect(self.retry)
 
@@ -287,7 +262,13 @@ class NewTool3 (QState):
         self.raffi_message          = RaffiMessage(tool = self.tool, model = self.model, parent = self)
         self.chk_profile            = CheckProfile(tool = self.tool, model = self.model, parent = self)
         
-        
+        self.palpador               = Palpador(tool = self.tool, model = self.model, parent = self)
+        self.zone_palpador          = CheckZonePalpador(tool = self.tool, model = self.model, parent = self)
+        self.waiting_pin            = WaitingPin(tool = self.tool, model = self.model, parent = self)
+        self.raffi_key_palpador     = RaffiKey(tool = self.tool, model = self.model, parent = self)
+        self.raffi_message_palpador = RaffiMessage(tool = self.tool, model = self.model, parent = self)
+
+
         #RAFFI EN ZONE
         self.zone.addTransition(self.model.transitions.raffi_on, self.raffi_message)
         self.raffi_message.addTransition(self.raffi_message.process_continue, self.zone)
@@ -302,6 +283,25 @@ class NewTool3 (QState):
         self.zone.addTransition(self.model.transitions.torque3, self.chk_response)
         self.chk_response.addTransition(self.chk_response.ok, self.zone)
         self.chk_response.addTransition(self.chk_response.nok, self.NOK)
+        
+        #PALPADOR
+        self.zone.addTransition(self.zone.chk_candados, self.palpador)
+        self.palpador.addTransition(self.palpador.continuar, self.zone_palpador)
+        self.zone_palpador.addTransition(self.model.transitions.zone_tool3, self.zone_palpador)
+        self.zone_palpador.addTransition(self.model.transitions.zone_tool4, self.zone_palpador)
+        self.zone_palpador.addTransition(self.zone_palpador.wait_pin, self.waiting_pin)
+        self.waiting_pin.addTransition(self.model.transitions.pin,self.zone_palpador)
+        self.waiting_pin.addTransition(self.model.transitions.zone_tool3,self.zone_palpador)
+        self.waiting_pin.addTransition(self.model.transitions.zone_tool4,self.zone_palpador)
+
+        #RAFFI EN ZONE_PALPADOR
+        self.zone_palpador.addTransition(self.model.transitions.raffi_on, self.raffi_message_palpador)
+        self.raffi_message_palpador.addTransition(self.raffi_message_palpador.process_continue, self.zone_palpador)
+        self.raffi_message_palpador.addTransition(self.model.transitions.key_process, self.raffi_key_palpador)
+        self.raffi_message_palpador.addTransition(self.model.transitions.raffi_off, self.zone_palpador)
+        self.raffi_key_palpador.addTransition(self.model.transitions.raffi_off,self.zone_palpador)
+        
+        self.zone_palpador.addTransition(self.zone_palpador.end,self.zone)
         
         #cuando estás en el estado de la clase error, te manda a el estado de reversa si el reintento es menor al maximo de reintentos permitidos
         self.NOK.addTransition(self.NOK.reintento, self.backward)
@@ -346,7 +346,6 @@ class NewTool3 (QState):
         self.clean()
         self.goPalpador.emit()
 
-
 class CheckZone (QState):
     ok              = pyqtSignal()
     nok             = pyqtSignal()
@@ -373,7 +372,7 @@ class CheckZone (QState):
         self.flex_BB_drawed = False
 
     def onEntry(self, event):
-
+        print("entrozone$%%$$$$$$$$$$%%%%%%%%%%%%%%%%%%%%%%%%%%$$$$$$$")
         #zone se inicializa con "0"
         zone = "0"
 
@@ -439,7 +438,7 @@ class CheckZone (QState):
         print("||||||||||||||||||||||||||||||||||||||||||||||")
         ########################## Funcionmiento Único para MFP1 y MFBP2 con tool3 ###################
         #self.model.current_queue[self.tool].clear()
-        #if self.tool == "tool3":
+        #if self.tool == "tool3":    
         #    if len(self.queue):
         #        for tarea in self.queue:
 
@@ -486,9 +485,11 @@ class CheckZone (QState):
 
         #si se habilita el estado_candados porque ya es la última tarea de la caja PDCR entonces se va a finish para mandar la señal de PALPADOR
         if self.model.estado_candados == True:
-
-                if self.tool == "tool3":
-                    self.finish()
+            if self.tool == "tool3":
+                #variable para cuando entras a zone ir a estado palpador hasta que se haya finalizado
+                if self.model.contains_PDCR == True:
+                    print("se emite la señal para palpador")
+                    self.chk_candados.emit()
                     return
 
         #si el valor de current_trq es None (por el momento está vacío) o config_data está en True el flexible_mode
@@ -518,7 +519,7 @@ class CheckZone (QState):
                     #se recorren las tareas en cola para ver si es igual a alguna de las tareas pendientes
                     for i in range(len(self.queue)):
                         if not(self.flex_BB_drawed):
-                            #se agrega el para pintarlo
+                            #se agrega el bounding box para pintarlo
                             flex_BB_array.append([self.queue[i][0], self.queue[i][1]])
 
                         #si la caja que marca actualmente el encoder es igual a la caja de la tarea en cola actual...
@@ -538,7 +539,7 @@ class CheckZone (QState):
 
                 #se guarda valor de la tuerca
                 self.nut = current_trq[3]
-                print("Self.Nut: ",self.nut)
+                #print("Self.Nut: ",self.nut)
                 print("Self.Tool: ",self.tool)
 
 
@@ -562,14 +563,14 @@ class CheckZone (QState):
                 if self.tool == "tool2":
                     self.currentTool = "HERRAMIENTA 3"
                 if current_trq[0] == "MFB-P1" or current_trq[0] == "MFB-S":
-                    print("Mostrar imagen de 2 herramientas para MFB-P1 y S")
+                    #print("Mostrar imagen de 2 herramientas para MFB-P1 y S")
                     self.currentTool = "HERRAMIENTAS 2,3"
                 if current_trq[0] == "MFB-P2":
-                    print("Mostrar imagen de 2 herramientas para MFB-P2")
+                    #print("Mostrar imagen de 2 herramientas para MFB-P2")
                     self.currentTool = "HERRAMIENTAS 1,2"
 
                 #se imprime la herramienta actual activa
-                print("Current Tool: ",self.currentTool)
+                #print("Current Tool: ",self.currentTool)
 
                 #img_name obtiene la dirección de la imagen de la caja para la tarea actual "current_trq"
                 img_name = self.model.imgs_path + "boxes/"+ current_trq[0] + ".jpg"
@@ -627,14 +628,12 @@ class CheckZone (QState):
             command = {}
             #self.model.torque_data[self.tool]["rqst"] = False
 
-            #print("zone[0] (ACTUAL): ",zone[0])
-            #print("zone[1] (ACTUAL): ",zone[1])
+            #print("zone[0] (ACTUAL - CAJA): ",zone[0])
+            #print("zone[1] (ACTUAL - ZONA): ",zone[1])
+
             #print("current_trq[0] (TAREA): ",current_trq[0])
             #print("Valores de los raffi",self.model.raffi)
             #print("Valor actual del raffi para esta caja current_trq[0]: ",self.model.raffi[current_trq[0]])
-
-            self.model.tareas_actuales[self.tool] = current_trq[1]
-
             print("CUURRETN_TRQ",current_trq[0])
             if current_trq[0] == "PDC-RMID" or current_trq[0] == "PDC-R" or current_trq[0] == "PDC-RS":
                 command = {
@@ -642,18 +641,20 @@ class CheckZone (QState):
                     }
                 publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
-
             #si el raffi no está habilitado (su valor es 0)
             if self.model.raffi[current_trq[0]] == 0:
 
                 #si la caja actual es igual a la solicitada de las tareas en cola...
-                if zone[0] == current_trq[0]:       
+                if zone[0] == current_trq[0]:   
+                   
+                    
 
+                  
                     #si la terminal actual es igual a cero... (esto pasa en comm.py cada que llega una zona en "false")
                     if zone[1] == "0":
                         command = {
                             "lbl_result" : {"text":"Herramienta fuera de zona de torque", "color": "red"},
-                            "lbl_steps" : {"text": "Coloca la herramienta en " + current_trq[0] + ": " + current_trq[1], "color": "black"}
+                            "lbl_steps" : {"text": "Coloca la herramienta en " + current_trq[0] + ": " + current_trq[1], "color": "black"},
                             }
                         profile = self.stop
 
@@ -669,7 +670,8 @@ class CheckZone (QState):
                             }
                         #se da a profile el valor del profile en cola solicitado para esa caja y esa terminal !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         profile = current_trq[2]
-                        print("herramienta activa: ",self.tool)
+                        print("zone[1] (ACTUAL - ZONA): ",zone[1])
+                        print("HERRAMIENTA ACTIVADA**********: ",self.tool)
 
                         #se bloquea el uso de este raffi
                         self.model.active_lock[current_trq[0]] = True
@@ -694,9 +696,10 @@ class CheckZone (QState):
 
                 #si la caja actual es diferente de la caja solicitada de las tareas en cola...
                 else:
+                    print("CUURRETN_TRQ",current_trq[0])
                     command = {
                         "lbl_result" : {"text":"Herramienta fuera de zona de torque", "color": "red"},
-                        "lbl_steps" : {"text": "Coloca la herramienta en " + current_trq[0] + ": " + current_trq[1], "color": "black"}
+                        "lbl_steps" : {"text": "Coloca la herramienta en " + current_trq[0] + ": " + current_trq[1], "color": "black"},
                         }
                     profile = self.stop
                     
@@ -725,12 +728,11 @@ class CheckZone (QState):
 
     def check_lock_raffi_function(self, current_box):
 
-        print("check lock raffi function")
+        #print("check lock raffi function")
         print("currentbox: ",current_box)
 
         #se dehabilita el bloqueo de raffi para esta herramienta porque no está activa (tiene profile:stop)****
         self.model.active_lock_tool[self.tool] = False
-        #_____________________________________________
 
         #se inicializa como False
         check_raffi_lock = False
@@ -764,8 +766,7 @@ class CheckZone (QState):
         if check_raffi_lock == False:
             #se hace false esta variable, para que se pueda volver a usar el raffi
             self.model.active_lock[current_box] = False
-            #__________________________________________
-            print("self.model.active_lock[",current_box,"] = False")
+            #print("self.model.active_lock[",current_box,"] = False")
 
     def check_key_process_function (self):
         
@@ -807,26 +808,20 @@ class CheckZone (QState):
             "img_nuts" : "blanco.jpg",
             "img_toolCurrent" : "blanco.jpg",
             "lbl_result" : {"text": f"Torques {self.tool} aplicados correctamente", "color": "green"},
-            "lbl_boxNEW" : {"text": "", "color": "black"},
             "lbl_steps" : {"text": f"{self.tool} OK", "color": "black"}
             }
         #publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         Timer(self.delay1, self.profilePub, args = (self.stop,)).start()
         self.model.torque_data[self.tool]["enable"] = False
 
-        #variable para cuando entras a zone ir a estado palpador hasta que se haya finalizado
-        if self.model.contains_PDCR == True:
-            print("se emite la señal para palpador")
-            Timer(self.delay2, self.chk_candados.emit).start()
-        else:
-            print("se emite finish de queue de caja")
-            Timer(self.delay2, self.ok.emit).start()
+        #
+        print("se emite finish de queue de caja")
+        Timer(self.delay2, self.ok.emit).start()
 
 class CheckResponse (QState):
     ok      = pyqtSignal()
     nok     = pyqtSignal()
     
-
     def __init__(self, tool = "tool1", model = None, parent = None):
         super().__init__(parent)
         self.model = model
@@ -839,7 +834,7 @@ class CheckResponse (QState):
         self.queue = self.model.torque_data[self.tool]["queue"]
 
     def onEntry(self, event):
-        print("°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°chkresponse°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°")
+        print("chkresponse°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°")
         try:
             if self.model.torque_data[self.tool]["rqst"] == False or self.model.input_data["torque"][self.tool] == {}:
                 self.ok.emit()
@@ -863,37 +858,31 @@ class CheckResponse (QState):
                 else:
                     info1 = self.model.local_data["lbl_info1_text"]
 
-                #se lee el torque final obtenido
-                print("response[torque]: ",response["torque"])
-                response["torque"] = "%.2f" % response["torque"]
-                response["torque"] = float(response["torque"])
-
-                #se lee el angulo final obtenido
-                response["angle"] = round(response["angle"],2)
-
-                #si viene el torque mínimo...
                 if "torque_min" in response:
                     response["torque_min"] = round(response["torque_min"],2)
                 else:
                     response["torque_min"] = 0.00
-                #si viene el torque máximo...
+
+                print("response[torque]: ",response["torque"])
+                #print("Tipo de dato response[torque]: ", type(response["torque"]))
+                response["torque"] = "%.2f" % response["torque"]
+                response["torque"] = float(response["torque"])
+                #print("Tipo de dato Final a base de datos: ", type(response["torque"]))
+
                 if "torque_max" in response:
                     response["torque_max"] = round(response["torque_max"],2)
                 else:
                     response["torque_max"] = 0.00
-                #si viene el ángulo mínimo...
+
                 if "angle_min" in response:
                     response["angle_min"] = int(response["angle_min"])
                 else:
                     response["angle_min"] = 0.00
-                #si viene el ángulo máximo...
+                response["angle"] = round(response["angle"],2)
                 if "angle_max" in response :
                     response["angle_max"] = int(response["angle_max"])
                 else:
                     response["angle_max"] = 0.00
-
-                
-
 
                 trq_zone = box + ":" +  current_trq[1]
                 trq_min = str(response["torque_min"])
@@ -930,10 +919,10 @@ class CheckResponse (QState):
                         resultado = "Bueno"
 
                 print("resultado: ",resultado)
-
                 #Si el resultado del torque es correcto (OK) o está en modo reversa
-                if resultado == "Bueno" or self.model.config_data["untwist"]:
-
+                if resultado == "Bueno"  or self.model.config_data["untwist"]:
+                    
+                    
                     self.model.imgs[box] = self.model.drawBB(
                     img = self.model.imgs[box], BB =[box, current_trq[1]] , color = (0, 255, 0))
                     imwrite(self.model.imgs_path + self.tool + ".jpg", self.model.imgs[box])
@@ -977,14 +966,17 @@ class CheckResponse (QState):
                     else:
                         self.remove_task(box, current_trq)
 
+                    print("Torque OK!!!!!!!!!!!!")
                     #tiempo para mostrar en pantalla que se torqueó correctamente (se regresa al estado zone y si no hay más tareas para la herramienta se finaliza con un ok.emit() el estado zone)
                     Timer(self.delay2, self.ok.emit).start()
 
                 #Si el resultado del torque no es correcto (NOK)
                 else:
+                    #imprime la imagen del cuadro en color rojo en la imagen de la caja
                     self.model.imgs[box] = self.model.drawBB(
                     img = self.model.imgs[box], BB =[box, current_trq[1]] , color = (0, 0, 255))
                     imwrite(self.model.imgs_path + self.tool + ".jpg", self.model.imgs[box])
+                    #
                     command = {
                         "lbl_info2" : {"text": info2, "color": "red"},
                         "lbl_result" : {"text": "Torque " + trq_zone + " NOK", "color": "red"},
@@ -993,6 +985,7 @@ class CheckResponse (QState):
                         }
                     publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
+                    #Aumenta el contador current_trq[1] en la caja actual
                     if self.model.tries[box][current_trq[1]] % 1 == 0:
                         if box in self.model.local_data["nuts_scrap"]:
                             if current_trq[1] in self.model.local_data["nuts_scrap"][box]:
@@ -1001,22 +994,9 @@ class CheckResponse (QState):
                                 self.model.local_data["nuts_scrap"][box][current_trq[1]] = 1
                         else:
                             self.model.local_data["nuts_scrap"][box] = {current_trq[1]: 1}
-                    print("Torque NOK !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+
+                    print("Torque NOK!!!!!!!!!!!!!!!!!!!!!")
                     Timer(self.delay1, self.nok.emit).start()
-
-
-                    # if self.model.tries[box][current_trq[1]] == 4:
-                    #     print("||||||||4 REINTENTOS EN UNA POSICIÓN, CAMBIAR CAJA")
-                    #     #se emite la señal de que se requiere la intervención de Calidad para decidir si cancelar la pieza o continuar (quality)
-                    #     Timer(self.delay1, self.quality.emit).start()
-                    # else:           
-                    #     command = {
-                    #         "show":{"img_popOut": "scrap.jpg"}
-                    #         }
-                    #     publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)                                        
-
-                    #     #se emite la señal de que el torque no es correcto (nok)
-                    #     Timer(self.delay1, self.nok.emit).start()
 
         except Exception as ex:
             print("Torque.CheckResponse() Exception:\n", ex)
@@ -1037,7 +1017,8 @@ class CheckResponse (QState):
         #si la caja ya no tiene terminales por torquear, se quita la caja de la colección y se libera la caja 
         if not(len(modularity[box])):
             modularity.pop(box)
-            Timer(1, self.releaseTorqueClamp, args = (box,)).start()
+            self.releaseTorqueClamp(box)
+            #Timer(1, self.releaseTorqueClamp, args = (box,)).start()
 
         self.model.torque_data[self.tool]["current_trq"]  = None
         #se vuelve a habilitar la opción de activar el raffi de esa caja
@@ -1110,8 +1091,9 @@ class CheckResponse (QState):
         print("|||||self.model.cajas_habilitadas: ",self.model.cajas_habilitadas)
         
 class Error (QState):
-    quality      = pyqtSignal()
-    reintento    = pyqtSignal()
+
+    quality = pyqtSignal()
+    reintento=pyqtSignal()
 
     def __init__(self, tool = "tool1", model = None, parent = None):
         super().__init__(parent)
@@ -1119,51 +1101,54 @@ class Error (QState):
         self.tool = tool
 
     def onEntry(self, event):
+        print("ESTADO ACTUAL ERROR NOK")
+        print("herramienta que entró a error: ",self.tool)
 
-        #se hace true para no pedir el enter de la llave y así solo poder emitir la señal key_process() en lugar de key()
-        #################################
-        print("self.model.reintento_torque = True")
-        print("para herramienta: ",self.tool)
         current_trq = self.model.torque_data[self.tool]["current_trq"]
         box = current_trq[0]
-        #para evitar que reintento_torque se haga true, hasta haber recibido un result de torque en reversa de cada herramienta que esté en reversa
-        self.model.backward_key_tool[self.tool] = True
+
+        #################################
+        print("self.model.reintento_torque = True")
         self.model.reintento_torque = True
         print("se hace true para no pedir el enter de la llave y así solo poder emitir la señal key_process() en lugar de key()")
+        #para evitar que reintento_torque se haga true, hasta haber recibido un result de torque en reversa de cada herramienta que esté en reversa
+        self.model.backward_key_tool[self.tool] = True
         #################################
 
-          #A los 4 reintentos emite el emit de calidad para mostrar el pop de calidad
+        #si tiene menos de 2 reintentos, se habilita en automático la reversa sin necesidad de autorización
         if self.model.tries[box][current_trq[1]] <= 2:
             if self.model.tries[box][current_trq[1]] == 1:
-                    command = {
-                        #"show":{"img_popOut": "scrap.jpg"},
+                command = {
+                        "show":{"img_popOut": "scrap.jpg"},
                         "lbl_steps" : {"text": "Mover Herramienta para continuar", "color": "black"},
                         "lbl_result" : {"text": "Reintento 1/2", "color": "red"}
                         }
             if self.model.tries[box][current_trq[1]] == 2:
-                    command = {
-                        #"show":{"img_popOut": "scrap.jpg"},
+                command = {
+                        "show":{"img_popOut": "scrap.jpg"},
                         "lbl_steps" : {"text": "Mover Herramienta para continuar", "color": "black"},
                         "lbl_result" : {"text": "Reintento 2/2", "color": "red"}
                         }
-                   
+            
             publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-
-            Timer(3.5, self.reintento.emit).start()
+            print("reintento emit")
+            Timer(3, self.reintento.emit).start()
+            return
         #A los 4 reintentos emite el emit de calidad para mostrar el pop de calidad
         elif self.model.tries[box][current_trq[1]] == 5:
             print("||||||||5 REINTENTOS EN UNA POSICIÓN, CAMBIAR CAJA")
             #se emite la señal de que se requiere la intervención de Calidad para decidir si cancelar la pieza o continuar (quality)
             Timer(0.15, self.quality.emit).start()
+            return
         #Si no son los 4 reintentos entonces emite el pop del cambio de tuerca
         else:           
             command = {
                 "show":{"img_popOut": "scrap.jpg"},
                 "lbl_steps" : {"text": "Gira la llave para reintentar", "color": "black"}
                 }
-            publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)                                        
+            publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
             #se espera la señal de la llave
-
+            return
 
 class QualityIntervention (QState):
     ok      = pyqtSignal()
@@ -1380,7 +1365,7 @@ class ToolsManager (QState):
     ok1      = pyqtSignal()
     ok2      = pyqtSignal()
     ok3      = pyqtSignal()
-    finish   = pyqtSignal()
+    finish  = pyqtSignal()
 
     def __init__(self, model = None, parent = None):
         super().__init__(parent)
@@ -1973,8 +1958,6 @@ class Palpador (QState):
 
 class WaitingPin (QState):
 
-    continuar   = pyqtSignal()
-
     def __init__(self, tool = "tool1", model = None, parent = None):
         super().__init__(parent)
         self.model = model
@@ -1983,10 +1966,6 @@ class WaitingPin (QState):
 
     def onEntry(self, event):
         print("||||Dentro de Estado WaitingPin!")
-
-        #BYPASS para palpador
-        #self.model.pin_pressed = True
-        #self.continuar.emit()
 
 
     def onExit(self, event):
@@ -2013,11 +1992,8 @@ class WaitingPin (QState):
                 }
             publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         
-
-
 class CheckZonePalpador (QState):
 
-    bypass               = pyqtSignal()
     end                  = pyqtSignal()
     wait_pin             = pyqtSignal()
     
@@ -2055,11 +2031,8 @@ class CheckZonePalpador (QState):
         #candado_encoder inicia valiendo "0"
         try:
 
-            candado_encoder = self.model.input_data["plc"]["encoder_2"]["candado"]
+            candado_encoder = self.model.input_data["plc"]["encoder_3"]["candado"]
             current_height = self.model.input_data["plc"]["encoder_4"]["candado"]
-
-            #BYPASS para estación 2 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            current_height = "height"
 
         except Exception as ex:
             print (f"CheckZone {self.tool} Exception: ", ex)
@@ -2113,27 +2086,19 @@ class CheckZonePalpador (QState):
                 #variable para indicar que ya inició el palpador y si se vuelve al estado inicial no borrar la imagen con fuseconnvalidation.jpg
                 self.model.palpador_iniciado = True
 
-                Timer(1.0, self.bypass.emit).start()#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
             #SI NO HAY TAREAS EN COLA PARA ESTA HERRAMIENTA (pero se pueden agregar más)
             else:
-                #se emite un Finish de CheckZonePalpador -  que se conecta a FINISH de NewTool3 ... FINISH
+                #se emite un Finish de CheckZonePalpador -  que se conecta a FINISH de NewTool3 ... FINISH!!!!!!!!!!!!!!!!!
                 print("||||||| Se emite el Finish; PROCESO DEL PALPADOR COMPLETADO |||||||")
                 self.finish()
                 return
 
         #############################################################################
-            
 
         ##si esta variable contiene elementos
         else:
 
-            print("self.model.current_task_candado: ",self.model.current_task_candado)
-
             command = {}
-
-            #BYPASS para estación 2 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            candado_encoder = current_task_candado
 
             #si el raffi no está habilitado (su valor es 0)
             if self.model.raffi["PDC-R"] == 0:
@@ -2162,8 +2127,8 @@ class CheckZonePalpador (QState):
                             if current_height == "height":
 
                                 command = {
-                                    "lbl_result" : {"text": "Verificar candado: " + candado_encoder +" en PDC-R", "color": "green"},
-                                    "lbl_steps" : {"text": 'Presiona "Espacio" en el teclado para validar', "color": "black"}
+                                    "lbl_result" : {"text": "Herramienta en PDC-R: " + candado_encoder, "color": "green"},
+                                    "lbl_steps" : {"text": "Empuja la herramienta hacia el candado para validar", "color": "black"}
                                     }
 
                                 #se bloquea el uso de este raffi
@@ -2286,7 +2251,8 @@ class CheckZonePalpador (QState):
             self.model.estado_candados = False
             self.model.contains_PDCR = False
             self.model.palpador_iniciado = False
-
+            #regresa variable que permite escanear otra caja
+            self.model.pdcr_iniciada=False
             ############################################## SE ELIMINA TAREA PENDIENTE DE ULTIMA TUERCA DE PDCR ########################################
 
             #se asigna la variable con la colección, la caja PDCR,PDCRMID o PDCRSMALL y el último torque que no se retiró antes de entrar a palpador
@@ -2336,7 +2302,6 @@ class CheckZonePalpador (QState):
                 "img_toolCurrent" : "blanco.jpg",
                 "img_center" : "logo.jpg",
                 "lbl_result" : {"text": f"Validación de candados finalizada con éxito", "color": "green"},
-                "lbl_boxNEW" : {"text": "", "color": "black"},
                 "lbl_steps" : {"text": f"Candados OK", "color": "black"}
                 }
             publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)

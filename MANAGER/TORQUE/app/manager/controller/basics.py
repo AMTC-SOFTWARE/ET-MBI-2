@@ -3,13 +3,13 @@ from paho.mqtt import publish
 from datetime import datetime
 from threading import Timer
 from os.path import exists
-from time import strftime, sleep
+from time import strftime
 from pickle import load
 from copy import copy
 from os import system
 import requests
 import json
-
+from time import sleep              # Para usar la función sleep(segundos)
 from toolkit.admin import Admin
 
 class Startup(QState):
@@ -18,6 +18,8 @@ class Startup(QState):
     def __init__(self, model = None, parent = None):
         super().__init__(parent)
         self.model = model
+
+
 
     def onEntry(self, event):
         Timer(0.05, self.model.log, args = ("STARTUP",)).start() 
@@ -62,23 +64,18 @@ class Startup(QState):
             "lbl_user" : {"type":"", "user": "", "color": "black"},
             "lbl_instructions" : {"text": "                                 ", "color": "black"},
             "img_nuts" : "blanco.jpg",
+            "lcdNumber": {"value": "0", "visible": False},
             "lbl_nuts"  : {"text": "", "color": "black"},
-            "lcdNumber": {"value": 0, "visible": False},
             "img_toolCurrent" : "blanco.jpg",
             "lbl_toolCurrent"  : {"text": "", "color": "black"},
             "position" : {"text": "POSICIÓN 1", "color": "black"},
             "img_center" : "logo.jpg"
             }
-         
         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-        
         command["position"]["text"] = "POSICIÓN 2"
         command["lcdNumber"]["value"] = "0"
         command["lcdNumber"]["visible"] = True
-
-        #command = {"position":{"text": "POSICIÓN 2"}, 
-        #           "lcdNumber": {"value": 0, "visible": True},
-        #           }
+        #command = {"position":{"text": "POSICIÓN 2"}, "lcdNumber": {"value": "0", "visible": True},#}
         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         try:
             turnos = {
@@ -99,7 +96,6 @@ class Startup(QState):
             publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         except Exception as ex:
             print("Error en el conteo ", ex)
-
 
         QTimer.singleShot(10, self.stopTorque)
         QTimer.singleShot(15, self.kioskMode)
@@ -221,14 +217,15 @@ class StartCycle (QState):
 
         command = {
                 "lineEdit" : False,
-                "lineEditKey" : True,
+                "lineEditKey": True,
                 }
         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         print("lineEdit desactivado")
 
         #para avisar que se finalizó el modo de revisión de candados
         self.model.estado_candados = False
-
+        #regresa variable que permite escanear otra caja
+        self.model.pdcr_iniciada=False
         #para funcionamiento normal de llave
         self.model.reintento_torque = False
         command = {
@@ -312,34 +309,29 @@ class StartCycle (QState):
 
         command["position"]["text"] = "POSICIÓN 2"
         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-
-        #command["position"]["text"] = "POSICIÓN 2"
-      
-        turnos = {
+        try:
+            turnos = {
             "1":["07-00","18-59"],
             "2":["19-00","06-59"],
             }
 
-        endpoint = "http://{}/contar/historial/FIN".format(self.model.server)
-        response = requests.get(endpoint, data=json.dumps(turnos))
-        response = response.json()
-        print("response: ",response)
-        print("He aqui el elefante de la habitacion")
+            endpoint = "http://{}/contar/historial/FIN".format(self.model.server)
+            response = requests.get(endpoint, data=json.dumps(turnos))
+            response = response.json()
+            print("response: ",response)
 
-        command = {
-                "lcdNumber" : {"value": response["conteo"]},
-                    "position" : {"text": response["conteo"]}
-                }
+            command = {
+                    "lcdNumber" : {"value": response["conteo"]}
+                    }
 
-        publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-        
+            publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+        except Exception as ex:
+            print("Error en el conteo ", ex)
+                
         QTimer.singleShot(100, self.stopTorque)
 
         if not(self.model.shutdown):
             self.ok.emit()
-        
-    
-            
 
 
     def torqueClamp (self):
@@ -519,11 +511,14 @@ class CheckQr (QState):
                         #Si la columna que indica la hora de salida de FET, es diferente a None, significa que completó esa estación y SI puede entrar a Torque.
                         if famx2response["SALFET"] != None: #AQUIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
                             print("El arnés ya salió de FET")
+                            print("famx2response[UBICACION]",famx2response["UBICACION"])
+                            ubic_sinspace = famx2response["UBICACION"]
+                            ubic_sinspace = ubic_sinspace.replace(" ","")
                             #Si la ubicación del HM del Arnés se encuentra entrando en reparación, NO podrá entrar a Torque
-                            if famx2response["UBICACION"] == "ENTRADA_A_REPARACION":
-                                print("El Arnés se encuentra entrando en Reparación, NO puede entrar a Torque")
+                            if ubic_sinspace != "SALIDA_DE_FET" and ubic_sinspace != "ENTRADA_A_TORQUE":
+
                                 command = {
-                                "lbl_result" : {"text": "Ubicación de HM: Entrada a Reparación", "color": "red"},
+                                "lbl_result" : {"text": "Ubicación Incorrecta de HM:" + ubic_sinspace, "color": "red"},
                                 "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
                                 }
                                 publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
@@ -556,13 +551,18 @@ class CheckQr (QState):
 
                                 respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(entTrazabilidad))
                                 respTrazabilidad = respTrazabilidad.json()
-                                sleep(0.1)
-                                respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(entTrazabilidad))
-                                respTrazabilidad = respTrazabilidad.json()
+                                print("respTrazabilidad del update: ",respTrazabilidad)
+
                                 sleep(0.1)
                                 respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(entTrazabilidad))
                                 respTrazabilidad = respTrazabilidad.json()
                                 print("respTrazabilidad del update: ",respTrazabilidad)
+
+                                sleep(0.1)
+                                respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(entTrazabilidad))
+                                respTrazabilidad = respTrazabilidad.json()
+                                print("respTrazabilidad del update: ",respTrazabilidad)
+
                                 #### Trazabilidad FAMX2 Update de Información
                         #Si la columna que indica la hora de salida de FET es None, significa que no ha completado esa estación y NO puede entrar aún a Torque.
                         else:
@@ -902,53 +902,6 @@ class CheckQr (QState):
                     serie = ""
                     if i == "MFB-P2":
                         serie = self.model.mfbp2_serie
-
-                        
-                        #print("ANTES")
-                        #print(self.model.input_data["database"]["modularity"][i])
-                        if i == "MFB-P2":
-                            serie = self.model.mfbp2_serie
-
-                        #print("ANTES")
-                        #print(self.model.input_data["database"]["modularity"][i])
-                        for terminal in self.model.input_data["database"]["modularity"][i]:
-                            
-                            if 'A29' in self.model.input_data["database"]["modularity"][i]:
-                                self.model.input_data["database"]["modularity"][i]
-                                self.model.input_data["database"]["modularity"][i].pop(self.model.input_data["database"]["modularity"][i].index("A29"))
-                                self.model.input_data["database"]["modularity"][i].append("A29")                           
-                            if 'A22' in self.model.input_data["database"]["modularity"][i]:
-                                self.model.input_data["database"]["modularity"][i]
-                                self.model.input_data["database"]["modularity"][i].pop(self.model.input_data["database"]["modularity"][i].index("A22"))
-                                self.model.input_data["database"]["modularity"][i].append("A22")
-                            if 'A27' in self.model.input_data["database"]["modularity"][i]:
-                                self.model.input_data["database"]["modularity"][i]
-                                self.model.input_data["database"]["modularity"][i].pop(self.model.input_data["database"]["modularity"][i].index("A27"))
-                                self.model.input_data["database"]["modularity"][i].append("A27")
-                            if 'A23' in self.model.input_data["database"]["modularity"][i]:
-                                self.model.input_data["database"]["modularity"][i]
-                                self.model.input_data["database"]["modularity"][i].pop(self.model.input_data["database"]["modularity"][i].index("A23"))
-                                self.model.input_data["database"]["modularity"][i].append("A23")
-                            if 'A26' in self.model.input_data["database"]["modularity"][i]:
-                                self.model.input_data["database"]["modularity"][i]
-                                self.model.input_data["database"]["modularity"][i].pop(self.model.input_data["database"]["modularity"][i].index("A26"))
-                                self.model.input_data["database"]["modularity"][i].append("A26")
-                            if 'A21' in self.model.input_data["database"]["modularity"][i]:
-                                self.model.input_data["database"]["modularity"][i]
-                                self.model.input_data["database"]["modularity"][i].pop(self.model.input_data["database"]["modularity"][i].index("A21"))
-                                self.model.input_data["database"]["modularity"][i].append("A21")
-                            if 'A24' in self.model.input_data["database"]["modularity"][i]:
-                                self.model.input_data["database"]["modularity"][i]
-                                self.model.input_data["database"]["modularity"][i].pop(self.model.input_data["database"]["modularity"][i].index("A24"))
-                                self.model.input_data["database"]["modularity"][i].append("A24")
-                            if 'A28' in self.model.input_data["database"]["modularity"][i]:
-                                self.model.input_data["database"]["modularity"][i]
-                                self.model.input_data["database"]["modularity"][i].pop(self.model.input_data["database"]["modularity"][i].index("A28"))
-                                self.model.input_data["database"]["modularity"][i].append("A28")
-                      
-                    #print(self.model.input_data["database"]["modularity"][i])     
-                    #print('I love YOU')   
-
                     if "PDC-R" in i:
                         serie = self.model.pdcr_serie
 
@@ -1127,7 +1080,8 @@ class Finish (QState):
 
         #para avisar que se finalizó el modo de revisión de candados
         self.model.estado_candados = False
-
+        #regresa variable que permite escanear otra caja
+        self.model.pdcr_iniciada=False
         command = {
             "DISABLE_PDC-R":False,
             "DISABLE_PDC-RMID":False,
@@ -1228,17 +1182,23 @@ class Finish (QState):
                     endpointUpdate = "http://{}/seghm/update/seghm/{}".format(self.model.server,self.model.id_HM)
                     respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(salTrazabilidad))
                     respTrazabilidad = respTrazabilidad.json()
-                    sleep(0.1)
-                    respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(salTrazabilidad))
-                    respTrazabilidad = respTrazabilidad.json()
+                    print("respTrazabilidad del update: ",respTrazabilidad)
+                    
                     sleep(0.1)
                     respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(salTrazabilidad))
                     respTrazabilidad = respTrazabilidad.json()
                     print("respTrazabilidad del update: ",respTrazabilidad)
 
+                    sleep(0.1)
+                    respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(salTrazabilidad))
+                    respTrazabilidad = respTrazabilidad.json()
+                    print("respTrazabilidad del update: ",respTrazabilidad)
+
+                    sleep(0.1)
                     print("||Realizando el POST de valores en FAMX2")
                     historial["INICIO"] = self.model.datetime.strftime("%Y/%m/%d %H:%M:%S") #Se modifica el formato de la fecha de Inicio, para que coincida con el esperado por el servidor
                     endpointPost = "http://{}/seghm/post/seghm_valores".format(self.model.server)
+                    
                     respPost = requests.post(endpointPost, data=json.dumps(historial))
                     respPost = respPost.json()
                     print("respuesta del POST a FAMX2 Valores: ",respPost)
@@ -1254,6 +1214,15 @@ class Finish (QState):
                             respPost = requests.post(endpointPost, data=json.dumps(historial))
                             respPost = respPost.json()
                             print("respuesta del POST a FAMX2 Valores: ",respPost)
+
+
+
+
+                    #endpoint = "http://{}/seghm/get/seghm/NAMEPREENSAMBLE/=/INTERIOR/HM/=/{}".format(self.model.server,self.model.qr_codes["HM"])
+                    #famx2response = requests.get(endpoint).json()
+                    #print("Respuesta de FAMX2: \n",famx2response)
+
+
 
                 except Exception as ex:
                     print("Excepción al momento de guardar datos en FAMX2", ex)
@@ -1275,7 +1244,7 @@ class Finish (QState):
                     label[i] = i + ": " + str(temp)
 
                 #publish.single(self.model.pub_topics["printer"], json.dumps(label), hostname='127.0.0.1', qos = 2)
-                
+
                 if "HM000000011936" in self.model.qr_codes["HM"]:
                     self.model.config_data["trazabilidad"] = True
                         
@@ -1322,23 +1291,6 @@ class Finish (QState):
             }
         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-        turnos = {
-                "1":["07-00","18-59"],
-                "2":["19-00","06-59"],
-                }
-
-        endpoint = "http://{}/contar/historial/FIN".format(self.model.server)
-        response = requests.get(endpoint, data=json.dumps(turnos))
-        response = response.json()
-        #print("response: ",response)
-
-        command = {
-                "lcdNumber" : {"text": response["conteo"]}
-                }
-        publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-
-
-
 
 
 
@@ -1351,6 +1303,8 @@ class Reset (QState):
         self.model = model
 
     def onEntry(self, event):
+
+        
 
         if "HM000000011936" in self.model.qr_codes["HM"]:
             self.model.config_data["trazabilidad"] = True
@@ -1371,7 +1325,8 @@ class Reset (QState):
 
         #para avisar que se finalizó el modo de revisión de candados
         self.model.estado_candados = False
-
+        #regresa variable que permite escanear otra caja
+        self.model.pdcr_iniciada=False
         command = {
             "show":{"login": False}
             }
@@ -1389,7 +1344,7 @@ class Reset (QState):
         self.model.reintento_torque = False
 
         self.model.cajas_habilitadas = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
-        self.model.raffi =             {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
+        self.model.raffi = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
         for i in self.model.raffi:
             raffi_clear = {f"raffi_{i}":False, f"DISABLE_{i}":False, i:False}
             publish.single(self.model.pub_topics["plc"],json.dumps(raffi_clear),hostname='127.0.0.1', qos = 2)
@@ -1459,21 +1414,4 @@ class Reset (QState):
                         }
                     publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                     publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-
-                turnos = {
-                    "1":["07-00","18-59"],
-                    "2":["19-00","06-59"],
-                }
-
-                endpoint = "http://{}/contar/historial/FIN".format(self.model.server)
-                response = requests.get(endpoint, data=json.dumps(turnos))
-                response = response.json()
-                #print("response: ",response)
-
-                command = {
-                        "lcdNumber" : {"text": response["conteo"]}
-                        }
-                publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-
-
         QTimer.singleShot(500,self.ok.emit)

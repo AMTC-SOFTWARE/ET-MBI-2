@@ -17,10 +17,8 @@ class Model (object):
         self.server = "127.0.0.1:5000"
         self.serial = "ET-MBI-2"
         self.id_HM = None
-
         self.tareas_actuales = {}
         self.llave = False
-
         ###############################
         #3: cajas terminadas en ciclo, 2:cajas que requieren QR, 1:cajas que no requieren QR, 0:cajas que no solicita el ciclo
         self.cajas_habilitadas = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
@@ -45,9 +43,14 @@ class Model (object):
         self.save_current_trq_candados = ""
         #variable para mostrar al inicio lo que ya está guardado
         self.palpador_iniciado = False
+        #Variable para indicar que la caja pdcr se escaneó y esta en proceso de torque
+        self.pdcr_iniciada=False
 
         #variable para detectar caja PDCR, e ir al estado de revisión de candados
         self.contains_PDCR = False
+
+        #variable para dar llave al ciclo
+        self.llave = False
 
         #para hacer pop de la lista de candados solamente cuando se recibió la señal estando en la zona del candado (waiting_pin)
         self.pin_pressed = False
@@ -281,8 +284,8 @@ class Model (object):
             "s7": ["F432","F433","F436","F442","F443","F444","F445","F446"],
             "s8": ["F447","F448","F449"],
             "s9": ["F450","F451","F452","F453","F454","F455"],
-           "s10": ["F456","F457","F458","F459","F460","F461"],
-           "s11": ["F462","F463","F464"]
+            "s10": ["F456","F457","F458","F459","F460","F461"],
+            "s11": ["F462","F463","F464"]
             }
 
         self.qr_codes = {
@@ -324,21 +327,16 @@ class Model (object):
                 "A2": ["tool3",15,"8mm Nut"]},
             "MFB-P2": {
                 "A20": ["tool3",7,"8mm Nut"],
-                "A25": ["tool3",3,"8mm Nut"], 
-                "A30": ["tool3",8,"8mm Nut"],
                 "A21": ["tool1",8,"6mm Nut"],
-                "A26": ["tool1",6,"6mm Nut"], 
-
                 "A22": ["tool1",5,"6mm Nut"],
-                "A27": ["tool1",10,"6mm Nut"], 
-
                 "A23": ["tool1",4,"6mm Nut"],
-                "A28": ["tool1",11,"6mm Nut"],
-
                 "A24": ["tool1",7,"6mm Nut"],
-                "A29": ["tool1",9,"6mm Nut"]
-                }, 
-                
+                "A25": ["tool3",3,"8mm Nut"], 
+                "A26": ["tool1",6,"6mm Nut"], 
+                "A27": ["tool1",10,"6mm Nut"], 
+                "A28": ["tool1",11,"6mm Nut"], 
+                "A29": ["tool1",9,"6mm Nut"], 
+                "A30": ["tool3",8,"8mm Nut"]},
             "PDC-R": {
                 "E1": ["tool3",11,"8mm Nut"]},
             "PDC-RS": {
@@ -417,8 +415,8 @@ class Model (object):
             "plc": {
                 "emergency": True,
                 "encoder_1": {"zone": "0"},# el valor de "zone" debe ser de la forma: '{"caja": "torque_name"}'
-                "encoder_2": {"zone": "0","candado":"0"},
-                "encoder_3": {"zone": "0"},
+                "encoder_2": {"zone": "0"},
+                "encoder_3": {"zone": "0","candado":"0"},
                 "encoder_4": {"candado": "0"}, # Encoder correspondiente a altura
                 "retry_btn": False,
                 "clamps": ["PDC-P", "PDC-D", "BATTERY", "MFB-P1", "MFB-S", "MFB-P2", "PDC-R"]}, # Debe inicializarce vacío

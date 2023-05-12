@@ -2,6 +2,7 @@
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 from paho.mqtt.client import Client
 from threading import Timer
+from time import sleep              # Para usar la función sleep(segundos)
 from copy import copy
 import json
 
@@ -46,7 +47,6 @@ class MqttClient (QObject):
 
     keyboard_key = ""
     keyboard_value = False
-    llave = False
     mostrar_gdi = True
     
     nido = ["PDC-P","PDC-D","MFB-P1","MFB-P2","PDC-R","PDC-RMID","BATTERY","BATTERY-2","MFB-S","MFB-E"]
@@ -292,14 +292,13 @@ class MqttClient (QObject):
                 print("Manager MQTT client connections fail:\n" + connection["fails"])
                 self.conn_nok.emit()
         except Exception as ex:
-            print("Manager MQTT client connection fail. Exception: ", ex) 
+            print("Manager MQTT client connection fail. Exception: ", ex)
             self.conn_nok.emit()
 
     def on_message(self, client, userdata, message):
         try:
             payload = json.loads(message.payload)
-
-
+            
             string_payload = str(payload)
             ignorar = False
             if "encoder" in string_payload:
@@ -309,7 +308,7 @@ class MqttClient (QObject):
             if "output" in string_payload:
                 ignorar = True
             if ignorar == False:
-                print ("   " + message.topic + " ", payload)
+                print ("   " + message.topic + " ", payload) 
 
             if message.topic == self.model.sub_topics["plc"]:
                 if "emergency" in payload:
@@ -359,12 +358,14 @@ class MqttClient (QObject):
 
                 #print("key: ",self.keyboard_key)
                 #print("value: ",self.keyboard_value)
-
                 if self.keyboard_key == "keyboard_space":
                     print("se presionó el palpador de teclado")
                     self.model.pin_pressed = True
                     self.pin.emit()
-
+                if self.keyboard_key == "keyboard_esc":
+                    command = {"popOut":"close"}
+                    self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                    print("key no emit")
 
                 if self.model.llave == True:
 
@@ -373,7 +374,6 @@ class MqttClient (QObject):
                         self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                         print("key no emit")
                         self.model.llave = False
-
                     elif self.keyboard_key == "click_derecho":
                         command = {"popOut":"close"}
                         self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
@@ -383,9 +383,10 @@ class MqttClient (QObject):
                     #else:
                     #    command = {"popOut":"Mensaje no recibido, gire la llave nuevamente"}
                     #    self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
-                    #    print("key no emit")
+                    #    print("AQUI HAY REMOVER EL MENSAJE PARA EVITAR QUE ESTE TODO EL TIEMPO")
+                        
 
-
+                
                     
 
                 self.raffi_check("PDC-R", "keyboard_F9")
@@ -398,18 +399,6 @@ class MqttClient (QObject):
                 self.raffi_check("MFB-E", "keyboard_F3")
                 self.raffi_check("PDC-D", "keyboard_F2")
                 self.raffi_check("PDC-P", "keyboard_F1")
-
-                #if self.keyboard_key == "click_derecho":
-                #    # si la variable es True, quiere decir que hubo un mal torqueo y se requiere llave para habilitar la reversa
-                #    if self.model.reintento_torque == True:
-                #        #esta llave solo es para proceso
-                #        print("key_process.emit()")
-                #        self.key_process.emit()
-                #    # si la variable es False, quiere decir que estás en otra parte del proceso y la llave reiniciará el ciclo
-                #    elif self.model.reintento_torque == False:
-                #        command = {"popOut":"¿Seguro que desea dar llave?\n Presione Esc. para salir, Enter para continuar..."}
-                #        self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
-                #        self.model.llave = True
 
 
             if message.topic == self.model.sub_topics["plc"]:
@@ -435,9 +424,9 @@ class MqttClient (QObject):
                 #            self.key_process.emit()
                 #        # si la variable es False, quiere decir que estás en otra parte del proceso y la llave reiniciará el ciclo
                 #        elif self.model.reintento_torque == False:
-                #            command = {"popOut":"¿Seguro que desea dar llave?\n Presione Esc. para salir, Enter para continuar..."}
+                #            command = {"popOut":"¿Seguro que desea dar llave?\n Presione Esc. para salir, Espacio para continuar..."}
                 #            self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
-                #            self.llave = True
+                #            self.model.llave = True
 
                 if "button" in payload:
                     if payload["button"] == True:
@@ -450,6 +439,13 @@ class MqttClient (QObject):
                         self.model.pin_pressed = True
                         self.pin.emit()
 
+                if "candados_finish" in payload:
+                    if payload["candados_finish"] == True:
+                        self.model.estado_candados = False
+                        #regresa variable que permite escanear otra caja
+                        self.model.pdcr_iniciada=False
+                    if payload["candados_finish"] == False:
+                        self.model.estado_candados = True
 
                 #ejemplo de mensaje:
                 #PLC/1/status       {"encoder":1,"name":{"PDC-D":"E1"},"value":True}
@@ -467,11 +463,11 @@ class MqttClient (QObject):
                     #obtener encoder_1, encoder_2, encoder_3, o encoder_4
                     encoder = "encoder_" + str(payload["encoder"])
 
-                    #si no se encuentra activado el modo de revisión de candados (funcionamiento normal)
-                    if self.model.estado_candados == False:
 
-                        tempp = "tool" + str(payload["encoder"])
-                        if self.model.tareas_actuales[tempp] in payload["name"]:   
+                    #si no se encuentra activado el modo de revisión de candados (funcionamiento normal)
+                    print("self.model.estado_candados ====", self.model.estado_candados)
+                    print('Para desactivar candados mandar PLC/1/status {"candados_finish":true} , para reactivar {"candados_finish":false}')
+                    if self.model.estado_candados == False:
 
                             #aquí entra cuando "value = False"...
                             if not(payload["value"]):
@@ -494,7 +490,7 @@ class MqttClient (QObject):
                                         #    #ejemplo: en self.model.input_data["plc"] ::::: [encoder_2]["zone"] = {}
                                         #    self.model.input_data["plc"][i]["zone"] = "{}"
                                         ############################################################################################################################## REVISAR ESTO COMENTADO
-                        
+                                print("encoder: ",encoder)
                                 print("self.model.input_data[plc][encoder][zone]", self.model.input_data["plc"][encoder]["zone"])
 
                                 if encoder == "encoder_1":
@@ -508,7 +504,7 @@ class MqttClient (QObject):
                                 if encoder == "encoder_3":
                                     self.zone_tool3.emit()
                                     print("emit zone de tool3")
- 
+
 
                     #si está en revisión de candados
                     else:
@@ -533,40 +529,44 @@ class MqttClient (QObject):
                             if payload["value"] == False:
                                 self.model.input_data["plc"][encoder]["candado"] = "0"
                             else:
-                                self.model.input_data["plc"][encoder]["candado"] = "height"
-                            self.zone_tool4.emit()
+                                if self.model.current_task_candado=="s6" or self.model.current_task_candado=="s7":
+                                    if payload_name=="height2" and payload["value"] == True:
+                                        self.model.input_data["plc"][encoder]["candado"] = "height"
+                                        self.zone_tool4.emit()
+                                else:
+                                    if payload_name=="height"and payload["value"] == True:
+                                        self.model.input_data["plc"][encoder]["candado"] = "height"
+                                        self.zone_tool4.emit()
                             print("emit zone de tool4")
 
 
-                        if encoder == "encoder_2":
+                        if encoder == "encoder_3":
+                            print("self.model.current_task_candado ==== ",self.model.current_task_candado)
                             if self.model.current_task_candado == payload_name:
                                 if payload["value"] == False:
                                     self.model.input_data["plc"][encoder]["candado"] = "0"
-                                    print("emit de zone tool2 VALUE = FALSE")
+                                    print("emit de zone tool3 VALUE = FALSE")
                                 else:
                                     self.model.input_data["plc"][encoder]["candado"] = payload_name
-                                    print("emit zone de tool2 VALUE = TRUE")
-                                self.zone_tool2.emit()
+                                    print("emit zone de tool3 VALUE = TRUE")
+                                self.zone_tool3.emit()
                             else:
                                 print("IGNORAR TRIGGER")
                                 print("IGNORADO: ",payload_name)
 
 
                         if encoder == "encoder_1":
-
-                            if self.model.tareas_actuales["tool1"] in payload["name"]:
-
-                                #aquí entra cuando "value = False"...
-                                if not(payload["value"]):
-                                    #actualizar payload["name"] actual con 0, ejemplo: {"PDC-D":"0"}
-                                    payload["name"] = payload["name"][:payload["name"].find(":") + 1] + '"0"}'
-                                #si zona guardada para el encoder actual ..es diferente de la zona actual...  (porque al ser true la zona vale "E1" en lugar de "0"
-                                if self.model.input_data["plc"][encoder]["zone"] != payload["name"]:
-                                    #ejemplo: en self.model.input_data["plc"] ::::: [encoder_2]["zone"] = "{"PDC-D":"E1"}"
-                                    self.model.input_data["plc"][encoder]["zone"] = payload["name"]
-                                    print("self.model.input_data[plc][encoder][zone]", self.model.input_data["plc"][encoder]["zone"])
-                                    self.zone_tool1.emit()
-                                    print("emit zone de tool1")
+                            #aquí entra cuando "value = False"...
+                            if not(payload["value"]):
+                                #actualizar payload["name"] actual con 0, ejemplo: {"PDC-D":"0"}
+                                payload["name"] = payload["name"][:payload["name"].find(":") + 1] + '"0"}'
+                            #si zona guardada para el encoder actual ..es diferente de la zona actual...  (porque al ser true la zona vale "E1" en lugar de "0"
+                            if self.model.input_data["plc"][encoder]["zone"] != payload["name"]:
+                                #ejemplo: en self.model.input_data["plc"] ::::: [encoder_2]["zone"] = "{"PDC-D":"E1"}"
+                                self.model.input_data["plc"][encoder]["zone"] = payload["name"]
+                                print("self.model.input_data[plc][encoder][zone]", self.model.input_data["plc"][encoder]["zone"])
+                                self.zone_tool1.emit()
+                                print("emit zone de tool1")
 
 
 
@@ -743,7 +743,6 @@ class MqttClient (QObject):
                     if "CENTERLLAVE" in str(payload):
                         self.key.emit()
 
-
                     if "CENTERKEY" in str(payload):
 
                         print("es una llave del AMTC")
@@ -779,7 +778,9 @@ class MqttClient (QObject):
 
             if message.topic == self.model.sub_topics["gui"] or message.topic == self.model.sub_topics["gui_2"]:
                 if "qr_box" in payload:
-                    self.qr_box.emit(payload["qr_box"])  
+                    string_qr_box = str(payload["qr_box"])
+                    string_qr_box = string_qr_box.replace(" ","") #se eliminan los espacios de los QRs
+                    self.qr_box.emit(string_qr_box)    
 
         except Exception as ex:
             print("input exception", ex)
