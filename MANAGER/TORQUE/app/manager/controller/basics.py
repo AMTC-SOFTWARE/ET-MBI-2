@@ -8,6 +8,7 @@ from pickle import load
 from copy import copy
 from os import system
 import requests
+import pprint
 import json
 from time import sleep              # Para usar la función sleep(segundos)
 from toolkit.admin import Admin
@@ -18,8 +19,6 @@ class Startup(QState):
     def __init__(self, model = None, parent = None):
         super().__init__(parent)
         self.model = model
-
-
 
     def onEntry(self, event):
         Timer(0.05, self.model.log, args = ("STARTUP",)).start() 
@@ -933,10 +932,24 @@ class CheckQr (QState):
                         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
 
+                #se reacomoda el orden de las tuercas de la caja MFB-P2
+                if "MFB-P2" in self.model.input_data["database"]["modularity"]:
+                    modularity = self.model.input_data["database"]["modularity"]["MFB-P2"]
+                    orden_tuercas = {"A29": "A29", "A22": "A22", "A27": "A27", "A23": "A23", "A26": "A26", "A21": "A21", "A24": "A24", "A28": "A28"}
+
+                    for tuerca in orden_tuercas:
+                        if tuerca in modularity:
+                            modularity.pop(modularity.index(tuerca))
+                            modularity.append(orden_tuercas[tuerca])
+
+
                 print("cajas habilitadas CICLO: ",self.model.cajas_habilitadas)
 
                 ###############################
-                print("\t\tCOLECCIÓN TORQUE:\n", self.model.input_data["database"]["modularity"])
+                print("*************************************COLECCIÓN TORQUE:*************************************")
+                pprint.pprint(self.model.input_data["database"]["modularity"])
+                print("*******************************************************************************************")
+
                 #print("\t\tCOLECCIÓN FUSIBLES PDC-R:\n", self.model.input_data["database"]["fuses"]) #Descomentar para ver en consola las cavidades que llevan fusibles para la PDC-R
                 #Se recorre la variable del modelo que indica qué cavidades pertenecen a c/candado; "s" = nombre del candado (Ejemplo: S1,S2...S10)
                 for s in self.model.configCandados:

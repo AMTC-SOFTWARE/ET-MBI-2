@@ -466,7 +466,7 @@ class MainWindow (QMainWindow):
         try:
             self.ui.img_center.setPixmap(QPixmap(self.model.centerImage).scaled(self.ui.img_center.width(), self.ui.img_center.height(), Qt.KeepAspectRatio))
             #print("[1]", self.width()-self.ui.frame.width())
-            self.ui.frame.setMaximumWidth(self.width() - 328)
+            #self.ui.frame.setMaximumWidth(self.width() - 328)
             #print("[2]", self.width()-self.ui.frame.width())
         except Exception as ex:
             print("resizeEvent() exception: ", ex)
