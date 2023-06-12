@@ -982,6 +982,16 @@ class CheckQr (QState):
 
                 print("cajas habilitadas CICLO: ",self.model.cajas_habilitadas)
 
+                print("Evento de este Arnés: ",dbEvent) #puede agregarse un if "aj23_2_pro3" in self.model.dbEvent para limitar a que solamente se cambie en un evento
+                #se recorren todos los módulos del arnés para buscar el que determina la caja nueva
+                if "aj2023_2_pro1" in dbEvent or "aj23_2_pro1" in dbEvent:                              #cuando se acaben las cajas de stock esto se quitará
+                    print("Es un caso especial de AJ23 2 PRO1 que debe llevar si o sí la caja nueva")   #cuando se acaben las cajas de stock esto se quitará
+                    for modulo in modules:
+                        if "A2975407930" in modulo:
+                            print("contiene el modulo A2975407930")
+                            #si se encuentra el módulo dentro del arnés, se cambia el QR de la caja del generado por la api: 12975407316 al 12975407930
+                            pedido["QR_BOXES"] = pedido["QR_BOXES"].replace("12975407316","12975407930")
+
                 ###############################
                 print("\t\tCOLECCIÓN TORQUE:\n", self.model.input_data["database"]["modularity"])
                 #print("\t\tCOLECCIÓN FUSIBLES PDC-R:\n", self.model.input_data["database"]["fuses"]) #Descomentar para ver en consola las cavidades que llevan fusibles para la PDC-R
@@ -1336,11 +1346,6 @@ class Finish (QState):
                 "lcdNumber" : {"text": response["conteo"]}
                 }
         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-
-
-
-
-
 
 
 class Reset (QState):

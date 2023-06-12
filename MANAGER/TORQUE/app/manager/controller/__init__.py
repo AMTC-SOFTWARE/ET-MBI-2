@@ -142,12 +142,23 @@ class Controller (QObject):
                     for i in master_qr_boxes:
                           #si se trata de la caja MFB-P2, inicia esta bandera en False, solo se activa si es una caja nueva de derecha
                         bandera_mfbp2_derecha_nueva = False
+                        bandera_mfbp2_izquierda_nueva = False
+
                         if i == "MFB-P2":
                             #si trae en los qr master el qr perteneciente a la caja de derecha
                             if "12975407216" in  master_qr_boxes["MFB-P2"][0]:
                                 if "12975407830" in qr_box:
                                     bandera_mfbp2_derecha_nueva = True
-                                    qr_box = qr_box.replace("12975407830","12975407216")         
+                                    qr_box = qr_box.replace("12975407830","12975407216")
+                                    
+                            if "12975407316" in  master_qr_boxes["MFB-P2"][0]:
+                                print("12975407316 está en masterkrboxes")
+                                if "12975407930" in qr_box:
+                                    print("aqui la bandera bandera_mfbp2_izquierda_nueva se hace true")
+                                    bandera_mfbp2_izquierda_nueva = True
+                                    print("qrbox1",qr_box)
+                                    qr_box = qr_box.replace("12975407930","12975407316")
+                                    print("qrbox2",qr_box)
                         # i para buscar en todas las cajas master_qr_boxes[i][0],  si ahí existe lo que escaneaste "qr_box" y aparte este es "true" entonces...
                         
                         if master_qr_boxes[i][0] in qr_box and master_qr_boxes[i][1]:
@@ -185,6 +196,9 @@ class Controller (QObject):
                                 if bandera_mfbp2_derecha_nueva == True:
                                     bandera_mfbp2_derecha_nueva = False
                                     qr_box = qr_box.replace("12975407216","12975407830")
+                                if bandera_mfbp2_izquierda_nueva == True:
+                                   bandera_mfbp2_izquierda_nueva = False
+                                   qr_box = qr_box.replace("12975407316","12975407930")
 
                             break
                     if not(ok):
