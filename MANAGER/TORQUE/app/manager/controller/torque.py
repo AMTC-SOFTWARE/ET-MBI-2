@@ -2016,7 +2016,7 @@ class CheckZonePalpador (QState):
 
     def onEntry(self, event):
         print("|||| Dentro de Estado CheckZonePalpador!")
-
+        publish.single(self.model.pub_topics["plc"],json.dumps({"zonas_candados" : True}),hostname='127.0.0.1', qos = 2)
         #candado_encoder se inicializa con "0"
         candado_encoder = "0"
         current_height = "0"
@@ -2253,6 +2253,8 @@ class CheckZonePalpador (QState):
             self.model.palpador_iniciado = False
             #regresa variable que permite escanear otra caja
             self.model.pdcr_iniciada=False
+            #desHabilita de nuevo las zonas del palpador para no causar ruido
+            publish.single(self.model.pub_topics["plc"],json.dumps({"zonas_candados" : False}),hostname='127.0.0.1', qos = 2)
             ############################################## SE ELIMINA TAREA PENDIENTE DE ULTIMA TUERCA DE PDCR ########################################
 
             #se asigna la variable con la colección, la caja PDCR,PDCRMID o PDCRSMALL y el último torque que no se retiró antes de entrar a palpador
