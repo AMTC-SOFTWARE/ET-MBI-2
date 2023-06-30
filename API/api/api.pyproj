@@ -11,7 +11,7 @@
     <OutputPath>.</OutputPath>
     <Name>api</Name>
     <RootNamespace>api</RootNamespace>
-    <InterpreterId>Global|VisualStudio|Main Environment</InterpreterId>
+    <InterpreterId>Global|VisualStudio|env (Python 3.7 (64-bit))</InterpreterId>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -53,7 +53,7 @@
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
-    <InterpreterReference Include="Global|VisualStudio|Main Environment" />
+    <InterpreterReference Include="Global|VisualStudio|env (Python 3.7 (64-bit))" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

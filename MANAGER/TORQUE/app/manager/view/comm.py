@@ -468,42 +468,41 @@ class MqttClient (QObject):
                     print("self.model.estado_candados ====", self.model.estado_candados)
                     print('Para desactivar candados mandar PLC/1/status {"candados_finish":true} , para reactivar {"candados_finish":false}')
                     if self.model.estado_candados == False:
+                        #aquí entra cuando "value = False"...
+                        if not(payload["value"]):
+                            #actualizar payload["name"] actual con 0, ejemplo: {"PDC-D":"0"}
+                            payload["name"] = payload["name"][:payload["name"].find(":") + 1] + '"0"}'
 
-                            #aquí entra cuando "value = False"...
-                            if not(payload["value"]):
-                                #actualizar payload["name"] actual con 0, ejemplo: {"PDC-D":"0"}
-                                payload["name"] = payload["name"][:payload["name"].find(":") + 1] + '"0"}'
+                        #a este punto llegas con un payload["name"] que vale a la caja:terminal {"PDC-D":"E1"} o con un valor de 0 {"PDC-D":"0"}
+                        #las zonas se inicializan en zone = "0" desde el código torque.py línea 278.. entonces
+                        #si zona guardada para el encoder actual ..es diferente de la zona actual...  (porque al ser true la zona vale "E1" en lugar de "0"
+                        if self.model.input_data["plc"][encoder]["zone"] != payload["name"]:
 
-                            #a este punto llegas con un payload["name"] que vale a la caja:terminal {"PDC-D":"E1"} o con un valor de 0 {"PDC-D":"0"}
-                            #las zonas se inicializan en zone = "0" desde el código torque.py línea 278.. entonces
-                            #si zona guardada para el encoder actual ..es diferente de la zona actual...  (porque al ser true la zona vale "E1" en lugar de "0"
-                            if self.model.input_data["plc"][encoder]["zone"] != payload["name"]:
+                            for i in self.model.input_data["plc"]:
 
-                                for i in self.model.input_data["plc"]:
+                                #i = emergency, encoder_1, encoder_2, encoder_3,...
+                                if "encoder" in i:
+                                    if i == encoder:
+                                        #ejemplo: en self.model.input_data["plc"] ::::: [encoder_2]["zone"] = "{"PDC-D":"E1"}"
+                                        self.model.input_data["plc"][i]["zone"] = payload["name"]
+                                    #else:
+                                    #    #ejemplo: en self.model.input_data["plc"] ::::: [encoder_2]["zone"] = {}
+                                    #    self.model.input_data["plc"][i]["zone"] = "{}"
+                                    ############################################################################################################################## REVISAR ESTO COMENTADO
+                            print("encoder: ",encoder)
+                            print("self.model.input_data[plc][encoder][zone]", self.model.input_data["plc"][encoder]["zone"])
 
-                                    #i = emergency, encoder_1, encoder_2, encoder_3,...
-                                    if "encoder" in i:
-                                        if i == encoder:
-                                            #ejemplo: en self.model.input_data["plc"] ::::: [encoder_2]["zone"] = "{"PDC-D":"E1"}"
-                                            self.model.input_data["plc"][i]["zone"] = payload["name"]
-                                        #else:
-                                        #    #ejemplo: en self.model.input_data["plc"] ::::: [encoder_2]["zone"] = {}
-                                        #    self.model.input_data["plc"][i]["zone"] = "{}"
-                                        ############################################################################################################################## REVISAR ESTO COMENTADO
-                                print("encoder: ",encoder)
-                                print("self.model.input_data[plc][encoder][zone]", self.model.input_data["plc"][encoder]["zone"])
+                            if encoder == "encoder_1":
+                                self.zone_tool1.emit()
+                                print("emit zone de tool1")
 
-                                if encoder == "encoder_1":
-                                    self.zone_tool1.emit()
-                                    print("emit zone de tool1")
+                            if encoder == "encoder_2":
+                                print("emit zone de tool2")
+                                self.zone_tool2.emit()
 
-                                if encoder == "encoder_2":
-                                    print("emit zone de tool2")
-                                    self.zone_tool2.emit()
-
-                                if encoder == "encoder_3":
-                                    self.zone_tool3.emit()
-                                    print("emit zone de tool3")
+                            if encoder == "encoder_3":
+                                self.zone_tool3.emit()
+                                print("emit zone de tool3")
 
 
                     #si está en revisión de candados

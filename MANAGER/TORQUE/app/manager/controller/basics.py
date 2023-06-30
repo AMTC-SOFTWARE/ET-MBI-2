@@ -737,8 +737,10 @@ class CheckQr (QState):
 
                 if flag_mfbp2_der == True and flag_mfbp2_izq == False:
                     self.model.mfbp2_serie = "12975407216/\n12975407830"
-                if flag_mfbp2_der == False and flag_mfbp2_izq == True:
+                if flag_mfbp2_der == False and flag_mfbp2_izq == True and bandera_mfbp2_izquierda_nueva==False:
                     self.model.mfbp2_serie = "12975407316"
+                if flag_mfbp2_der == False and flag_mfbp2_izq == True and bandera_mfbp2_izquierda_nueva==True:
+                    self.model.mfbp2_serie = "12975407930"
                 if flag_mfbp2_der == False and flag_mfbp2_izq == False:
                     self.model.mfbp2_serie = "Sin especificar"
 

@@ -636,6 +636,7 @@ class CheckZone (QState):
             #print("Valor actual del raffi para esta caja current_trq[0]: ",self.model.raffi[current_trq[0]])
             print("CUURRETN_TRQ",current_trq[0])
             if current_trq[0] == "PDC-RMID" or current_trq[0] == "PDC-R" or current_trq[0] == "PDC-RS":
+                
                 command = {
                     "lbl_boxNEW" : {"text": "RETIRE CUALQUIER\nCONTAMINANTE\nEN LOS CANDADOS\nQUE EXISTA", "color": "red"}
                     }
@@ -2016,7 +2017,7 @@ class CheckZonePalpador (QState):
 
     def onEntry(self, event):
         print("|||| Dentro de Estado CheckZonePalpador!")
-        publish.single(self.model.pub_topics["plc"],json.dumps({"zonas_candados" : True}),hostname='127.0.0.1', qos = 2)
+        publish.single(self.model.pub_topics["plc"],json.dumps({"zonas_candados" : False}),hostname='127.0.0.1', qos = 2)
         #candado_encoder se inicializa con "0"
         candado_encoder = "0"
         current_height = "0"
