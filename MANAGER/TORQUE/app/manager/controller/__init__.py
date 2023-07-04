@@ -167,16 +167,10 @@ class Controller (QObject):
                                 if "PDC-R" in i:
                                     if self.model.smallflag == True:
                                         copy_i = "PDC-RMID"
-                                        #Deshabilita las zonas del torque en el PLC
-                                        self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"zonas_candados": True}), qos = 2)
                                     if self.model.mediumflag == True:
                                         copy_i = "PDC-RMID"
-                                        #Deshabilita las zonas del torque en el PLC
-                                        self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"zonas_candados": True}), qos = 2)
                                     elif self.model.largeflag == True:
                                         copy_i = "PDC-R"
-                                        #Deshabilita las zonas del torque en el PLC
-                                        self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"zonas_candados": True}), qos = 2)
                                 #se avisa a la variable de cajas_habilitadas que ya se escaneó la caja
                                 self.model.cajas_habilitadas[copy_i] = 1
                                 print("cajas habilitadas: ",self.model.cajas_habilitadas)
@@ -215,10 +209,8 @@ class Controller (QObject):
                                 print("------Colocar Caja "+ str(i) +" para clampear: ")
                                 if i == "PDC-RS":
                                     self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"PDC-RMID": True}), qos = 2)
-                                    self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"zonas_candados": True}), qos = 2)
                                 else:
                                     self.client.client.publish(self.model.pub_topics["plc"],json.dumps({i: True}), qos = 2)
-                                    self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"zonas_candados": True}), qos = 2)
                                     print("zonas en else")
                                 command = {
                                     "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"}
@@ -235,19 +227,13 @@ class Controller (QObject):
                                     if self.model.smallflag == True:
                                         i = "PDC-RMID"
                                         self.model.pdcr_iniciada=True
-                                        #Deshabilita las zonas del torque en el PLC
-                                        self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"zonas_candados": True}), qos = 2)
                                     if self.model.mediumflag == True:
                                         i = "PDC-RMID"
                                         self.model.pdcr_iniciada=True
                                         print("medium flag activacion")
-                                        #Deshabilita las zonas del torque en el PLC
-                                        self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"zonas_candados": True}), qos = 2)
                                     elif self.model.largeflag == True:
                                         i = "PDC-R"
                                         self.model.pdcr_iniciada=True
-                                        #Deshabilita las zonas del torque en el PLC
-                                        self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"zonas_candados": True}), qos = 2)
                                 #se avisa a la variable de cajas_habilitadas que ya se escaneó la caja
                                 self.model.cajas_habilitadas[i] = 1
                                 print("cajas habilitadas: ",self.model.cajas_habilitadas)
@@ -278,10 +264,8 @@ class Controller (QObject):
             print("Caja DESCLAMPEADA: ",i)
             if i == "PDC-RS":
                 self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"PDC-RMID": False}), qos = 2)
-                self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"zonas_candados": False}), qos = 2)
             else:
                 self.client.client.publish(self.model.pub_topics["plc"],json.dumps({i: False}), qos = 2)
-                self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"zonas_candados": False}), qos = 2)
             command = {
                 "lbl_steps" : {"text": f"Vuelve a escanear la caja {i}", "color": "black"},
                 }

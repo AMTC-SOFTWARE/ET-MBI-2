@@ -450,7 +450,6 @@ class MqttClient (QObject):
                 #ejemplo de mensaje:
                 #PLC/1/status       {"encoder":1,"name":{"PDC-D":"E1"},"value":True}
                 #DESDE GDI SERÍA:   {"encoder": 2,"name": "{\"PDC-R\":\"E1\"}","value":true}
-
                 # SI EL MENSAJE MQTT CONTIENE ENCODER, NAME y VALUE...
                 if "encoder" in payload and "name" in payload and "value" in payload:
 
@@ -463,51 +462,56 @@ class MqttClient (QObject):
                     #obtener encoder_1, encoder_2, encoder_3, o encoder_4
                     encoder = "encoder_" + str(payload["encoder"])
 
-
                     #si no se encuentra activado el modo de revisión de candados (funcionamiento normal)
-                    print("self.model.estado_candados ====", self.model.estado_candados)
-                    print('Para desactivar candados mandar PLC/1/status {"candados_finish":true} , para reactivar {"candados_finish":false}')
                     if self.model.estado_candados == False:
-                        #aquí entra cuando "value = False"...
-                        if not(payload["value"]):
-                            #actualizar payload["name"] actual con 0, ejemplo: {"PDC-D":"0"}
-                            payload["name"] = payload["name"][:payload["name"].find(":") + 1] + '"0"}'
+                        print('Para activar candados mandar{"candados_finish":false}')
 
-                        #a este punto llegas con un payload["name"] que vale a la caja:terminal {"PDC-D":"E1"} o con un valor de 0 {"PDC-D":"0"}
-                        #las zonas se inicializan en zone = "0" desde el código torque.py línea 278.. entonces
-                        #si zona guardada para el encoder actual ..es diferente de la zona actual...  (porque al ser true la zona vale "E1" en lugar de "0"
-                        if self.model.input_data["plc"][encoder]["zone"] != payload["name"]:
+                        #se obtienen los datos del current_trq
+                        current_tool = encoder.replace("encoder_","tool")
+                        #si current_trq no está vacío...
+                        if self.model.torque_data[current_tool]["current_trq"] != None:
+                            caja = self.model.torque_data[current_tool]["current_trq"][0]
+                            tuerca = self.model.torque_data[current_tool]["current_trq"][1]
+                            
+                            #ejemplo de señal: {"encoder":1,"name":{"PDC-D":"E1"},"value":True}
+                            #ejemplo de caja: "PDC-D"
+                            #ejemplo de tuerca: "E1"
+                            #si el encoder leído contiene la caja y la tuerca del torque que está en la tarea actual (current_trq)
+                            if caja in payload["name"] and tuerca in payload["name"]:
 
-                            for i in self.model.input_data["plc"]:
+                                #aquí entra cuando "value = False"...
+                                if not(payload["value"]):
+                                    #actualizar payload["name"] actual con 0, ejemplo: {"PDC-D":"0"}
+                                    payload["name"] = payload["name"][:payload["name"].find(":") + 1] + '"0"}'
 
-                                #i = emergency, encoder_1, encoder_2, encoder_3,...
-                                if "encoder" in i:
+                                #a este punto llegas con un payload["name"] que vale a la caja:terminal {"PDC-D":"E1"} o con un valor de 0 {"PDC-D":"0"}
+
+                                lista_encoders = ["encoder_1","encoder_2","encoder_3"]
+                                for i in lista_encoders:
                                     if i == encoder:
-                                        #ejemplo: en self.model.input_data["plc"] ::::: [encoder_2]["zone"] = "{"PDC-D":"E1"}"
-                                        self.model.input_data["plc"][i]["zone"] = payload["name"]
-                                    #else:
-                                    #    #ejemplo: en self.model.input_data["plc"] ::::: [encoder_2]["zone"] = {}
-                                    #    self.model.input_data["plc"][i]["zone"] = "{}"
-                                    ############################################################################################################################## REVISAR ESTO COMENTADO
-                            print("encoder: ",encoder)
-                            print("self.model.input_data[plc][encoder][zone]", self.model.input_data["plc"][encoder]["zone"])
+                                        #se actualiza la zona de este encoder
+                                        self.model.input_data["plc"][i]["zone"] = payload["name"] #ejemplo: self.model.input_data["plc"][encoder_2]["zone"] = "{"PDC-D":"E1"}"
 
-                            if encoder == "encoder_1":
-                                self.zone_tool1.emit()
-                                print("emit zone de tool1")
 
-                            if encoder == "encoder_2":
-                                print("emit zone de tool2")
-                                self.zone_tool2.emit()
+                                print("encoder: ",encoder)
+                                print("self.model.input_data[plc][encoder][zone]", self.model.input_data["plc"][encoder]["zone"])
 
-                            if encoder == "encoder_3":
-                                self.zone_tool3.emit()
-                                print("emit zone de tool3")
+                                if encoder == "encoder_1":
+                                    print("emit zone de tool1")
+                                    self.zone_tool1.emit() 
+
+                                if encoder == "encoder_2":
+                                    print("emit zone de tool2")
+                                    self.zone_tool2.emit()
+
+                                if encoder == "encoder_3":
+                                    print("emit zone de tool3")
+                                    self.zone_tool3.emit()   
 
 
                     #si está en revisión de candados
                     else:
-
+                        print('Para desactivar candados mandar PLC/1/status {"candados_finish":true}')
                         print("PAYLOAD: ",payload["name"])
                         print("VALUE: ",payload["value"])    
                         # {"encoder":2,"name":{"PDC-R":"S1"},"value":True}
@@ -523,31 +527,34 @@ class MqttClient (QObject):
                         payload_name = payload_name.replace('PDC-RSMALL:','')
                         print("copyPAYLOAD: ",payload_name)
 
-
                         if encoder == "encoder_4":
-                            if payload["value"] == False:
-                                self.model.input_data["plc"][encoder]["candado"] = "0"
+                            #funcionamiento cambia para s6 y s7 que esperan valores de height2
+                            if self.model.current_task_candado=="s6" or self.model.current_task_candado=="s7":
+                                if payload_name=="height2":
+                                    if payload["value"] == False:
+                                        self.model.input_data["plc"][encoder]["candado"] = "0"
+                                    else:
+                                        self.model.input_data["plc"][encoder]["candado"] = "height"
+                                    print("emit zone de tool4")
+                                    self.zone_tool4.emit()
                             else:
-                                if self.model.current_task_candado=="s6" or self.model.current_task_candado=="s7":
-                                    if payload_name=="height2" and payload["value"] == True:
+                                if payload_name=="height":
+                                    if payload["value"] == False:
+                                        self.model.input_data["plc"][encoder]["candado"] = "0"
+                                    else:
                                         self.model.input_data["plc"][encoder]["candado"] = "height"
-                                        self.zone_tool4.emit()
-                                else:
-                                    if payload_name=="height"and payload["value"] == True:
-                                        self.model.input_data["plc"][encoder]["candado"] = "height"
-                                        self.zone_tool4.emit()
-                            print("emit zone de tool4")
-
+                                    print("emit zone de tool4")
+                                    self.zone_tool4.emit()
 
                         if encoder == "encoder_3":
                             print("self.model.current_task_candado ==== ",self.model.current_task_candado)
                             if self.model.current_task_candado == payload_name:
                                 if payload["value"] == False:
                                     self.model.input_data["plc"][encoder]["candado"] = "0"
-                                    print("emit de zone tool3 VALUE = FALSE")
+                                    print("emit de zone tool3 CANDADO = FALSE")
                                 else:
                                     self.model.input_data["plc"][encoder]["candado"] = payload_name
-                                    print("emit zone de tool3 VALUE = TRUE")
+                                    print("emit zone de tool3 CANDADO = TRUE")
                                 self.zone_tool3.emit()
                             else:
                                 print("IGNORAR TRIGGER")
@@ -555,17 +562,26 @@ class MqttClient (QObject):
 
 
                         if encoder == "encoder_1":
-                            #aquí entra cuando "value = False"...
-                            if not(payload["value"]):
-                                #actualizar payload["name"] actual con 0, ejemplo: {"PDC-D":"0"}
-                                payload["name"] = payload["name"][:payload["name"].find(":") + 1] + '"0"}'
-                            #si zona guardada para el encoder actual ..es diferente de la zona actual...  (porque al ser true la zona vale "E1" en lugar de "0"
-                            if self.model.input_data["plc"][encoder]["zone"] != payload["name"]:
-                                #ejemplo: en self.model.input_data["plc"] ::::: [encoder_2]["zone"] = "{"PDC-D":"E1"}"
-                                self.model.input_data["plc"][encoder]["zone"] = payload["name"]
-                                print("self.model.input_data[plc][encoder][zone]", self.model.input_data["plc"][encoder]["zone"])
-                                self.zone_tool1.emit()
-                                print("emit zone de tool1")
+
+                            if self.model.torque_data[current_tool]["current_trq"] != None:
+                                caja = self.model.torque_data["tool1"]["current_trq"][0]
+                                tuerca = self.model.torque_data["tool1"]["current_trq"][1]
+                            
+                                #ejemplo de señal: {"encoder":1,"name":{"PDC-D":"E1"},"value":True}
+                                #ejemplo de caja: "PDC-D"
+                                #ejemplo de tuerca: "E1"
+                                if caja in payload["name"] and tuerca in payload["name"]:
+
+                                    #aquí entra cuando "value = False"...
+                                    if not(payload["value"]):
+                                        #actualizar payload["name"] actual con 0, ejemplo: {"PDC-D":"0"}
+                                        payload["name"] = payload["name"][:payload["name"].find(":") + 1] + '"0"}'
+
+                                    #ejemplo: en self.model.input_data["plc"] ::::: [encoder_2]["zone"] = "{"PDC-D":"E1"}"
+                                    self.model.input_data["plc"][encoder]["zone"] = payload["name"] #valores como "E1", "A22", "0", etc...
+                                    print("self.model.input_data[plc][encoder][zone]", self.model.input_data["plc"][encoder]["zone"])
+                                    print("emit zone de tool1")
+                                    self.zone_tool1.emit()
 
 
 
