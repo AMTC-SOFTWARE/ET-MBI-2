@@ -560,10 +560,9 @@ class MqttClient (QObject):
                                 print("IGNORAR TRIGGER")
                                 print("IGNORADO: ",payload_name)
 
-
                         if encoder == "encoder_1":
 
-                            if self.model.torque_data[current_tool]["current_trq"] != None:
+                            if self.model.torque_data["tool1"]["current_trq"] != None:
                                 caja = self.model.torque_data["tool1"]["current_trq"][0]
                                 tuerca = self.model.torque_data["tool1"]["current_trq"][1]
                             

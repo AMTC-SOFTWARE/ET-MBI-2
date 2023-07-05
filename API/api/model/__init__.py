@@ -7,6 +7,7 @@ class model(object):
         self.user = "admin"
         #self.host = "10.71.88.100"
         #self.user = "dedicado"
+        
         self.password = "4dm1n_001"
         self.database = "et_mbi_2"
 
