@@ -43,6 +43,10 @@ class Model (object):
         self.save_current_trq_candados = ""
         #variable para mostrar al inicio lo que ya está guardado
         self.palpador_iniciado = False
+
+        #señal para dejar un delay entre cada candado
+        self.nuevo_pin = False
+
         #Variable para indicar que la caja pdcr se escaneó y esta en proceso de torque
         self.pdcr_iniciada=False
 

@@ -264,6 +264,7 @@ class NewTool3 (QState):
         
         self.palpador               = Palpador(tool = self.tool, model = self.model, parent = self)
         self.zone_palpador          = CheckZonePalpador(tool = self.tool, model = self.model, parent = self)
+        self.delay_pin              = DelayPin(tool = self.tool, model = self.model, parent = self)
         self.waiting_pin            = WaitingPin(tool = self.tool, model = self.model, parent = self)
         self.raffi_key_palpador     = RaffiKey(tool = self.tool, model = self.model, parent = self)
         self.raffi_message_palpador = RaffiMessage(tool = self.tool, model = self.model, parent = self)
@@ -290,9 +291,11 @@ class NewTool3 (QState):
         self.zone_palpador.addTransition(self.model.transitions.zone_tool3, self.zone_palpador)
         self.zone_palpador.addTransition(self.model.transitions.zone_tool4, self.zone_palpador)
         self.zone_palpador.addTransition(self.zone_palpador.wait_pin, self.waiting_pin)
-        self.waiting_pin.addTransition(self.model.transitions.pin,self.zone_palpador)
-        self.waiting_pin.addTransition(self.model.transitions.zone_tool3,self.zone_palpador)
-        self.waiting_pin.addTransition(self.model.transitions.zone_tool4,self.zone_palpador)
+        self.waiting_pin.addTransition(self.model.transitions.pin,self.delay_pin)
+        self.waiting_pin.addTransition(self.model.transitions.zone_tool3,self.delay_pin)
+        self.waiting_pin.addTransition(self.model.transitions.zone_tool4,self.delay_pin)
+        self.waiting_pin.addTransition(self.waiting_pin.pin_already_pressed,self.delay_pin)
+        self.delay_pin.addTransition(self.delay_pin.continuar,self.zone_palpador)
 
         #RAFFI EN ZONE_PALPADOR
         self.zone_palpador.addTransition(self.model.transitions.raffi_on, self.raffi_message_palpador)
@@ -1959,6 +1962,8 @@ class Palpador (QState):
 
 class WaitingPin (QState):
 
+    pin_already_pressed   = pyqtSignal()
+
     def __init__(self, tool = "tool1", model = None, parent = None):
         super().__init__(parent)
         self.model = model
@@ -1968,6 +1973,9 @@ class WaitingPin (QState):
     def onEntry(self, event):
         print("||||Dentro de Estado WaitingPin!")
 
+        #quiere decir que se presionó el pin antes de entrar correctamente en la zona encoder + zona altura y no se ha dejado de presionar el pin
+        if self.model.pin_pressed == True:
+            self.pin_already_pressed.emit()
 
     def onExit(self, event):
         print("||||||||||||||||||||||Salida de WaitingPin")
@@ -1992,6 +2000,27 @@ class WaitingPin (QState):
                 "img_center" : self.tool + ".jpg"
                 }
             publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            
+            #señal para avisar que acaba de finalizar un pin y dar un timer para antes de empezar a esperar el nuevo pin del siguiente candado
+            self.model.nuevo_pin = True
+
+class DelayPin (QState):
+
+    continuar   = pyqtSignal()
+
+    def __init__(self, tool = "tool1", model = None, parent = None):
+        super().__init__(parent)
+        self.model = model
+
+    def onEntry(self, event):
+        print("||||Dentro de Estado DelayPin!")
+
+        if self.model.nuevo_pin == True:
+            self.model.nuevo_pin = False
+            Timer(0.7, self.continuar.emit).start()
+        else:
+            self.continuar.emit()
+
         
 class CheckZonePalpador (QState):
 

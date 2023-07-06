@@ -438,6 +438,8 @@ class MqttClient (QObject):
                         print("se presionó el palpador")
                         self.model.pin_pressed = True
                         self.pin.emit()
+                    else:
+                        self.model.pin_pressed = False
 
                 if "candados_finish" in payload:
                     if payload["candados_finish"] == True:
@@ -514,9 +516,9 @@ class MqttClient (QObject):
                         print('Para desactivar candados mandar PLC/1/status {"candados_finish":true}')
                         print("PAYLOAD: ",payload["name"])
                         print("VALUE: ",payload["value"])    
-                        # {"encoder":2,"name":{"PDC-R":"S1"},"value":True}
-                        # {"encoder":2,"name":{"PDC-R":"S1"},"value":False}
-                        # {"encoder":2,"name":{"PDC-R":"S3"},"value":True}
+                        # {"encoder":3,"name":{"PDC-R":"S1"},"value":True}
+                        # {"encoder":3,"name":{"PDC-R":"S1"},"value":False}
+                        # {"encoder":3,"name":{"PDC-R":"S3"},"value":True}
 
                         payload_name = copy(payload["name"])
                         payload_name = payload_name.replace('{','')
@@ -559,7 +561,7 @@ class MqttClient (QObject):
                             else:
                                 print("IGNORAR TRIGGER")
                                 print("IGNORADO: ",payload_name)
-
+                                
                         if encoder == "encoder_1":
 
                             if self.model.torque_data["tool1"]["current_trq"] != None:
@@ -581,7 +583,6 @@ class MqttClient (QObject):
                                     print("self.model.input_data[plc][encoder][zone]", self.model.input_data["plc"][encoder]["zone"])
                                     print("emit zone de tool1")
                                     self.zone_tool1.emit()
-
 
 
                 if "retry_btn" in payload:

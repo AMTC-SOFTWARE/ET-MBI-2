@@ -221,6 +221,8 @@ class StartCycle (QState):
         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         print("lineEdit desactivado")
 
+        #reiniciar variable para dar delay entre cada pin
+        self.model.nuevo_pin = False
         #para avisar que se finalizó el modo de revisión de candados
         self.model.estado_candados = False
         #regresa variable que permite escanear otra caja
