@@ -883,22 +883,25 @@ class CheckQr (QState):
 
                 print("Evento de este Arnés: ",dbEvent) #puede agregarse un if "aj23_2_pro3" in self.model.dbEvent para limitar a que solamente se cambie en un evento
                 #se recorren todos los módulos del arnés para buscar el que determina la caja nueva
-                if "aj2023_2_pro1" in dbEvent or "aj23_2_pro1" in dbEvent:                              #cuando se acaben las cajas de stock esto se quitará
-                    print("Es un caso especial de AJ23 2 PRO1 que debe llevar si o sí la caja nueva")   #cuando se acaben las cajas de stock esto se quitará
-                    for modulo in modules:
-                        if "A2975407930" in modulo:
-                            print("contiene el modulo A2975407930")
-                            #si se encuentra el módulo dentro del arnés, se cambia el QR de la caja del generado por la api: 12975407316 al 12975407930
-                            pedido["QR_BOXES"] = pedido["QR_BOXES"].replace("12975407316","12975407930")
+                
+                
+                for modulo in modules:
+                    if "A2975407930" in modulo:
+                        print("contiene el modulo A2975407930")
+                        #si se encuentra el módulo dentro del arnés, se cambia el QR de la caja del generado por la api: 12975407316 al 12975407930
+                        pedido["QR_BOXES"] = pedido["QR_BOXES"].replace("12975407316","12975407930")
+                
+                if "aj2023_1_pro3" in dbEvent or "aj23_1_pro3" in dbEvent:                              #cuando se acaben las cajas de stock esto se quitará
+                    print("Es un caso especial de AJ23 1 PRO3 que debe llevar si o sí la caja vieja")   #cuando se acaben las cajas de stock esto se quitará
+                    pedido["QR_BOXES"] = pedido["QR_BOXES"].replace("12975407930","12975407316")
+                        
 
                 QR_CAJAS = json.loads(pedido["QR_BOXES"]) #se lee el string y se convierte a formato json, diccionario
 
                 if flag_mfbp2_der == True and flag_mfbp2_izq == False:
                     self.model.mfbp2_serie = "12975407216/\n12975407830"
                 if flag_mfbp2_der == False and flag_mfbp2_izq == True:
-                    self.model.mfbp2_serie = "12975407316/\n12975407930" #normalmente el QR_CAJAS[MFB-P2] es 12975407316
-                    if QR_CAJAS["MFB-P2"][0] == "12975407930":          #solamente cambia de valor a 12975407930 cuando es un AJ23-2-PRO1
-                        self.model.mfbp2_serie = QR_CAJAS["MFB-P2"][0]  #esto debido a que solamente debe llevar esa caja nueva ese evento
+                    self.model.mfbp2_serie = QR_CAJAS["MFB-P2"][0]
                 if flag_mfbp2_der == False and flag_mfbp2_izq == False:
                     self.model.mfbp2_serie = "Sin especificar"
 
