@@ -57,13 +57,14 @@ class MainWindow (QMainWindow):
         ######### Modificación para etiqueta BATTERY-2 #########
         self.ui.lbl_boxBATTERY2.setText("")
         ######### Modificación para etiqueta BATTERY-2 #########
+        ######### Modificación para etiqueta NEW #########
+        self.ui.lbl_boxNEW.setText("")
         ########################################################
         self.ui.lbl_boxPDCP.setText("")
         self.ui.lbl_boxPDCD.setText("")
         self.ui.lbl_boxMFBP1.setText("")
         self.ui.lbl_boxMFBS.setText("")
         self.ui.lbl_boxBATTERY.setText("")
-        self.ui.lbl_boxNEW.setText("")
         ########################################################
         self.ui.lbl_instructions.setText("")
         self.ui.position.setText("")
@@ -77,12 +78,11 @@ class MainWindow (QMainWindow):
         self.ui.lineEditKey.setFocus(True)
         self.ui.lineEditKey.setVisible(False)
 
-       
 
         self.ui.lbl_cant.setVisible(True)
         self.ui.lcdNumber.setVisible(True)
-        #para mantener contraseña oculta al escribir en el LineEdit
         self.ui.lineEditKey.setEchoMode(QLineEdit.Password)
+
 
         menu = self.ui.menuMenu
         actionLogin = QAction("Login",self)
@@ -96,7 +96,7 @@ class MainWindow (QMainWindow):
         menu.addAction(actionWEB)
         menu.addAction(actionGDI)
         menu.triggered[QAction].connect(self.menuProcess)
-
+        
 
         self.ui.lineEditKey.returnPressed.connect(self.QR)
         self.ui.lineEdit.returnPressed.connect(self.qrBoxes)
@@ -218,6 +218,7 @@ class MainWindow (QMainWindow):
         except Exception as ex:
             print("QR exception:", ex)
 
+
     @pyqtSlot()
     def qrBoxes (self):
         try:
@@ -231,7 +232,7 @@ class MainWindow (QMainWindow):
             #self.ui.lineEdit.setFocus()
         except Exception as ex:
             print("qrBoxes exception:", ex)
-    
+
     @pyqtSlot(dict)
     def input(self, message):
         try:
@@ -258,6 +259,7 @@ class MainWindow (QMainWindow):
                 self.ui.lbl_boxTITLE.setText(message["lbl_boxTITLE"]["text"])
                 if "color" in message["lbl_boxTITLE"]:
                     self.ui.lbl_boxTITLE.setStyleSheet("color: " + message["lbl_boxTITLE"]["color"])
+            
             if "lcdNumber" in message:
                 if "value" in message["lcdNumber"]:
 
@@ -267,7 +269,7 @@ class MainWindow (QMainWindow):
                     #### Visualizacion del LCD
                     self.ui.lbl_cant.setVisible(message["lcdNumber"]["visible"])
                     self.ui.lcdNumber.setVisible(message["lcdNumber"]["visible"])
-            
+
             if "lineEdit" in message:
                 if message["lineEdit"] == True:
                     self.ui.lineEdit.setVisible(True)
@@ -325,7 +327,7 @@ class MainWindow (QMainWindow):
                 self.ui.lbl_boxBATTERY2.setText(message["lbl_boxBATTERY2"]["text"])
                 if "color" in message["lbl_boxBATTERY2"]:
                     self.ui.lbl_boxBATTERY2.setStyleSheet("color: " + message["lbl_boxBATTERY2"]["color"])
-            ######### Modificación para etiqueta BOX-NEW #########
+             ######### Modificación para etiqueta BOX-NEW #########
             if "lbl_boxNEW" in message:
                 self.ui.lbl_boxNEW.setText(message["lbl_boxNEW"]["text"])
                 if "color" in message["lbl_boxNEW"]:
@@ -464,7 +466,7 @@ class MainWindow (QMainWindow):
         try:
             self.ui.img_center.setPixmap(QPixmap(self.model.centerImage).scaled(self.ui.img_center.width(), self.ui.img_center.height(), Qt.KeepAspectRatio))
             #print("[1]", self.width()-self.ui.frame.width())
-            self.ui.frame.setMaximumWidth(self.width() - 328)
+            #self.ui.frame.setMaximumWidth(self.width() - 328)
             #print("[2]", self.width()-self.ui.frame.width())
         except Exception as ex:
             print("resizeEvent() exception: ", ex)
@@ -505,9 +507,6 @@ class Login (QDialog):
         self.ui.lineEdit.setStyleSheet('lineedit-password-character: 9679')
         self.ui.btn_ok.setFocusPolicy(Qt.NoFocus)
         self.ui.lineEdit.setFocus()
-
-    def closeEvent(self, event):
-        event.ignore() 
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
@@ -553,7 +552,8 @@ class PopOut (QMessageBox):
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
-            print("Escape key was pressed")
+            print("Escape key was pressed for PopOut")
+
 
 
 if __name__ == "__main__":
