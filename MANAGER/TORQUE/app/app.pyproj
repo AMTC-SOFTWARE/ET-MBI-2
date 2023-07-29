@@ -11,7 +11,7 @@
     <OutputPath>.</OutputPath>
     <Name>app</Name>
     <RootNamespace>app</RootNamespace>
-    <InterpreterId>Global|VisualStudio|Main Environment</InterpreterId>
+    <InterpreterId>MSBuild|env|$(MSBuildProjectFullPath)</InterpreterId>
     <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">

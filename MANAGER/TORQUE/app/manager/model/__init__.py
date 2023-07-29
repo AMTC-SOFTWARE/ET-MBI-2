@@ -16,6 +16,10 @@ class Model (object):
         self.imgs = {}
         self.server = "127.0.0.1:5000"
         self.serial = "ET-MBI-2"
+        #Ruta de archivos estandarizada
+        self.ruta_principal="C:/BIN/"
+        self.parametros={}
+
         self.id_HM = None
         self.tareas_actuales = {}
         self.llave = False

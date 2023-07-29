@@ -2,7 +2,7 @@ from PyQt5.QtCore import QState, pyqtSignal, QTimer
 from paho.mqtt import publish
 from datetime import datetime
 from threading import Timer
-from os.path import exists
+from os.path import exists, join
 from time import strftime
 from pickle import load
 from copy import copy
@@ -890,10 +890,11 @@ class CheckQr (QState):
                         print("contiene el modulo A2975407930")
                         #si se encuentra el módulo dentro del arnés, se cambia el QR de la caja del generado por la api: 12975407316 al 12975407930
                         pedido["QR_BOXES"] = pedido["QR_BOXES"].replace("12975407316","12975407930")
-                
-                if "aj2023_1_pro3" in dbEvent or "aj23_1_pro3" in dbEvent:                              #cuando se acaben las cajas de stock esto se quitará
-                    print("Es un caso especial de AJ23 1 PRO3 que debe llevar si o sí la caja vieja")   #cuando se acaben las cajas de stock esto se quitará
-                    pedido["QR_BOXES"] = pedido["QR_BOXES"].replace("12975407930","12975407316")
+                self.leer_configuracion()
+                if self.model.parametros["caja_MFBP2_antigua"]=="True":
+                    if "aj2023_1_pro3" in dbEvent or "aj23_1_pro3" in dbEvent:                              #cuando se acaben las cajas de stock esto se quitará
+                        print("Es un caso especial de AJ23 1 PRO3 que debe llevar si o sí la caja vieja")   #cuando se acaben las cajas de stock esto se quitará
+                        pedido["QR_BOXES"] = pedido["QR_BOXES"].replace("12975407930","12975407316")
                         
 
                 QR_CAJAS = json.loads(pedido["QR_BOXES"]) #se lee el string y se convierte a formato json, diccionario
@@ -1052,6 +1053,20 @@ class CheckQr (QState):
             self.model.torque_data["tool2"]["queue"].clear()
             self.model.torque_data["tool3"]["queue"].clear()
             self.nok.emit()
+
+    def leer_configuracion(self):
+        """
+        lee un txt en C:BIN/ llamado configuracion, cada renglon debe tener la forma: condicion:True
+        almacena todos los parametros en el diccionario parametros en el modelo
+
+        """
+        ruta_configuracion=join(self.model.ruta_principal, "configuracion.txt")
+        if exists(ruta_configuracion):
+            with open(ruta_configuracion) as configuracion:
+                for linea in configuracion:
+                    comando_configuracion=linea.split(":")
+                    self.model.parametros[comando_configuracion[0]]=comando_configuracion[1]
+                print("self.model.parametros",self.model.parametros)
 
     def torqueClamp (self):
         command = {}
