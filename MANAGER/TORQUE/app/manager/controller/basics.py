@@ -890,11 +890,12 @@ class CheckQr (QState):
                         print("contiene el modulo A2975407930")
                         #si se encuentra el módulo dentro del arnés, se cambia el QR de la caja del generado por la api: 12975407316 al 12975407930
                         pedido["QR_BOXES"] = pedido["QR_BOXES"].replace("12975407316","12975407930")
-                self.leer_configuracion()
-                if self.model.parametros["caja_MFBP2_antigua"]=="True":
-                    if "aj2023_1_pro3" in dbEvent or "aj23_1_pro3" in dbEvent:                              #cuando se acaben las cajas de stock esto se quitará
-                        print("Es un caso especial de AJ23 1 PRO3 que debe llevar si o sí la caja vieja")   #cuando se acaben las cajas de stock esto se quitará
-                        pedido["QR_BOXES"] = pedido["QR_BOXES"].replace("12975407930","12975407316")
+                
+                #self.leer_configuracion() #Función para leer archivo con configuración para caja correr con caja antigua
+                #if self.model.parametros["caja_MFBP2_antigua"]=="True":
+                #    if "aj2023_1_pro3" in dbEvent or "aj23_1_pro3" in dbEvent:                              #cuando se acaben las cajas de stock esto se quitará
+                #        print("Es un caso especial de AJ23 1 PRO3 que debe llevar si o sí la caja vieja")   #cuando se acaben las cajas de stock esto se quitará
+                #        pedido["QR_BOXES"] = pedido["QR_BOXES"].replace("12975407930","12975407316")
                         
 
                 QR_CAJAS = json.loads(pedido["QR_BOXES"]) #se lee el string y se convierte a formato json, diccionario

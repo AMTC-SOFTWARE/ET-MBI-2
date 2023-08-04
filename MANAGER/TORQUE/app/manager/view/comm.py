@@ -358,10 +358,13 @@ class MqttClient (QObject):
 
                 #print("key: ",self.keyboard_key)
                 #print("value: ",self.keyboard_value)
-                if self.keyboard_key == "keyboard_space":
-                    print("se presionó el palpador de teclado")
-                    self.model.pin_pressed = True
-                    self.pin.emit()
+
+                # PARA HABILITAR EL PALPADOR CON LA TECLA ESPACIO
+                #if self.keyboard_key == "keyboard_space":
+                #    print("se presionó el palpador de teclado")
+                #    self.model.pin_pressed = True
+                #    self.pin.emit()
+
                 if self.keyboard_key == "keyboard_esc":
                     command = {"popOut":"close"}
                     self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
