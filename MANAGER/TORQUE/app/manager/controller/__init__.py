@@ -88,22 +88,22 @@ class Controller (QObject):
         try:
             #Busca entre las cajas "P" D O R y te DEJA ESCANEAR, si no es alguna de estas verifica si esta en modo candado si esta en modo candado no te deja escanear ...
             permite_escanear=False
-            master_qr_boxes = json.loads(self.model.input_data["database"]["pedido"]["QR_BOXES"])
+            #master_qr_boxes = json.loads(self.model.input_data["database"]["pedido"]["QR_BOXES"])
             for box in master_qr_boxes:
-                #si se trata de la caja MFB-P2, inicia esta bandera en False, solo se activa si es una caja nueva de derecha
-                bandera_mfbp2_derecha_nueva = False
-                print("aqui esta la caja master_qr_boxes xox",box)
-                if box == "MFB-P2":
-                    print("si entró masterqrboxes",master_qr_boxes["MFB-P2"][0])
-                    #si trae en los qr master el qr perteneciente a la caja de derecha
-                    if "12975407216" in  master_qr_boxes["MFB-P2"][0]:
-                        print("si esta en masterkrboxes")
-                        if "12975407830" in qr_box:
-                            print("aqui la bandera se hace true")
-                            bandera_mfbp2_derecha_nueva = True
-                            print("qrbox1",qr_box)
-                            qr_box = qr_box.replace("12975407830","12975407216")
-                            print("qrbox2",qr_box)
+            #    #si se trata de la caja MFB-P2, inicia esta bandera en False, solo se activa si es una caja nueva de derecha
+            #    bandera_mfbp2_derecha_nueva = False
+            #    print("aqui esta la caja master_qr_boxes xox",box)
+            #    if box == "MFB-P2":
+            #        print("si entró masterqrboxes",master_qr_boxes["MFB-P2"][0])
+            #        #si trae en los qr master el qr perteneciente a la caja de derecha
+            #        if "12975407216" in  master_qr_boxes["MFB-P2"][0]:
+            #            print("si esta en masterkrboxes")
+            #            if "12975407830" in qr_box:
+            #                print("aqui la bandera se hace true")
+            #                bandera_mfbp2_derecha_nueva = True
+            #                print("qrbox1",qr_box)
+            #                qr_box = qr_box.replace("12975407830","12975407216")
+            #                print("qrbox2",qr_box)
                             
                 # i para buscar en todas las cajas master_qr_boxes[i][0](seriales maestros),  si ahí existe algo similar a lo que escaneaste "qr_box"(serial) y aparte este es "true" entonces...
                 if master_qr_boxes[box][0] in qr_box and master_qr_boxes[box][1]:
@@ -175,15 +175,15 @@ class Controller (QObject):
                 else:
                     for i in master_qr_boxes:
                         #si se trata de la caja MFB-P2, inicia esta bandera en False, solo se activa si es una caja nueva de derecha
-                        bandera_mfbp2_derecha_nueva = False
+                        #bandera_mfbp2_derecha_nueva = False
                         print("aqui esta la caja master_qr_boxes i",i)
                         if i == "MFB-P2":
                             print("si entró ")
                             #si trae en los qr master el qr perteneciente a la caja de derecha
-                            if "12975407216" in  master_qr_boxes["MFB-P2"][0]:
-                                if "12975407830" in qr_box:
-                                    bandera_mfbp2_derecha_nueva = True
-                                    qr_box = qr_box.replace("12975407830","12975407216")
+                            #if "12975407216" in  master_qr_boxes["MFB-P2"][0]:
+                            #    if "12975407830" in qr_box:
+                            #        bandera_mfbp2_derecha_nueva = True
+                            #        qr_box = qr_box.replace("12975407830","12975407216")
 
                         # i para buscar en todas las cajas master_qr_boxes[i][0],  si ahí existe lo que escaneaste "qr_box" y aparte este es "true" entonces...
                         if master_qr_boxes[i][0] in qr_box and master_qr_boxes[i][1]:
@@ -221,9 +221,9 @@ class Controller (QObject):
                                 #se avisa a la variable de cajas_habilitadas que ya se escaneó la caja
                                 self.model.cajas_habilitadas[i] = 1
                                 print("cajas habilitadas: ",self.model.cajas_habilitadas)
-                                if bandera_mfbp2_derecha_nueva == True:
-                                   bandera_mfbp2_derecha_nueva = False
-                                   qr_box = qr_box.replace("12975407216","12975407830")
+                                #if bandera_mfbp2_derecha_nueva == True:
+                                #   bandera_mfbp2_derecha_nueva = False
+                                #   qr_box = qr_box.replace("12975407216","12975407830")
                                 #variable donde se guardan los seriales de cada caja (si se acaba el tiempo se reemplazará al escanear nuevamente para clampear)
                                 self.model.qr_codes[i] = qr_box
 

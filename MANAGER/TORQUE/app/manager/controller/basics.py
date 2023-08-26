@@ -884,12 +884,20 @@ class CheckQr (QState):
                 print("Evento de este Arnés: ",dbEvent) #puede agregarse un if "aj23_2_pro3" in self.model.dbEvent para limitar a que solamente se cambie en un evento
                 #se recorren todos los módulos del arnés para buscar el que determina la caja nueva
                 
-                
-                for modulo in modules:
-                    if "A2975407930" in modulo:
-                        print("contiene el modulo A2975407930")
-                        #si se encuentra el módulo dentro del arnés, se cambia el QR de la caja del generado por la api: 12975407316 al 12975407930
-                        pedido["QR_BOXES"] = pedido["QR_BOXES"].replace("12975407316","12975407930")
+                self.leer_configuracion()
+                if self.model.parametros["CAJA_VIEJA_SIEMPRE"]=="False":
+                    for modulo in modules:
+                        #para caja MFBP2 izquierda
+                        if "A2975407930" in modulo:
+                            print("contiene el modulo A2975407930")
+                            #si se encuentra el módulo dentro del arnés, se cambia el QR de la caja del generado por la api: 12975407316 al 12975407930
+                            pedido["QR_BOXES"] = pedido["QR_BOXES"].replace("12975407316","12975407930")
+                        #para caja MFBP2 derechaA2975407830
+                        if "A2975407830" in modulo:
+                            print("contiene el modulo A2975407830")
+                            #si se encuentra el módulo dentro del arnés, se cambia el QR de la caja del generado por la api: 12975407316 al 12975407930
+                            pedido["QR_BOXES"] = pedido["QR_BOXES"].replace("12975407216","12975407830")
+                            
                 
                 #self.leer_configuracion() #Función para leer archivo con configuración para caja correr con caja antigua
                 #if self.model.parametros["caja_MFBP2_antigua"]=="True":
@@ -901,7 +909,7 @@ class CheckQr (QState):
                 QR_CAJAS = json.loads(pedido["QR_BOXES"]) #se lee el string y se convierte a formato json, diccionario
 
                 if flag_mfbp2_der == True and flag_mfbp2_izq == False:
-                    self.model.mfbp2_serie = "12975407216/\n12975407830"
+                    self.model.mfbp2_serie = QR_CAJAS["MFB-P2"][0]
                 if flag_mfbp2_der == False and flag_mfbp2_izq == True:
                     self.model.mfbp2_serie = QR_CAJAS["MFB-P2"][0]
                 if flag_mfbp2_der == False and flag_mfbp2_izq == False:
@@ -1057,7 +1065,8 @@ class CheckQr (QState):
 
     def leer_configuracion(self):
         """
-        lee un txt en C:BIN/ llamado configuracion, cada renglon debe tener la forma: condicion:True
+        lee un txt en C:BIN/ llamado configuracion, cada renglon debe tener la forma: 
+        condicion:True
         almacena todos los parametros en el diccionario parametros en el modelo
 
         """
@@ -1065,9 +1074,12 @@ class CheckQr (QState):
         if exists(ruta_configuracion):
             with open(ruta_configuracion) as configuracion:
                 for linea in configuracion:
-                    comando_configuracion=linea.split(":")
-                    self.model.parametros[comando_configuracion[0]]=comando_configuracion[1]
-                print("self.model.parametros",self.model.parametros)
+                    if not linea.startswith("#"):
+                        linea.strip()
+                        comando_configuracion=linea.split(":")
+                        self.model.parametros[comando_configuracion[0]]=comando_configuracion[1]
+        print("self.model.parametros",self.model.parametros)
+                
 
     def torqueClamp (self):
         command = {}
