@@ -88,7 +88,7 @@ class Controller (QObject):
         try:
             #Busca entre las cajas "P" D O R y te DEJA ESCANEAR, si no es alguna de estas verifica si esta en modo candado si esta en modo candado no te deja escanear ...
             permite_escanear=False
-            #master_qr_boxes = json.loads(self.model.input_data["database"]["pedido"]["QR_BOXES"])
+            master_qr_boxes = json.loads(self.model.input_data["database"]["pedido"]["QR_BOXES"])
             for box in master_qr_boxes:
             #    #si se trata de la caja MFB-P2, inicia esta bandera en False, solo se activa si es una caja nueva de derecha
             #    bandera_mfbp2_derecha_nueva = False
@@ -121,9 +121,16 @@ class Controller (QObject):
                                     }
                                 self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                                 self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                else:
+                    command = {
+                        "lbl_steps" : {"text": "El código escaneado no pertenece a ninguna caja del arnés", "color": "red"}
+                        }
+                    self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                    self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
 
             #si hay tareas en el pedido y no está en el estado de candados...
             if len(self.model.input_data["database"]["pedido"]) and permite_escanear==True:
+
                 master_qr_boxes = json.loads(self.model.input_data["database"]["pedido"]["QR_BOXES"])
                 rework_qr_boxes = self.model.input_data["database"]["qr_retrabajo"]
                 ok = False
@@ -166,6 +173,7 @@ class Controller (QObject):
                                 self.model.cajas_habilitadas[copy_i] = 1
                                 print("cajas habilitadas: ",self.model.cajas_habilitadas)
                             break
+                        
                     if not(ok_rework):
                         command = {
                             "lbl_steps" : {"text": "El código escaneado no pertenece a ninguna caja del arnés", "color": "red"}
@@ -202,9 +210,24 @@ class Controller (QObject):
                                     "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"}
                                     }
                                 if i in self.model.boxPos1:
+                                    command = {
+                                    "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"}
+                                    }
                                     self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
-                                if i in self.model.boxPos2:
+                                    command = {
+                                    "lbl_steps" : {"text": f" ", "color": "black"}
+                                    }
                                     self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                if i in self.model.boxPos2:
+
+                                    command = {
+                                    "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"}
+                                    }
+                                    self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                    command = {
+                                    "lbl_steps" : {"text": f" ", "color": "black"}
+                                    }
+                                    self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                                 
                                 #caja adecuada:
                                 if "PDC-R" in i:
@@ -228,7 +251,15 @@ class Controller (QObject):
                                 self.model.qr_codes[i] = qr_box
 
                                 Timer(15, self.boxTimeout, args = (i, qr_box)).start()
+                            else:
+
+                                command = {
+                                "lbl_steps" : {"text": "El código escaneado no pertenece a ninguna caja del arnés", "color": "red"}
+                                }
+                                self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
                             break
+                        
                     if not(ok):
                         
                         
@@ -236,7 +267,7 @@ class Controller (QObject):
                             "lbl_steps" : {"text": "Vuelve a escanear la caja", "color": "red"}
                             }
                         self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
-
+            
         except Exception as ex:
             print ("manager.controller.chkQrBoxes Exception: ", ex)
 
