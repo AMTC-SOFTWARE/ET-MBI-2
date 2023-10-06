@@ -50,6 +50,20 @@ class Model (object):
 
         #señal para dejar un delay entre cada candado
         self.nuevo_pin = False
+        #zonas de candados
+
+        self.candados_zonas= {
+            "s1":False,
+            "s2":False,
+            "s3":False,
+            "s4":False,
+            "s5":False,
+            "s6":False,
+            "s7":False,
+            "s8":False,
+            "s9":False,
+            "s10":False,
+            }
 
         #Variable para indicar que la caja pdcr se escaneó y esta en proceso de torque
         self.pdcr_iniciada=False

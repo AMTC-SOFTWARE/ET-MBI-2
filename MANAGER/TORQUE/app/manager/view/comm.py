@@ -552,14 +552,24 @@ class MqttClient (QObject):
                                     self.zone_tool4.emit()
 
                         if encoder == "encoder_3":
+                            if payload_name in self.model.candados_zonas:
+                                if payload["value"] == True:
+                                    self.model.candados_zonas[payload_name]=True
+                                    print("self.model.candados_zonas[payload_name]",self.model.candados_zonas)
+                                else:
+                                    self.model.candados_zonas[payload_name]=False
+                                    print("self.model.candados_zonas[payload_name]",self.model.candados_zonas)
+
                             print("self.model.current_task_candado ==== ",self.model.current_task_candado)
                             if self.model.current_task_candado == payload_name:
                                 if payload["value"] == False:
                                     self.model.input_data["plc"][encoder]["candado"] = "0"
                                     print("emit de zone tool3 CANDADO = FALSE")
+                                    self.model.candados_zonas["candado"]=False
                                 else:
                                     self.model.input_data["plc"][encoder]["candado"] = payload_name
                                     print("emit zone de tool3 CANDADO = TRUE")
+                                    self.model.candados_zonas["candado"]=True
                                 self.zone_tool3.emit()
                             else:
                                 print("IGNORAR TRIGGER")
@@ -637,6 +647,18 @@ class MqttClient (QObject):
                         #se copia la información del arreglo recibido del torque por esta herramienta
                         self.model.input_data["torque"][tool] = copy(payload)
                         print("torque1 emit()")
+                        ################################################
+                        fecha_actual = datetime.now()
+                        try:
+                            data = {
+                                "HERRAMIENTA": tool,
+                                "REGISTRO": payload,
+                                "FECHA": fecha_actual.strftime("%Y/%m/%d %H:%M:%S"),
+                                }
+                            endpoint = "http://{}/api/post/torque_info".format(self.model.server)
+                            resp = requests.post(endpoint, data=json.dumps(data))
+                        except Exception as ex:
+                            print("post torque exception: ", ex)
                         #se emite la señal de que se hizo un torque con esta herramienta
                         self.torque1.emit()
                     else:
@@ -682,6 +704,18 @@ class MqttClient (QObject):
                         #se copia la información del arreglo recibido del torque por esta herramienta
                         self.model.input_data["torque"][tool] = copy(payload)
                         print("torque2 emit()")
+                        ################################################
+                        fecha_actual = datetime.now()
+                        try:
+                            data = {
+                                "HERRAMIENTA": tool,
+                                "REGISTRO": payload,
+                                "FECHA": fecha_actual.strftime("%Y/%m/%d %H:%M:%S"),
+                                }
+                            endpoint = "http://{}/api/post/torque_info".format(self.model.server)
+                            resp = requests.post(endpoint, data=json.dumps(data))
+                        except Exception as ex:
+                            print("post torque exception: ", ex)
                         #se emite la señal de que se hizo un torque con esta herramienta
                         self.torque2.emit()
                     else:
@@ -725,6 +759,19 @@ class MqttClient (QObject):
                         #se copia la información del arreglo recibido del torque por esta herramienta
                         self.model.input_data["torque"][tool] = copy(payload)
                         print("torque3 emit()")
+                        ################################################
+                        fecha_actual = datetime.now()
+                        try:
+                            data = {
+                                "HERRAMIENTA": tool,
+                                "REGISTRO": payload,
+                                "FECHA": fecha_actual.strftime("%Y/%m/%d %H:%M:%S"),
+                                }
+                            endpoint = "http://{}/api/post/torque_info".format(self.model.server)
+                            resp = requests.post(endpoint, data=json.dumps(data))
+                        except Exception as ex:
+                            print("post torque exception: ", ex)
+                        
                         #se emite la señal de que se hizo un torque con esta herramienta
                         self.torque3.emit()
                     else:

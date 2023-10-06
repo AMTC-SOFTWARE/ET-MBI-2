@@ -2147,7 +2147,7 @@ class CheckZonePalpador (QState):
                     self.check_lock_raffi_function("PDC-R")
 
                 #si la zona de candado actual es igual a la zona de candado solicitada en la tarea actual en cola
-                elif candado_encoder == current_task_candado:
+                elif candado_encoder == current_task_candado or self.model.candados_zonas["candado"]==True:
                         
                         #si es "0" quiere decir que no está en la zona de altura correcta
                         if current_height != "0":
