@@ -326,7 +326,7 @@ class Model (object):
             "BATTERY": {
                 "BT": ["tool2",9,"Battery Nut"]},
             "BATTERY-2": {
-                "BT": ["tool2",9,"Battery Nut"]},
+                "BT": ["tool2",10,"Battery Nut"]},
             "MFB-P1": {
                 "A47": ["tool3",10,"8mm Nut"],
                 "A46": ["tool3",5,"8mm Nut"],
