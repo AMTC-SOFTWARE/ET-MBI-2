@@ -217,7 +217,7 @@ class StartCycle (QState):
         segundos=0
         color="black"
         try:
-            query="SELECT INICIO, FIN FROM et_mbi_3.historial WHERE RESULTADO = 1 order by ID desc LIMIT 1;"
+            query="SELECT INICIO, FIN FROM et_mbi_2.historial WHERE RESULTADO = 1 order by ID desc LIMIT 1;"
             endpoint = "http://{}/query/get/{}".format(self.model.server, query)
             print("Endpoint: ",endpoint)
         
