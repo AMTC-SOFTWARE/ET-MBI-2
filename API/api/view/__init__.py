@@ -221,6 +221,36 @@ def generalGET(table, column_1, operation_1, value_1, column_2, operation_2, val
         connection.close()
         return response
 
+@app.route('/query/get/<query>',methods=['GET'])
+def query(query):
+    print(query);
+    try:
+        connection = pymysql.connect(host = host, user = user, passwd = password, database = database, cursorclass=pymysql.cursors.DictCursor)
+    except Exception as ex:
+        print("myJsonResponse connection Exception: ", ex)
+        return {"exception": ex.args}
+    try:
+        with connection.cursor() as cursor:
+            items = cursor.execute(query)
+            result = cursor.fetchall()
+            print("el result es mejor",result)
+            if len(result) > 0:
+                response = {}
+                keys = list(result[0])
+                for key in keys:
+                    response[key] = []
+                    for item in result:
+                        response[key].append(item.pop(key))   
+                response["columns"] = keys
+            else:
+                response = {"items": items}
+    except Exception as ex:
+        print("myJsonResponse cursor Exception: ", ex)
+        response = {"exception" : ex.args}
+    finally:
+        connection.close()
+        return response
+
 @app.route("/api/post/<table>",methods=["POST"])
 def generalPOST(table):
     def escape_name(s):

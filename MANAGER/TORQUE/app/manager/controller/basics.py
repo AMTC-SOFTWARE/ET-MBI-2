@@ -213,6 +213,35 @@ class StartCycle (QState):
         self.clamps = True
 
     def onEntry(self, event):
+        minutos=0
+        segundos=0
+        color="black"
+        try:
+            query="SELECT INICIO, FIN FROM et_mbi_3.historial WHERE RESULTADO = 1 order by ID desc LIMIT 1;"
+            endpoint = "http://{}/query/get/{}".format(self.model.server, query)
+            print("Endpoint: ",endpoint)
+        
+            resp_ultimo_arnés = requests.get(endpoint).json()
+            
+            in_formato_ciclo=datetime.strptime(resp_ultimo_arnés["INICIO"][0], '%a, %d %b %Y %H:%M:%S GMT')
+            out_formato_ciclo=datetime.strptime(resp_ultimo_arnés["FIN"][0], '%a, %d %b %Y %H:%M:%S GMT')
+
+            # Calcula la diferencia entre la fecha de fin y la fecha de inicio
+            diferencia = out_formato_ciclo - in_formato_ciclo
+            
+            # Extrae los minutos y segundos de la diferencia
+            minutos, segundos = divmod(diferencia.total_seconds(), 60)
+
+            if minutos >10 :
+                color="red"
+            else:
+                color="green"
+            # Imprime el resultado
+            print(f"ciclo: {int(minutos)} min {int(segundos)} segundos")
+            print(in_formato_ciclo)
+
+        except Exception as ex:
+            print("Excepción al momento de extraer el ultimo arnes", ex)
 
         command = {
                 "lineEdit" : False,
@@ -261,7 +290,7 @@ class StartCycle (QState):
             "lbl_info1" : {"text": "", "color": "black"},
             "lbl_info2" : {"text": "", "color": "green"},
             "lbl_info3" : {"text": "", "color": "black"},
-            "lbl_boxTITLE" : {"text": "", "color": "black"},
+            "lbl_boxTITLE" : {"text": f"último ciclo: \n{int(minutos)} min {int(segundos)} segundos", "color": color},
             "lbl_boxPDCR" : {"text": "", "color": "black"},
             "lbl_boxPDCP" : {"text": "", "color": "black"},
             "lbl_boxPDCD" : {"text": "", "color": "black"},
