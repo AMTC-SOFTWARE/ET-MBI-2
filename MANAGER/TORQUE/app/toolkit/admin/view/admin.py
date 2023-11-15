@@ -243,10 +243,10 @@ class Ui_admin(object):
         _translate = QtCore.QCoreApplication.translate
         admin.setWindowTitle(_translate("admin", "Administración"))
         self.checkBox_1.setText(_translate("admin", "Abrir carpeta de archivos"))
-        self.checkBox_2.setText(_translate("admin", "Administración de hardware"))
+        self.checkBox_2.setText(_translate("admin", "Cajas repetidas"))
         #self.btn_torque.setText(_translate("admin", "Torque manual"))
         self.btn_reset.setText(_translate("admin", "Reiniciar"))
-        self.checkBox_3.setText(_translate("admin", "Administración de visión"))
+        self.checkBox_3.setText(_translate("admin", "Comp. PDC-D y P con FET"))
         self.checkBox_4.setText(_translate("admin", "Modo desapriete"))
         self.btn_off.setText(_translate("admin", "Apagar"))
         self.checkBox_5.setText(_translate("admin", "Modo puntual"))

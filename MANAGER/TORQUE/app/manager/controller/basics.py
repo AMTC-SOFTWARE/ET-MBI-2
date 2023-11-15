@@ -242,14 +242,19 @@ class StartCycle (QState):
 
         except Exception as ex:
             print("Excepción al momento de extraer el ultimo arnes", ex)
-
+        
         command = {
                 "lineEdit" : False,
                 "lineEditKey": True,
                 }
         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         print("lineEdit desactivado")
-
+        self.model.pdcr_iniciada=False
+        self.model.qr_box_actual=""
+        self.model.caja_repetida_hm_asociado=""
+        self.model.qr_validado=[]
+        self.model.key_calidad_caja_repetida=False
+        self.model.caja_por_validar=""
         #reiniciar variable para dar delay entre cada pin
         self.model.nuevo_pin = False
         #para avisar que se finalizó el modo de revisión de candados
@@ -286,6 +291,10 @@ class StartCycle (QState):
 
         self.model.reset()
         Timer(0.05, self.model.log, args = ("IDLE",)).start() 
+
+
+
+
         command = {
             "lbl_info1" : {"text": "", "color": "black"},
             "lbl_info2" : {"text": "", "color": "green"},
@@ -465,6 +474,8 @@ class CheckQr (QState):
             }
         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+
+
         Timer(0.05, self.API_requests).start()
 
     def API_requests (self):
@@ -478,6 +489,7 @@ class CheckQr (QState):
             self.model.qr_codes["HM"] = "--"
             self.model.qr_codes["REF"] = "--"
             correct_lbl = False
+            
             for i in temp:
                 if "HM" in i:
                     self.model.qr_codes["HM"] = i
@@ -538,6 +550,8 @@ class CheckQr (QState):
                     else:
                         print("FAMX2 Salida de FET: \n",famx2response["SALFET"])
                         print("FAMX2 Ubicación: \n",famx2response["UBICACION"])
+
+                        respuesta_Fet=self.caja_FET_consulta(self.model.qr_codes["HM"])
                         #Si la columna que indica la hora de salida de FET, es diferente a None, significa que completó esa estación y SI puede entrar a Torque.
                         if famx2response["SALFET"] != None: #AQUIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
                             print("El arnés ya salió de FET")
@@ -555,6 +569,18 @@ class CheckQr (QState):
                                 publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                                 self.nok.emit()
                                 return
+                            if self.model.config_data["comparacion_cajasDP"]:
+                                if respuesta_Fet ==None:
+                                    print("No se encontró registro en FET")
+                                    command = {
+                                    "lbl_result" : {"text": "No se encontró registros de cajas en FET "+ famx2response["NAMEINDUCCION"], "color": "red"},
+                                    "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
+                                    }
+                                    publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                                    publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                                    self.nok.emit()
+                                    return
+
                             if famx2response["REFERENCIA"] !=self.model.qr_codes["REF"]:
                                 print("La REFERENCIA no coincide con Trazabilidad, NO puede entrar a Torque")
                                 command = {
@@ -565,6 +591,7 @@ class CheckQr (QState):
                                 publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                                 self.nok.emit()
                                 return
+                            
                             else:
                                 #Se guarda el id del arnés de FAMX2 en el modelo para realizar updates en el servidor de FAMX2.
                                 self.model.id_HM = famx2response["id"]
@@ -1068,7 +1095,10 @@ class CheckQr (QState):
                 Timer(0.1, self.torqueClamp).start()
                 Timer(0.05, self.model.log, args = ("RUNNING",)).start() 
                 self.ok.emit()
+                
             else:
+                self.model.retrabajo=True
+                print("retrabajo true en checkqr")
                 self.rework.emit()
                 return
             ####### Original
@@ -1124,6 +1154,29 @@ class CheckQr (QState):
                     command[i] = True
         publish.single(self.model.pub_topics["plc"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
+    def caja_FET_consulta(self,hm):
+        famx2response=None
+        try:
+            print("||||||||||||Consulta de HM a FAMX2...")
+            endpoint = "http://{}/seghm/get/SEGHM_BOX/HM/=/{}/_/_/_".format(self.model.server,hm)
+            famx2response = requests.get(endpoint).json()
+            #No existen coincidencias del HM en FAMX2
+            if "items" in famx2response:
+                print("ITEMS por que no se encontraron coincidencias en FAMX2")
+                famx2response=None
+                self.model.qr_error="Hm no encontrado"
+                
+            #Si existe el HM en FAMX2
+            else:
+                print("FAMX2 ",famx2response)
+                return famx2response
+
+                
+        except Exception as ex:
+            print ("caja_match_FET_consulta exception ", ex)
+            famx2response=None
+        return famx2response
+
 
 class QrRework (QState):
     ok = pyqtSignal()
@@ -1145,8 +1198,9 @@ class QrRework (QState):
         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         self.model.qr_keyboard = True
         print("model qr_keyboard = True")
-
+        
     def onExit(self, QEvent):
+        self.model.en_ciclo=False
         command = {
             "show":{"scanner": False}
             }
@@ -1155,10 +1209,12 @@ class QrRework (QState):
         print("model qr_keyboard = False")
 
     def rework (self):
+        self.model.retrabajo=True
         self.model.local_data["qr_rework"] = True
         Timer(0.05, self.ok.emit).start()
 
     def noRework(self):
+        self.model.retrabajo=False
         Timer(0.05, self.ok.emit).start()
 
 
@@ -1171,7 +1227,35 @@ class Finish (QState):
         self.model = model
 
     def onEntry(self, event):
+        minutos=0
+        segundos=0
+        color="black"
+        try:
+            query="SELECT INICIO, FIN FROM et_mbi_2.historial WHERE RESULTADO = 1 order by ID desc LIMIT 1;"
+            endpoint = "http://{}/query/get/{}".format(self.model.server, query)
+            print("Endpoint: ",endpoint)
+        
+            resp_ultimo_arnés = requests.get(endpoint).json()
+            
+            in_formato_ciclo=datetime.strptime(resp_ultimo_arnés["INICIO"][0], '%a, %d %b %Y %H:%M:%S GMT')
+            out_formato_ciclo=datetime.strptime(resp_ultimo_arnés["FIN"][0], '%a, %d %b %Y %H:%M:%S GMT')
 
+            # Calcula la diferencia entre la fecha de fin y la fecha de inicio
+            diferencia = out_formato_ciclo - in_formato_ciclo
+            
+            # Extrae los minutos y segundos de la diferencia
+            minutos, segundos = divmod(diferencia.total_seconds(), 60)
+            if minutos >10 :
+                color="red"
+            else:
+                color="green"
+            # Imprime el resultado
+            print(f"ciclo: {int(minutos)} min {int(segundos)} segundos")
+            print(in_formato_ciclo)
+
+        except Exception as ex:
+            print("Excepción al momento de extraer el ultimo arnes", ex)
+        self.model.en_ciclo=False
         #para avisar que se finalizó el modo de revisión de candados
         self.model.estado_candados = False
         #regresa variable que permite escanear otra caja
@@ -1197,7 +1281,12 @@ class Finish (QState):
                 if self.model.tries[i][j] <= 0:
                     self.model.tries[i][j] = 0
         print("||||||| RE-intentos en Modelo FINAL: ",self.model.tries)
-
+        self.model.pdcr_iniciada=False
+        self.model.qr_box_actual=""
+        self.model.caja_repetida_hm_asociado=""
+        self.model.qr_validado=[]
+        self.model.key_calidad_caja_repetida=False
+        self.model.caja_por_validar=""
         #para funcionamiento normal de llave
         self.model.reintento_torque = False
 
@@ -1213,7 +1302,7 @@ class Finish (QState):
         self.model.mfbp2_serie = ""
 
         lblbox_clean = {
-            "lbl_boxTITLE" : {"text": "", "color": "black"},
+            "lbl_boxTITLE" : {"text": f"último ciclo: \n{int(minutos)} min {int(segundos)} segundos" , "color": color},
             "lbl_boxPDCR" : {"text": "", "color": "black"},
             "lbl_boxPDCP" : {"text": "", "color": "black"},
             "lbl_boxPDCD" : {"text": "", "color": "black"},
@@ -1247,6 +1336,7 @@ class Finish (QState):
             }
         print("|||||||||||| HISTORIAL INICIO: ",historial["INICIO"])
         print("|||||||||||| HISTORIAL FIN: ",historial["FIN"])
+
         if self.model.config_data["untwist"]:
             historial["RESULTADO"] = "0"
             historial["NOTAS"]["TORQUE"].insert(0,"DESAPRIETE")
@@ -1398,8 +1488,8 @@ class Reset (QState):
 
     def onEntry(self, event):
 
-        
-
+        self.model.en_ciclo=False
+        self.model.retrabajo=False
         if "HM000000011936" in self.model.qr_codes["HM"]:
             self.model.config_data["trazabilidad"] = True
                         
@@ -1421,6 +1511,12 @@ class Reset (QState):
         self.model.estado_candados = False
         #regresa variable que permite escanear otra caja
         self.model.pdcr_iniciada=False
+        self.model.qr_box_actual=""
+        self.model.caja_repetida_hm_asociado=""
+        self.model.qr_validado=[]
+        self.model.key_calidad_caja_repetida=False
+        self.model.caja_por_validar=""
+        
         command = {
             "show":{"login": False}
             }

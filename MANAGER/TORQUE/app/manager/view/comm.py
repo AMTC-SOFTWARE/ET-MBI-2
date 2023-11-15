@@ -7,6 +7,7 @@ from copy import copy
 import json
 from datetime import datetime
 import requests
+
 class MqttClient (QObject):
     
     conn_ok         =   pyqtSignal()
@@ -366,6 +367,20 @@ class MqttClient (QObject):
                 #    self.model.pin_pressed = True
                 #    self.pin.emit()
 
+                if self.keyboard_key == "keyboard_ctrl" and self.model.en_ciclo==True:
+                    command = {
+                            "lineEdit" : True,
+                            "lineEdit_focus" : True
+                            }
+                    self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                if self.keyboard_key == "keyboard_shift" and self.model.en_ciclo==True:
+
+                    command = {
+                           "lineEditKey" : True,
+                           "lineEditKey_focus":True
+                            }
+                    self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+
                 if self.keyboard_key == "keyboard_esc":
                     command = {"popOut":"close"}
                     self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
@@ -553,12 +568,13 @@ class MqttClient (QObject):
                                     self.zone_tool4.emit()
 
                         if encoder == "encoder_3":
+
                             if payload_name in self.model.candados_zonas:
-                                if payload["value"] == True:
-                                    self.model.candados_zonas[payload_name]=True
+                                if payload["value"] == False:
+                                    self.model.candados_zonas[payload_name]=False
                                     print("self.model.candados_zonas[payload_name]",self.model.candados_zonas)
                                 else:
-                                    self.model.candados_zonas[payload_name]=False
+                                    self.model.candados_zonas[payload_name]=True
                                     print("self.model.candados_zonas[payload_name]",self.model.candados_zonas)
 
                             print("self.model.current_task_candado ==== ",self.model.current_task_candado)
@@ -566,11 +582,11 @@ class MqttClient (QObject):
                                 if payload["value"] == False:
                                     self.model.input_data["plc"][encoder]["candado"] = "0"
                                     print("emit de zone tool3 CANDADO = FALSE")
-                                    self.model.candados_zonas["candado"]=False
+                                    
                                 else:
                                     self.model.input_data["plc"][encoder]["candado"] = payload_name
                                     print("emit zone de tool3 CANDADO = TRUE")
-                                    self.model.candados_zonas["candado"]=True
+                                    
                                 self.zone_tool3.emit()
                             else:
                                 print("IGNORAR TRIGGER")
@@ -772,7 +788,6 @@ class MqttClient (QObject):
                             resp = requests.post(endpoint, data=json.dumps(data))
                         except Exception as ex:
                             print("post torque exception: ", ex)
-                        
                         #se emite la señal de que se hizo un torque con esta herramienta
                         self.torque3.emit()
                     else:
@@ -804,7 +819,86 @@ class MqttClient (QObject):
                                 print("Mostrando GDI")
 
                 if "codeQR" in payload:
+                    
+                    usuario = str(payload["codeQR"])
+                    try:
+                        endpoint = ("http://{}/api/get/usuarios/GAFET/=/{}/ACTIVE/=/1".format(self.model.server, usuario))
+                        response = requests.get(endpoint).json()
+                        print(response)
+                        if "TYPE" in response:
+                            if response["TYPE"] == "SUPERUSUARIO" or response["TYPE"] == "AMTC" or response["TYPE"] == "CALIDAD":
+                                fecha_actual = datetime.now()
+                                data = {
+                                    "NAME": response["NAME"],
+                                    "GAFET":  usuario,
+                                    "TYPE": response["TYPE"],
+                                    "LOG": "torque_KEY",
+                                    "DATETIME": fecha_actual.strftime("%Y/%m/%d %H:%M:%S"),
+                                    }
+                                
+                                
+                                if (self.model.key_calidad_caja_repetida== True  or self.model.key_calidad_caja_sin_FET==True) and response["TYPE"] == "CALIDAD":
+                                    data["LOG"]="CAJA_"+self.model.caja_por_validar+"_Validada"
+                                    self.model.key_calidad_caja_repetida=False
+                                    
+                                    print("QR ACEPTADO: ",self.model.qr_box_actual)
+                                    print("colocar caja para clampear: ",self.model.caja_por_validar)
+                                    self.client.publish(self.model.pub_topics["plc"],json.dumps({self.model.caja_por_validar: True}), qos = 2)
 
+                                    if self.model.caja_por_validar in self.model.boxPos1:
+                                        command = {
+                                        "lbl_steps" : {"text": f"Coloca la caja {self.model.caja_por_validar} en su lugar", "color": "black"},
+                                        "lbl_result" : {"text": "", "color": "red"},
+                                        "lbl_boxNEW" : {"text":"", "color": "green"},
+                                        }
+                                        self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                        command = {
+                                        "lbl_steps" : {"text": "", "color": "black"},
+                                        "lbl_result" : {"text": "", "color": "red"},
+                                        "lbl_boxNEW" : {"text":"", "color": "green"},
+                                        }
+                                        self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                    if self.model.caja_por_validar in self.model.boxPos2:
+
+                                        command = {
+                                        "lbl_steps" : {"text": f"Coloca la caja {self.model.caja_por_validar} en su lugar", "color": "black"},
+                                        "lbl_result" : {"text": "", "color": "red"},
+                                        "lbl_boxNEW" : {"text":"", "color": "green"},
+                                        }
+                                        self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                        command = {
+                                        "lbl_steps" : {"text": f" ", "color": "black"},
+                                        "lbl_result" : {"text": "", "color": "red"},
+                                        "lbl_boxNEW" : {"text":"", "color": "green"},
+                                        
+                                        }
+                                        self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+
+                                    self.model.qr_validado.append(copy(self.model.qr_box_actual))
+                                    endpoint = "http://{}/api/post/login".format(self.model.server)
+                                    resp = requests.post(endpoint, data=json.dumps(data))
+                                    Timer(10, self.boxTimeout, args = (self.model.caja_por_validar, self.model.qr_box_actual)).start()
+
+                                #elif self.model.reintento_torque == True:
+                                #    print("key_process!!!!!!!!!!!!!!!!!!!!!!")
+                                #    print("key_process!!!!!!!!!!!!!!!!!!!!!!")
+                                #    print("key_process!!!!!!!!!!!!!!!!!!!!!!")
+                                #
+                                #    endpoint = "http://{}/api/post/login".format(self.model.server)
+                                #    resp = requests.post(endpoint, data=json.dumps(data))
+                                #    
+                                #    self.key_process.emit()
+                                ## si la variable es False, quiere decir que estás en otra parte del proceso y la llave reiniciará el ciclo
+                                #else:
+                                #    endpoint = "http://{}/api/post/login".format(self.model.server)
+                                #    resp = requests.post(endpoint, data=json.dumps(data))
+                                #    
+                                #    command = {"popOut":"¿Seguro que desea dar llave?\n Presione Esc. para salir, click derecho para continuar..."}
+                                #    self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                #    self.model.llave = True
+
+                    except Exception as ex:
+                        print("QR exception:", ex)
                     print("llego un codigo qr")
                     if "CENTERLLAVE" in str(payload):
                         self.key.emit()
@@ -856,6 +950,60 @@ class MqttClient (QObject):
             "popOut":"close"
             }
         self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+
+    def boxTimeout(self, i, qr_box):
+
+        #if self.model.bandera_mfbe_nueva == True:
+        #        self.model.bandera_mfbe_nueva = False
+        #        qr_box = qr_box.replace("12975407416","12975408030") #se regresa qr orgiginal 
+        #                                                             #para que quede registrado como su qr en self.model.qr_codes[i]
+        #                                                             #que es la varable que guarda los QRs en el registro
+
+        if not(i in self.model.input_data["plc"]["clamps"]):
+            print("tiempo terminado... caja desclampeada: ",i)
+            self.client.publish(self.model.pub_topics["plc"],json.dumps({i: False}), qos = 2)
+            command = {
+                "lbl_steps" : {"text": f"Vuelve a escanear la caja {i}", "color": "red"},
+                }
+            self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+
+            if self.model.caja_por_validar in self.model.boxPos1:
+                command = {
+                "lbl_steps" : {"text": f"Vuelve a escanear la caja {self.model.caja_por_validar}", "color": "red"},
+                "lbl_result" : {"text": "", "color": "red"},
+                "lbl_boxNEW" : {"text":"", "color": "green"},
+                }
+                self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                command = {
+                "lbl_steps" : {"text": f" ", "color": "black"},
+                "lbl_result" : {"text": "", "color": "red"},
+                "lbl_boxNEW" : {"text":"", "color": "green"},
+                }
+                self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+            if self.model.caja_por_validar in self.model.boxPos2:
+
+                command = {
+                "lbl_steps" : {"text": f"Vuelve a escanear la caja {self.model.caja_por_validar}", "color": "red"},
+                "lbl_result" : {"text": "", "color": "red"},
+                "lbl_boxNEW" : {"text":"", "color": "green"},
+                }
+                self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                command = {
+                "lbl_steps" : {"text": f" ", "color": "black"},
+                "lbl_result" : {"text": "", "color": "red"},
+                "lbl_boxNEW" : {"text":"", "color": "green"},
+
+                }
+                self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+
+
+
+            for item in self.model.torque_data:
+                if not(len(self.model.torque_data[item]["queue"])):
+                    #self.client.client.publish(self.model.torque_data[item]["gui"],json.dumps(command), qos = 2)
+                    pass
+        else:
+            self.model.qr_codes[i] = qr_box
 
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication

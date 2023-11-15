@@ -51,6 +51,16 @@ class Admin (QDialog):
         #                self.ui.checkBox_2.setChecked(False)
         #else:
         #    self.config["untwist"] = False
+
+        if self.data.config_data["cajas_repetidas"]:
+            self.ui.checkBox_2.setChecked(True)
+        else:
+            self.ui.checkBox_2.setChecked(False)
+        if self.data.config_data["comparacion_cajasDP"]:
+            self.ui.checkBox_3.setChecked(True)
+        else:
+            self.ui.checkBox_3.setChecked(False)
+
         if self.data.config_data["untwist"]:
             self.ui.checkBox_4.setChecked(True)
         else:
@@ -100,8 +110,8 @@ class Admin (QDialog):
             self.ui.btn_reset.setEnabled(True)
             #self.ui.btn_torque.setEnabled(True)
             self.ui.checkBox_1.setEnabled(True)
-            self.ui.checkBox_2.setEnabled(False)
-            self.ui.checkBox_3.setEnabled(False)
+            self.ui.checkBox_2.setEnabled(True)
+            self.ui.checkBox_3.setEnabled(True)
             self.ui.checkBox_4.setEnabled(True)
             self.ui.checkBox_5.setEnabled(True)
         elif self.user_type == "MANTENIMIENTO":
@@ -199,15 +209,15 @@ class Admin (QDialog):
 
     def onClicked_2(self):
         if self.ui.checkBox_2.isChecked():
-            self.client.publish("modules/set",json.dumps({"window" : True}), qos = 2)
+            self.data.config_data["cajas_repetidas"] = True
         else:
-            self.client.publish("modules/set",json.dumps({"window" : False}), qos = 2)
+            self.data.config_data["cajas_repetidas"] = False
 
     def onClicked_3(self):
         if self.ui.checkBox_3.isChecked():
-            self.client.publish("visycam/set",json.dumps({"window" : True}), qos = 2)
+            self.data.config_data["comparacion_cajasDP"] = True
         else:
-            self.client.publish("visycam/set",json.dumps({"window" : False}), qos = 2)
+            self.data.config_data["comparacion_cajasDP"] = False
             
     def onClicked_4(self):
         if self.ui.checkBox_4.isChecked():

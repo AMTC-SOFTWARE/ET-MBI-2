@@ -47,23 +47,26 @@ class Model (object):
         self.save_current_trq_candados = ""
         #variable para mostrar al inicio lo que ya está guardado
         self.palpador_iniciado = False
+        self.en_ciclo=False
+
+        self.contador_focus=0
+        self.qr_box_actual=""
+        self.caja_repetida_hm_asociado=""
+        self.qr_validado=[]
+        self.key_calidad_caja_repetida=False
+        self.caja_por_validar=""
+        self.total_hms_caja_repetida=[]
+        self.retrabajo=False
+
+        self.key_calidad_caja_sin_FET=False
+        self.cajas_repetidas_habilitado=False
+        self.comparacion_PD_habilitado=False
+        self.arnes_misma_caja=False
+        self.qr_coincide_FET=False
+        self.qr_error=""
 
         #señal para dejar un delay entre cada candado
         self.nuevo_pin = False
-        #zonas de candados
-
-        self.candados_zonas= {
-            "s1":False,
-            "s2":False,
-            "s3":False,
-            "s4":False,
-            "s5":False,
-            "s6":False,
-            "s7":False,
-            "s8":False,
-            "s9":False,
-            "s10":False,
-            }
 
         #Variable para indicar que la caja pdcr se escaneó y esta en proceso de torque
         self.pdcr_iniciada=False
@@ -317,7 +320,8 @@ class Model (object):
             }
 
         self.evento = ""
-
+        self.numero=""
+        self.conduccion=""
         self.torque_cycles = {
             "PDC-P": {
                 "E1": ["tool1",2,"6mm Nut"]},
@@ -415,6 +419,8 @@ class Model (object):
             "constraints": {
                 "tools": [["tool1", "tool3"]]
             },
+            "cajas_repetidas":True,
+            "comparacion_cajasDP":True,
             "untwist": False,
             "flexible_mode": False,
             "trazabilidad": True
@@ -429,6 +435,21 @@ class Model (object):
                             "qr_rework" : False,
                             "nuts_scrap":{}
                             }
+        #zonas de candados
+
+        self.candados_zonas= {
+            "s1":False,
+            "s2":False,
+            "s3":False,
+            "s4":False,
+            "s5":False,
+            "s6":False,
+            "s7":False,
+            "s8":False,
+            "s9":False,
+            "s10":False,
+            }
+
 
         self.input_data = {
             "database":{

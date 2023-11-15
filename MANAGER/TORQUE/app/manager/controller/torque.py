@@ -985,7 +985,7 @@ class CheckResponse (QState):
                         "lbl_info2" : {"text": info2, "color": "red"},
                         "lbl_result" : {"text": "Torque " + trq_zone + " NOK", "color": "red"},
                         "lbl_steps" : {"text": "", "color": "black"},
-                        "img_center" : self.tool + ".jpg"
+                        "img_center" : self.tool + ".jpg",
                         }
                     publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
@@ -1315,7 +1315,8 @@ class Backward (QState):
             return
        
         command = {
-            "show":{"img_popOut": "close"}
+            "show":{"img_popOut": "close"},
+            "lineEdit_focus":True
             }
         publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
@@ -1382,11 +1383,12 @@ class ToolsManager (QState):
     def onEntry(self, event):
 
         command = {
-                "lineEdit" : True
+                "lineEdit" : True,
+                "lineEdit_focus" : True
                 }
         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         print("Focus de lineEdit enviado")
-
+        self.model.en_ciclo=True
         #Para saber si aún quedan cajas del lado izquierdo o derecho dependiendo de en que posición se hayan activado sus variables, se mantiene como true o se hace false
         Pos1Finished = False
         Pos2Finished = False
@@ -1975,11 +1977,12 @@ class WaitingPin (QState):
 
         #quiere decir que se presionó el pin antes de entrar correctamente en la zona encoder + zona altura y no se ha dejado de presionar el pin
         if self.model.pin_pressed == True:
+            print("self.pin_already_pressed.emit()")
             self.pin_already_pressed.emit()
 
     def onExit(self, event):
         print("||||||||||||||||||||||Salida de WaitingPin")
-        
+        print("self.model.pin_pressed",self.model.pin_pressed)
         if self.model.pin_pressed == True:
             self.model.pin_pressed = False
             self.candadosQueue.pop(0)
@@ -2017,7 +2020,7 @@ class DelayPin (QState):
 
         if self.model.nuevo_pin == True:
             self.model.nuevo_pin = False
-            Timer(0.7, self.continuar.emit).start()
+            Timer(1.5, self.continuar.emit).start()
         else:
             self.continuar.emit()
 
@@ -2051,7 +2054,7 @@ class CheckZonePalpador (QState):
         current_height = "0"
 
         #se hace true al presionar el palpador, pero se debe mantener en False antes de llegar a ese estado (para prevenir que se haga true cuando se presione fuera de el estado waiting_pin)
-        self.model.pin_pressed = False
+        #self.model.pin_pressed = False
 
         #se revisa si hay alguna herramienta en reversa, o si está el raffi de la caja actual habilitado
         self.check_key_process_function()
@@ -2147,7 +2150,7 @@ class CheckZonePalpador (QState):
                     self.check_lock_raffi_function("PDC-R")
 
                 #si la zona de candado actual es igual a la zona de candado solicitada en la tarea actual en cola
-                elif candado_encoder == current_task_candado or self.model.candados_zonas["candado"]==True:
+                elif candado_encoder == current_task_candado or self.model.candados_zonas[current_task_candado]==True:
                         
                         #si es "0" quiere decir que no está en la zona de altura correcta
                         if current_height != "0":

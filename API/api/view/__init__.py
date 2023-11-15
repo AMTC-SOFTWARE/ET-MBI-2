@@ -221,6 +221,74 @@ def generalGET(table, column_1, operation_1, value_1, column_2, operation_2, val
         connection.close()
         return response
 
+@app.route("/api/get_col/<table>/<column_1>/<operation_1>/<value_1>/<column_2>/<operation_2>/<value_2>/<value_colums>/<value_QR>/<value_caja>",methods=["GET"])
+def GET_column(table, column_1, operation_1, value_1, column_2, operation_2, value_2,value_colums,value_QR,value_caja):
+    if column_1=='all' or value_colums=='all':
+        query='SELECT * FROM ' +table+';'
+    else:
+        if value_2=='_':
+            if value_colums=='all':
+                query = "SELECT * FROM " + table + " WHERE " + column_1 + operation_1 + "'{}';".format(value_1)
+            else:
+                query = "SELECT "+ value_colums +" FROM " + table + " WHERE " + column_1 + operation_1 + "'{}';".format(value_1)
+        else:
+            if value_colums=='all':
+                query = "SELECT * FROM " + table + " WHERE " + column_1 + operation_1 + "'{}'".format(value_1)
+                query += " AND " + column_2 + operation_2 + "'{}';".format(value_2)
+            else:
+                query = "SELECT "+ value_colums +" FROM " + table + " WHERE " + column_1 + operation_1 + "'{}'".format(value_1)
+                query += " AND " + column_2 + operation_2 + "'{}';".format(value_2)
+    try:
+        connection = pymysql.connect(host = host, user = user, passwd = password, database = database, cursorclass=pymysql.cursors.DictCursor)
+    except Exception as ex:
+        print("GET connection Exception: ", ex)
+        return {"exception": ex.args}
+    try:
+        qr_repetido=False
+        response_hms={}
+        with connection.cursor() as cursor:
+            items = cursor.execute(query)
+            result = cursor.fetchall()
+            if len(result) > 0:
+                response = {}
+                keys = list(result[0])
+                for key in keys:
+                    response[key] = []
+                    response_hms[key] = []
+                    for item in result:
+                        item_dict=json.loads(item[key])
+                        item_qr_box=""
+                        if value_caja in item_dict.keys():
+                            item_qr_box=item_dict[value_caja]
+                            
+                        if value_QR == item_qr_box:
+                            qr_repetido=True
+                            hm=item_dict["HM"]
+                            response_hms[key].append(hm)
+                            
+                        
+                        #response[key].append(item_qr_box)
+                        item.pop(key)
+                        #response[key].append(item.pop(key))           
+            else:
+                response = {"items": items}
+    except Exception as ex:
+        print("GET cursor Exception: ", ex)
+        response = {"exception" : ex.args}
+    finally:
+        connection.close()
+        
+        if qr_repetido:
+            response_ok= response_hms
+        else:
+            #response_ok=response
+            response_ok={}
+            response_ok["SERIALES"] = []
+            response_ok["SERIALES"].append("NONE")
+        print("responseee_ok",response_ok)
+        return response_ok
+
+
 @app.route('/query/get/<query>',methods=['GET'])
 def query(query):
     print(query);

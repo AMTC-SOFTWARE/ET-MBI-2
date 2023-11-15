@@ -691,7 +691,7 @@ class Ui_main(object):
 
 
 if __name__ == "__main__":
-    import resources_rc
+    #import resources_rc
     import sys
     app = QtWidgets.QApplication(sys.argv)
     main = QtWidgets.QMainWindow()

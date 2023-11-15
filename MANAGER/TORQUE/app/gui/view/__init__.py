@@ -71,7 +71,7 @@ class MainWindow (QMainWindow):
         self.setWindowTitle(self.model.name)
         self.ui.lineEdit.setFocusPolicy(Qt.StrongFocus)
         self.ui.lineEdit.setPlaceholderText("Fuse boxes QR")
-        self.ui.lineEdit.setFocus()
+        self.ui.lineEdit.setFocus(True)
         self.ui.lineEdit.setVisible(False)
 
         self.ui.lineEditKey.setPlaceholderText("QR Key")
@@ -271,17 +271,62 @@ class MainWindow (QMainWindow):
                     self.ui.lcdNumber.setVisible(message["lcdNumber"]["visible"])
 
             if "lineEdit" in message:
+                
+                if "lineEdit_focus" in message:
+                    self.activateWindow()
+                    self.raise_()
+                    self.show()
+                    self.ui.lineEdit.setFocus(True)
+                
+
+                elif "lineEditKey" in message:
+                    
+                    if "lineEditKey_focus" in message:
+                        self.activateWindow()
+                        self.raise_()
+                        self.show()
+                        self.ui.lineEditKey.setFocus(True)
+                    else:
+                        if message["lineEditKey"] == True:
+                            self.ui.lineEditKey.setVisible(True)
+                            
+                        if message["lineEditKey"] == False:
+                            self.ui.lineEditKey.setVisible(False)
+                else:
+                    if message["lineEdit"] == True:
+                        self.ui.lineEdit.setVisible(True)
+                    if message["lineEdit"] == False:
+                        self.ui.lineEdit.setVisible(False)
+
+            if "lineEdit_focus" in message:
+                self.activateWindow()
+                self.raise_()
+                self.show()
+                self.ui.lineEdit.setFocus(True)
+                    
+            if "lineEditKey" in message:
+                    
+                if "lineEditKey_focus" in message:
+                    self.activateWindow()
+                    self.raise_()
+                    self.show()
+                    self.ui.lineEditKey.setFocus(True)
+                else:
+                    if message["lineEditKey"] == True:
+                        self.ui.lineEditKey.setVisible(True)
+                        
+                    if message["lineEditKey"] == False:
+                        self.ui.lineEditKey.setVisible(False)
+            if "lineEditKey_focus" in message:
+                self.activateWindow()
+                self.raise_()
+                self.show()
+                self.ui.lineEditKey.setFocus(True)
+            if "lineEdit" in message:
                 if message["lineEdit"] == True:
                     self.ui.lineEdit.setVisible(True)
-                    self.ui.lineEdit.setFocus(True)
                 if message["lineEdit"] == False:
                     self.ui.lineEdit.setVisible(False)
-
-            if "lineEditKey" in message:
-                if message["lineEditKey"] == True:
-                    self.ui.lineEditKey.setVisible(True)
-                if message["lineEditKey"] == False:
-                    self.ui.lineEditKey.setVisible(False)
             ######### Modificación para etiqueta PDC-R #########
             if "lbl_boxPDCR" in message:
                 self.ui.lbl_boxPDCR.setText(message["lbl_boxPDCR"]["text"])
