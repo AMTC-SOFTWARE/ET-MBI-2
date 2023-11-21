@@ -570,10 +570,13 @@ class CheckQr (QState):
                                 self.nok.emit()
                                 return
                             if self.model.config_data["comparacion_cajasDP"]:
-                                if respuesta_Fet ==None:
+                                if respuesta_Fet == None:
                                     print("No se encontró registro en FET")
+                                    FET_arnes_station = str(famx2response["NAMEFET"])
+                                    FET_arnes_station = FET_arnes_station.replace(" ","")
+                            
                                     command = {
-                                    "lbl_result" : {"text": "No se encontró registros de cajas en FET "+ famx2response["NAMEINDUCCION"], "color": "red"},
+                                    "lbl_result" : {"text": "No se encontró registros de cajas en FET " + FET_arnes_station, "color": "red"},
                                     "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
                                     }
                                     publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
@@ -1162,7 +1165,7 @@ class CheckQr (QState):
             famx2response = requests.get(endpoint).json()
             #No existen coincidencias del HM en FAMX2
             if "items" in famx2response:
-                print("ITEMS por que no se encontraron coincidencias en FAMX2")
+                print("ITEMS por que no se encontró HM en SEGHM_BOX, tabla de cajas registradas de FET")
                 famx2response=None
                 self.model.qr_error="Hm no encontrado"
                 
