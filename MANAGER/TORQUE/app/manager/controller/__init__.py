@@ -1764,7 +1764,7 @@ class Controller (QObject):
                     self.model.qr_error="Qr no coincide"
                     print("no coincide")
                     self.model.qr_coincide_FET=False
-                    
+                    self.model.qr_FET=famx2response[caja]
 
                     return famx2response
                 

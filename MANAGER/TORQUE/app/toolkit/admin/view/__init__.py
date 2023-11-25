@@ -9,6 +9,8 @@ from time import sleep
 from os import system
 from copy import copy
 import json
+import requests
+from datetime import datetime
 #import requests    #Descomentar el día que se habilite el envío de info al servidor de P2
 #import datetime    #Descomentar el día que se habilite el envío de info al servidor de P2
 
@@ -210,14 +212,61 @@ class Admin (QDialog):
     def onClicked_2(self):
         if self.ui.checkBox_2.isChecked():
             self.data.config_data["cajas_repetidas"] = True
+            fecha_actual = datetime.now()
+            data = {
+                "NAME": self.data.local_data["user"]["name"],
+                "GAFET":  self.data.local_data["user"]["pass"],
+                "TYPE": self.data.local_data["user"]["type"],
+                "LOG": "cajas_repetidas_True",
+                "DATETIME": fecha_actual.strftime("%Y/%m/%d %H:%M:%S"),
+                }
+                
+                
+            endpoint = "http://{}/api/post/login".format(self.data.server)
+            resp = requests.post(endpoint, data=json.dumps(data))
         else:
             self.data.config_data["cajas_repetidas"] = False
-
+            fecha_actual = datetime.now()
+            data = {
+                "NAME": self.data.local_data["user"]["name"],
+                "GAFET":  self.data.local_data["user"]["pass"],
+                "TYPE": self.data.local_data["user"]["type"],
+                "LOG": "cajas_repetidas_False",
+                "DATETIME": fecha_actual.strftime("%Y/%m/%d %H:%M:%S"),
+                }
+                
+                
+            endpoint = "http://{}/api/post/login".format(self.data.server)
+            resp = requests.post(endpoint, data=json.dumps(data))
     def onClicked_3(self):
         if self.ui.checkBox_3.isChecked():
             self.data.config_data["comparacion_cajasDP"] = True
+            fecha_actual = datetime.now()
+            data = {
+                "NAME": self.data.local_data["user"]["name"],
+                "GAFET":  self.data.local_data["user"]["pass"],
+                "TYPE": self.data.local_data["user"]["type"],
+                "LOG": "comparacion_cajasDP_True",
+                "DATETIME": fecha_actual.strftime("%Y/%m/%d %H:%M:%S"),
+                }
+                
+                
+            endpoint = "http://{}/api/post/login".format(self.data.server)
+            resp = requests.post(endpoint, data=json.dumps(data))
         else:
             self.data.config_data["comparacion_cajasDP"] = False
+            fecha_actual = datetime.now()
+            data = {
+                "NAME": self.data.local_data["user"]["name"],
+                "GAFET":  self.data.local_data["user"]["pass"],
+                "TYPE": self.data.local_data["user"]["type"],
+                "LOG": "comparacion_cajasDP_False",
+                "DATETIME": fecha_actual.strftime("%Y/%m/%d %H:%M:%S"),
+                }
+                
+                
+            endpoint = "http://{}/api/post/login".format(self.data.server)
+            resp = requests.post(endpoint, data=json.dumps(data))
             
     def onClicked_4(self):
         if self.ui.checkBox_4.isChecked():

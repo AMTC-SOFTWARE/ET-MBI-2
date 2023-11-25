@@ -48,7 +48,8 @@ class Model (object):
         #variable para mostrar al inicio lo que ya está guardado
         self.palpador_iniciado = False
         self.en_ciclo=False
-
+        self.name_FET=""
+        self.qr_FET=""
         self.contador_focus=0
         self.qr_box_actual=""
         self.caja_repetida_hm_asociado=""

@@ -827,6 +827,7 @@ class MqttClient (QObject):
                         print(response)
                         if "TYPE" in response:
                             if response["TYPE"] == "SUPERUSUARIO" or response["TYPE"] == "AMTC" or response["TYPE"] == "CALIDAD":
+                                master_qr_boxes = json.loads(self.model.input_data["database"]["pedido"]["QR_BOXES"])
                                 fecha_actual = datetime.now()
                                 data = {
                                     "NAME": response["NAME"],
@@ -839,9 +840,13 @@ class MqttClient (QObject):
                                 
                                 if (self.model.key_calidad_caja_repetida== True  or self.model.key_calidad_caja_sin_FET==True) and response["TYPE"] == "CALIDAD":
                                     data["LOG"]="CAJA_"+self.model.caja_por_validar+"_Validada"
+                                    data["HM"]=self.model.qr_codes["HM"]
+                                    data["QR_VALIDADO"]=self.model.qr_box_actual
                                     self.model.key_calidad_caja_repetida=False
-                                    
-                                    print("QR ACEPTADO: ",self.model.qr_box_actual)
+                                    if self.model.key_calidad_caja_sin_FET==True and (self.model.caja_por_validar=="PDC-D" or self.model.caja_por_validar=="PDC-P"):
+                                        data["FET"]=self.model.name_FET
+                                        data["QR_FET"]=self.model.qr_FET
+                                    print("QR ACEPTADO validado calidad: ",self.model.qr_box_actual)
                                     print("colocar caja para clampear: ",self.model.caja_por_validar)
                                     self.client.publish(self.model.pub_topics["plc"],json.dumps({self.model.caja_por_validar: True}), qos = 2)
 

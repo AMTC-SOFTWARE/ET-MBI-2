@@ -556,6 +556,7 @@ class CheckQr (QState):
                         if famx2response["SALFET"] != None: #AQUIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
                             print("El arnés ya salió de FET")
                             print("famx2response[UBICACION]",famx2response["UBICACION"])
+                            self.model.name_FET=str(famx2response["NAMEFET"])
                             ubic_sinspace = famx2response["UBICACION"]
                             ubic_sinspace = ubic_sinspace.replace(" ","")
                             #Si la ubicación del HM del Arnés se encuentra entrando en reparación, NO podrá entrar a Torque
