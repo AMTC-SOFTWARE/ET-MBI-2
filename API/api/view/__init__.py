@@ -1,6 +1,13 @@
-from model import model
 from werkzeug.utils import secure_filename
-from flask import Flask, request
+from flask import Flask, request,  send_file, make_response
+from openpyxl import Workbook
+from openpyxl.chart.label import DataLabel, DataLabelList
+from openpyxl.chart.series import SeriesLabel
+from openpyxl.styles import Alignment, Font, PatternFill, NamedStyle
+from openpyxl.chart import BarChart, Reference
+from openpyxl.worksheet.table import Table, TableStyleInfo
+from openpyxl.utils import get_column_letter
+
 from datetime import datetime, timedelta, date, time
 from flask_cors import CORS
 from time import strftime
@@ -8,17 +15,23 @@ from pickle import load
 import pymysql
 import json
 import os
+import io
+from os.path import exists  #para saber si existe una carpeta o archivo
+from shutil import rmtree   #para eliminar carpeta con archivos dentro: rmtree("carpeta_con_archivos")
+from os import remove       #para eliminar archivo único: remove("archivo.txt")
+from os import rmdir        #para eliminar carpeta vacía: rmdir("carpeta_vacia")
 import requests
 from paho.mqtt import publish
 import pyodbc
 import auto_modularities
+from model import model
+
+datos_conexion=model()
+host,user,password,database,serverp2,dbp2,userp2,passwordp2=datos_conexion.datos_acceso()
 
 app = Flask(__name__)
 CORS(app)
 app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), '..\\')
-
-datos_conexion=model() #se crea un objeto de la clase model
-host,user,password,database,serverp2,dbp2,userp2,passwordp2=datos_conexion.datos_acceso() #se da valor a las variables obtenido del método de la clase de ese objeto
 #####################################  Servicio para Etiquetas desde WEB ####################################
 @app.route("/printer/etiqueta",methods=["POST"])
 def etiqueta():
@@ -91,6 +104,28 @@ def etiqueta():
         return response
 
 #####################################  Upload Files Services ####################################
+@app.route('/delete/filesmodularities', methods=['POST'])
+def delRef():
+    response = {"items": 0}
+    try:
+        path_carpeta = "..\\ILX";
+        #se obtiene true si existe la carpeta
+        existe_carpeta = os.path.isdir(path_carpeta)
+        if existe_carpeta == True:
+            try:
+                #Eliminar la carpeta (con archivos dentro) anteriormente generada, (pueden quedarse por algún error de la matriz al tratar de cargar un formato inválido)
+                #rmtree(path_carpeta)#para eliminar archivo único: from os import remove | remove("archivo.txt") ; para eliminar carpeta vacía: from os import rmdir | rmdir("carpeta_vacia")
+                print("se elimina la carpeta")
+                response = {"path" : 'Carpeta Eliminada desde la API,'}
+            except OSError as error:
+                print("ERROR AL ELIMINAR CARPETA:::\n",error)
+                response = {"exception" : ex.args}
+    except Exception as ex:
+        print("uploadRef Exception: ", ex)
+        response = {"exception" : ex.args}
+        return response
+
+
 @app.route('/upload/modularities', methods=['POST'])
 def uploadRef():
     response = {"items": 0}
@@ -105,6 +140,13 @@ def uploadRef():
                     filename.rsplit('.', 1)[1].lower() == "dat"
         if file and allowed_file:
             filename = secure_filename(file.filename)
+            path = os.path.join(app.config['UPLOAD_FOLDER'], 'ILX')
+            print(path, 'ACAAAAAAAA esta la ubicacion que se necesita subir')
+            isExist = os.path.exists(path)
+            if not isExist:
+                # Create a new directory because it does not exist 
+                os.makedirs(path)
+                print("The new directory is created!", path)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], "ILX", filename))
             response["items"] = 1
     except Exception as ex:
@@ -126,6 +168,17 @@ def updateModules():
     allowed_file = False
     file = None
     try:
+        path_carpeta = "..\\modules";
+        #se obtiene true si existe la carpeta
+        existe_carpeta = os.path.isdir(path_carpeta)
+        if existe_carpeta == True:
+            try:
+                #Eliminar la carpeta (con archivos dentro) anteriormente generada, (pueden quedarse por algún error de la matriz al tratar de cargar un formato inválido)
+                rmtree(path_carpeta)#para eliminar archivo único: from os import remove | remove("archivo.txt") ; para eliminar carpeta vacía: from os import rmdir | rmdir("carpeta_vacia")
+                print("se elimina la carpeta")
+            except OSError as error:
+                print("ERROR AL ELIMINAR CARPETA:::\n",error)
+
         data = request.form['DBEVENT']
         print("DB a la que se carga la Info: ",data)
         usuario = request.form['USUARIO']
@@ -138,6 +191,14 @@ def updateModules():
                     filename.rsplit('.', 1)[1].lower() in ['xls', 'xlsx']
         if file and allowed_file:
             filename = secure_filename(file.filename)
+            path = os.path.join(app.config['UPLOAD_FOLDER'], "modules")
+            #print(path, 'ACAAAAAAAA esta la ubicacion que se necesita subir')
+            isExist = os.path.exists(path)
+            if not isExist:
+                # Create a new directory because it does not exist 
+                os.makedirs(path)
+                print("The new directory is created!", path)
+
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], "modules", filename))
             auto_modularities.refreshModules(data)
             excelnew = {
@@ -162,6 +223,17 @@ def updateDeterminantes():
     allowed_file = False
     file = None
     try:
+        path_carpeta = "..\\determinantes";
+        #se obtiene true si existe la carpeta
+        existe_carpeta = os.path.isdir(path_carpeta)
+        if existe_carpeta == True:
+            try:
+                #Eliminar la carpeta (con archivos dentro) anteriormente generada, (pueden quedarse por algún error de la matriz al tratar de cargar un formato inválido)
+                rmtree(path_carpeta)#para eliminar archivo único: from os import remove | remove("archivo.txt") ; para eliminar carpeta vacía: from os import rmdir | rmdir("carpeta_vacia")
+                print("se elimina la carpeta")
+            except OSError as error:
+                print("ERROR AL ELIMINAR CARPETA:::\n",error)
+
         data = request.form['DBEVENT']
         print("DB a la que se carga la Info: ",data)
         usuario = request.form['USUARIO']
@@ -174,6 +246,14 @@ def updateDeterminantes():
                     filename.rsplit('.', 1)[1].lower() in ['xls', 'xlsx']
         if file and allowed_file:
             filename = secure_filename(file.filename)
+            path = os.path.join(app.config['UPLOAD_FOLDER'], "determinantes")
+            print(path, 'ACAAAAAAAA esta la ubicacion que se necesita subir')
+            isExist = os.path.exists(path)
+            if not isExist:
+                # Create a new directory because it does not exist 
+                os.makedirs(path)
+                print("The new directory is created!", path)
+
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], "determinantes", filename))
             auto_modularities.refreshDeterminantes(data,usuario)
             response["items"] = 1
@@ -1556,3 +1636,216 @@ def data_count(table, column):
     finally:
         connection.close()
         return response
+
+    ### Area de consulta de datos
+@app.route('/descargar/<db>/<table>/<task>')
+def descargar(db, table, task):
+    query = 'SELECT * FROM ' +table+' WHERE '+task+';'
+    print(query)
+    try:
+        connection = pymysql.connect(host = host, user = user, passwd = password, database = database, cursorclass=pymysql.cursors.DictCursor)
+    except Exception as ex:
+        print("myJsonResponse connection Exception: ", ex)
+        return {"exception": ex.args}
+    try:
+        with connection.cursor() as cursor:
+            items = cursor.execute(query)
+            result = cursor.fetchall()
+            #print("result: ",result)
+            #print(result[0].keys())
+            arreglo = []
+            hourEnd = []
+            h =  result[0]
+            valores_fila = ','.join( str(valor) for valor in h)
+            print(valores_fila)
+            li = list(valores_fila.split(","))
+            #print(li)
+            li.remove('VISION')
+            li.remove('TORQUE')
+            li.remove('ALTURA')
+            li.remove('INTENTOS_VA')
+            li.remove('INTENTOS_T')
+            li.remove('SCRAP')
+            li.remove('SERIALES')
+            #li.remove('NOTAS')
+            li.remove('ANGULO')
+            #Capitalizando Titulos,   TITULO -> Titulo
+            capt = []
+            for l in li: 
+                c = l.capitalize()
+                capt.append(c)
+                
+            arreglo.append(capt)
+            #arreglo.append(valores_fila)
+            if len(result) > 0:
+                # Procesar los resultados por fila
+                for fila in result:
+                    del fila['VISION']
+                    del fila['TORQUE']
+                    del fila['ALTURA']
+                    del fila['INTENTOS_VA']
+                    del fila['INTENTOS_T']
+                    del fila['SCRAP']
+                    del fila['SERIALES']
+                    #del fila['NOTAS']
+                    del fila['ANGULO']
+
+                    dato = []
+                    if fila["HM"] != 'HM000000000003':
+                        arreglo.append(dato)
+                        #print(fila)
+                        for i in fila:
+                            if 'NOTAS' in i:
+                                Notepad = json.loads(fila[i])
+                                print(Notepad['TORQUE'][1])
+                                dato.append(Notepad['TORQUE'][1])
+                            else: 
+                                #print(fila["FIN"])
+                                # Define las dos fechas como cadenas de texto
+                                hourEnd.append(fila['FIN'])
+                                # Convierte las cadenas de texto en objetos datetime
+                                #fecha1 = datetime.strptime(fecha1_str, "%d-%m-%Y %H:%M:%S")
+                                #fecha2 = datetime.strptime(fecha2_str, "%d-%m-%Y %H:%M:%S")
+
+                                dato.append(fila[i])
+
+                #print(arreglo)
+
+            else:
+                response = {"items": items}
+                #print(response)
+
+    except Exception as ex:
+        print("myJsonResponse cursor Exception: ", ex)
+        response = {"exception" : ex.args}
+
+
+    #######################  REALIZANDO FORMATO EXCEL ################
+    #######################                           ################
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = 'Historial'
+
+    # Crea una nueva hoja en el libro
+    #sheet2 = workbook.create_sheet("Graficar") # insert at first position
+    #sheet2 = workbook["Graficar"]
+
+    sheet['A1'] = '_____'
+
+    for j in arreglo:
+        sheet.append(j)
+    alineacion_izquierda = Alignment(horizontal='left')
+    
+    sheet.insert_cols(idx=6,amount=1)
+    sheet['F2'] = 'Duracion (dias, horas, minutos, segundos)'
+    sheet['H2'] = 'Apriete-Torque'
+    
+    sheet['I2'] = 'Tiempo Ciclo'
+    sheet['J2'] = 'Tiempo Ciclo Horas'
+    
+    sheet.title = 'Historial'
+        # Agrega valores a la nueva columna (no necesitas calcular la diferencia en Python)
+    for i in range(3, sheet.max_row + 1):
+        formula = f'= IFERROR(ABS(D{i}-E{i}), 0)'  # Suponiendo que "Inicio" está en la columna D y "Fin" en la columna E
+        
+        # Suponiendo que "Inicio" está en la columna D y "Fin" en la columna E
+        formulaB = f'= CONCATENATE( (PRODUCT( DAY(F{i}),24) + HOUR(F{i}) ), ":", MINUTE(F{i}), ":", SECOND(F{i}))'  
+        
+        formulaC = f'=IFERROR(ABS($D{i}-$E{i}), 0)'  #Tiempo Muerto en Decimal de Horas
+        formulaD = f'=IFERROR(ABS($D{i}-$E{i}) * 24, 0)'  #Tiempo Muerto en Decimal de Horas
+
+        sheet.cell(row=i, column=6, value=formula)
+
+
+        sheet.cell(row=i, column=9, value=formulaC)
+        sheet.cell(row=i, column=10, value=formulaD)
+
+    lastfila = get_column_letter(sheet.max_column)+str(sheet.max_row) 
+
+
+# ####FORMATOS
+    formato_hora = NamedStyle(name = 'formato_hora')
+    formato_hora.number_format = 'hh:mm:ss'
+
+    # Supongamos que deseas aplicar el formato a la columna A (por ejemplo, de la fila 2 a la fila 100)
+    columna = sheet['F']
+    for celda in columna[2:sheet.max_row]:  # Excluye la primera fila si tiene encabezados
+             celda.number_format = 'dd hh:mm:ss'
+
+    # Supongamos que deseas aplicar el formato a la columna A (por ejemplo, de la fila 2 a la fila 100)
+    columna = sheet['J']
+    for celda in columna[2:sheet.max_row]:  # Excluye la primera fila si tiene encabezados
+            celda.number_format = 'dd hh:mm:ss'
+
+# Iterar sobre todas las columnas y ajustar sus anchos
+    for column in sheet.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                cell.alignment = alineacion_izquierda
+                if len(str(cell.value)) > max_length:
+                    max_length = len(cell.value)
+            except:
+                pass
+        adjusted_width = (max_length + 2) * 1.1
+        sheet.column_dimensions[column_letter].width = adjusted_width
+    # sheet.column_dimensions['C'].width = 40
+    sheet.column_dimensions['D'].width = 20
+    sheet.column_dimensions['F'].width = 20
+    # sheet.column_dimensions['G'].width = 20
+    sheet.column_dimensions['K'].width = 20
+    sheet.column_dimensions['E'].width = 19
+    sheet.column_dimensions['J'].width = 15
+    sheet.column_dimensions['N'].width = 13
+    sheet.column_dimensions['O'].width = 15
+    sheet.column_dimensions['P'].width = 15
+    # Agregar título de la tabla de clientes
+    sheet['A1'] = f'Fujikura Automotive México Piedras Negras "Torque"'
+    sheet.merge_cells('A1:D1')
+
+
+    tab = Table(displayName="Table1", ref="A2:" + lastfila)
+
+    # Agregando Estilos de tabla
+    style = TableStyleInfo(name="TableStyleMedium6", showFirstColumn=False,
+                    showLastColumn=False, showRowStripes=True, showColumnStripes=True)
+    tab.tableStyleInfo = style
+
+    sheet.add_table(tab)
+
+    # Formulario para calcular por columnas diferentes tareas
+    sheet['N2'] = 'Promedio'
+    sheet['N3'] = "= TEXT(AVERAGE(F3:F"+str(sheet.max_row)+'), "hh:mm:ss")'
+    sheet['O2'] = "No terminados"
+    sheet['O3'] = '= COUNTIF(H3:H'+str(sheet.max_row)+',"="&"RESET")'
+
+
+    tab2 = Table(displayName="Table2", ref="N2:O3")
+
+    # Agregando Formato a la tabla
+    formulas = TableStyleInfo(name="TableStyleMedium2", showFirstColumn=False,
+                    showLastColumn=False, showRowStripes=True, showColumnStripes=True)
+    tab2.tableStyleInfo = formulas
+
+    sheet.add_table(tab2)
+
+    # Establecer estilos de fuente y color
+    first_table_font = Font(color="124B43")  # Azul Marino
+    second_table_font = Font(color="0043BB")  # Un tono más claro de rojo
+
+    
+
+    # Guardar el libro de Excel en un objeto en memoria
+    output = io.BytesIO()
+    workbook.save(output)
+    output.seek(0)
+
+    # Enviar el archivo como respuesta para descarga
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name='Fujikura Automotive México Piedras Negras.xlsx',
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
