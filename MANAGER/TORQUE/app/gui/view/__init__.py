@@ -118,9 +118,17 @@ class MainWindow (QMainWindow):
         try:
             case = q.text()               
             if case == "Login":
+                self.qw_login.setVisible(self.login_show) #se muestra u oculta login al presionar el botón
                 self.qw_login.ui.lineEdit.setText("")
                 self.qw_login.ui.lineEdit.setPlaceholderText("Escanea o escribe tu codigo")
+
+                if self.login_show == True:#si estaba true para que se mostrara, ahora al volver a presionar el botón será false, entonces lo ocultará
+                    self.login_show = False
+                else:
+                    self.login_show = True
+
                 self.output.emit({"request":"login"})
+
             elif case == "Logout":
                 if self.cycle_started == False:
                     self.qw_login.ui.lineEdit.setText("")

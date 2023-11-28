@@ -825,64 +825,68 @@ class MqttClient (QObject):
                         endpoint = ("http://{}/api/get/usuarios/GAFET/=/{}/ACTIVE/=/1".format(self.model.server, usuario))
                         response = requests.get(endpoint).json()
                         print(response)
-                        if "TYPE" in response:
-                            if response["TYPE"] == "SUPERUSUARIO" or response["TYPE"] == "AMTC" or response["TYPE"] == "CALIDAD":
-                                master_qr_boxes = json.loads(self.model.input_data["database"]["pedido"]["QR_BOXES"])
-                                fecha_actual = datetime.now()
-                                data = {
-                                    "NAME": response["NAME"],
-                                    "GAFET":  usuario,
-                                    "TYPE": response["TYPE"],
-                                    "LOG": "torque_KEY",
-                                    "DATETIME": fecha_actual.strftime("%Y/%m/%d %H:%M:%S"),
-                                    }
-                                
-                                
-                                if (self.model.key_calidad_caja_repetida== True  or self.model.key_calidad_caja_sin_FET==True) and response["TYPE"] == "CALIDAD":
-                                    data["LOG"]="CAJA_"+self.model.caja_por_validar+"_Validada"
-                                    data["HM"]=self.model.qr_codes["HM"]
-                                    data["QR_VALIDADO"]=self.model.qr_box_actual
-                                    self.model.key_calidad_caja_repetida=False
-                                    if self.model.key_calidad_caja_sin_FET==True and (self.model.caja_por_validar=="PDC-D" or self.model.caja_por_validar=="PDC-P"):
+                        if (self.model.key_calidad_caja_repetida== True  or self.model.key_calidad_caja_sin_FET==True) and response["TYPE"] == "CALIDAD":
+                            master_qr_boxes = json.loads(self.model.input_data["database"]["pedido"]["QR_BOXES"])
+                            for box in master_qr_boxes:
+                                if master_qr_boxes[box][0] in self.model.qr_box_actual and master_qr_boxes[box][1]:
+                                    if not(box in self.model.input_data["plc"]["clamps"]) and box in self.model.input_data["database"]["modularity"]:
+                                        
+                                        if "TYPE" in response:
+                                            if response["TYPE"] == "SUPERUSUARIO" or response["TYPE"] == "AMTC" or response["TYPE"] == "CALIDAD":
+                                                fecha_actual = datetime.now()
+                                                data = {
+                                                    "NAME": response["NAME"],
+                                                    "GAFET":  usuario,
+                                                    "TYPE": response["TYPE"],
+                                                    "LOG": "torque_KEY",
+                                                    "DATETIME": fecha_actual.strftime("%Y/%m/%d %H:%M:%S"),
+                                                    }
+                                        
+                                        print("porque está mal")
+                                        data["LOG"]="CAJA_"+self.model.caja_por_validar+"_Validada"
+                                        data["HM"]=self.model.qr_codes["HM"]
                                         data["FET"]=self.model.name_FET
                                         data["QR_FET"]=self.model.qr_FET
-                                    print("QR ACEPTADO validado calidad: ",self.model.qr_box_actual)
-                                    print("colocar caja para clampear: ",self.model.caja_por_validar)
-                                    self.client.publish(self.model.pub_topics["plc"],json.dumps({self.model.caja_por_validar: True}), qos = 2)
-
-                                    if self.model.caja_por_validar in self.model.boxPos1:
-                                        command = {
-                                        "lbl_steps" : {"text": f"Coloca la caja {self.model.caja_por_validar} en su lugar", "color": "black"},
-                                        "lbl_result" : {"text": "", "color": "red"},
-                                        "lbl_boxNEW" : {"text":"", "color": "green"},
-                                        }
-                                        self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
-                                        command = {
-                                        "lbl_steps" : {"text": "", "color": "black"},
-                                        "lbl_result" : {"text": "", "color": "red"},
-                                        "lbl_boxNEW" : {"text":"", "color": "green"},
-                                        }
-                                        self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
-                                    if self.model.caja_por_validar in self.model.boxPos2:
-
-                                        command = {
-                                        "lbl_steps" : {"text": f"Coloca la caja {self.model.caja_por_validar} en su lugar", "color": "black"},
-                                        "lbl_result" : {"text": "", "color": "red"},
-                                        "lbl_boxNEW" : {"text":"", "color": "green"},
-                                        }
-                                        self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
-                                        command = {
-                                        "lbl_steps" : {"text": f" ", "color": "black"},
-                                        "lbl_result" : {"text": "", "color": "red"},
-                                        "lbl_boxNEW" : {"text":"", "color": "green"},
+                                        data["QR_VALIDADO"]=self.model.qr_box_actual
+                                        self.model.key_calidad_caja_repetida=False
                                         
-                                        }
-                                        self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                        print("QR ACEPTADO validado calidad: ",self.model.qr_box_actual)
+                                        print("colocar caja para clampear: ",self.model.caja_por_validar)
+                                        self.client.publish(self.model.pub_topics["plc"],json.dumps({self.model.caja_por_validar: True}), qos = 2)
 
-                                    self.model.qr_validado.append(copy(self.model.qr_box_actual))
-                                    endpoint = "http://{}/api/post/login".format(self.model.server)
-                                    resp = requests.post(endpoint, data=json.dumps(data))
-                                    Timer(10, self.boxTimeout, args = (self.model.caja_por_validar, self.model.qr_box_actual)).start()
+                                        if self.model.caja_por_validar in self.model.boxPos1:
+                                            command = {
+                                            "lbl_steps" : {"text": f"Coloca la caja {self.model.caja_por_validar} en su lugar", "color": "black"},
+                                            "lbl_result" : {"text": "", "color": "red"},
+                                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                                            }
+                                            self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                            command = {
+                                            "lbl_steps" : {"text": "", "color": "black"},
+                                            "lbl_result" : {"text": "", "color": "red"},
+                                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                                            }
+                                            self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                        if self.model.caja_por_validar in self.model.boxPos2:
+
+                                            command = {
+                                            "lbl_steps" : {"text": f"Coloca la caja {self.model.caja_por_validar} en su lugar", "color": "black"},
+                                            "lbl_result" : {"text": "", "color": "red"},
+                                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                                            }
+                                            self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                            command = {
+                                            "lbl_steps" : {"text": f" ", "color": "black"},
+                                            "lbl_result" : {"text": "", "color": "red"},
+                                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                                            
+                                            }
+                                            self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+
+                                        self.model.qr_validado.append(copy(self.model.qr_box_actual))
+                                        endpoint = "http://{}/api/post/login".format(self.model.server)
+                                        resp = requests.post(endpoint, data=json.dumps(data))
+                                        Timer(10, self.boxTimeout, args = (self.model.caja_por_validar, self.model.qr_box_actual)).start()
 
                                 #elif self.model.reintento_torque == True:
                                 #    print("key_process!!!!!!!!!!!!!!!!!!!!!!")
