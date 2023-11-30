@@ -1697,7 +1697,7 @@ def descargar(db, table, task):
                         for i in fila:
                             if 'NOTAS' in i:
                                 Notepad = json.loads(fila[i])
-                                print(Notepad['TORQUE'][1])
+                                #print(Notepad['TORQUE'][1])
                                 dato.append(Notepad['TORQUE'][1])
                             else: 
                                 #print(fila["FIN"])
