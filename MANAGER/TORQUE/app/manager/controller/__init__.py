@@ -652,15 +652,12 @@ class Controller (QObject):
                                                 #serial de la caja
                                                 print("------QR ACEPTADO: "+str(qr_box))
                                                 print("------Colocar Caja "+ str(i) +" para clampear: ")
-                                                if i == "PDC-RS":
-                                                    self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"PDC-RMID": True}), qos = 2)
-                                                else:
-                                                    self.client.client.publish(self.model.pub_topics["plc"],json.dumps({i: True}), qos = 2)
-                                                    print("zonas en else")
                                                 
+                                                self.model.validacion_conectores_pdcp=True
                                                 if i in self.model.boxPos1:
                                                     command = {
-                                                    "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"},
+                                                    "lbl_steps" : {"text": f"Coloca la caja {i} para validar CONECTORES", "color": "green"},
+                                                    "img_center" : "PDCP_CANDADOS.JPG",
                                                     "lbl_result" : {"text": "", "color": "red"},
                                                     "lbl_boxNEW" : {"text":"", "color": "green"},
                                                     }
@@ -683,24 +680,14 @@ class Controller (QObject):
                                                     self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
 
                                                     command = {
-                                                    "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"},
+                                                    "lbl_steps" : {"text": f"Coloca la caja {i} para validar CONECTORES", "color": "green"},
+                                                    "img_center" : "PDCP_CANDADOS.JPG",
                                                     "lbl_result" : {"text": "", "color": "red"},
                                                     "lbl_boxNEW" : {"text":"", "color": "green"},
                                                     }
                                                     self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
                                                 
-                                                #caja adecuada:
-                                                if "PDC-R" in i:
-                                                    if self.model.smallflag == True:
-                                                        i = "PDC-RMID"
-                                                        self.model.pdcr_iniciada=True
-                                                    if self.model.mediumflag == True:
-                                                        i = "PDC-RMID"
-                                                        self.model.pdcr_iniciada=True
-                                                        print("medium flag activacion")
-                                                    elif self.model.largeflag == True:
-                                                        i = "PDC-R"
-                                                        self.model.pdcr_iniciada=True
+                                                
                                                 #se avisa a la variable de cajas_habilitadas que ya se escaneó la caja
                                                 self.model.cajas_habilitadas[i] = 1
                                                 print("cajas habilitadas: ",self.model.cajas_habilitadas)
@@ -710,21 +697,17 @@ class Controller (QObject):
                                                 #variable donde se guardan los seriales de cada caja (si se acaba el tiempo se reemplazará al escanear nuevamente para clampear)
                                                 self.model.qr_codes[i] = qr_box
 
-                                                Timer(15, self.boxTimeout, args = (i, qr_box)).start()
+                                                #Timer(15, self.boxTimeout, args = (i, qr_box)).start()
 
                                             elif self.model.qr_coincide_FET==True:
                                                 #serial de la caja
                                                 print("------QR ACEPTADO: "+str(qr_box))
                                                 print("------Colocar Caja "+ str(i) +" para clampear: ")
-                                                if i == "PDC-RS":
-                                                    self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"PDC-RMID": True}), qos = 2)
-                                                else:
-                                                    self.client.client.publish(self.model.pub_topics["plc"],json.dumps({i: True}), qos = 2)
-                                                    print("zonas en else")
-                                                
+                                                self.model.validacion_conectores_pdcp=True
                                                 if i in self.model.boxPos1:
                                                     command = {
-                                                    "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"},
+                                                    "lbl_steps" : {"text": f"Coloca la caja {i} para validar CONECTORES", "color": "green"},
+                                                    "img_center" : "PDCP_CANDADOS.JPG",
                                                     "lbl_result" : {"text": "", "color": "red"},
                                                     "lbl_boxNEW" : {"text":"", "color": "green"},
                                                     }
@@ -738,7 +721,8 @@ class Controller (QObject):
                                                 if i in self.model.boxPos2:
 
                                                     command = {
-                                                    "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"},
+                                                    "lbl_steps" : {"text": f"Coloca la caja {i} para validar CONECTORES", "color": "green"},
+                                                    "img_center" : "PDCP_CANDADOS.JPG",
                                                     "lbl_result" : {"text": "", "color": "red"},
                                                     "lbl_boxNEW" : {"text":"", "color": "green"},
                                                     }
@@ -750,18 +734,7 @@ class Controller (QObject):
                                                     }
                                                     self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                                                 
-                                                #caja adecuada:
-                                                if "PDC-R" in i:
-                                                    if self.model.smallflag == True:
-                                                        i = "PDC-RMID"
-                                                        self.model.pdcr_iniciada=True
-                                                    if self.model.mediumflag == True:
-                                                        i = "PDC-RMID"
-                                                        self.model.pdcr_iniciada=True
-                                                        print("medium flag activacion")
-                                                    elif self.model.largeflag == True:
-                                                        i = "PDC-R"
-                                                        self.model.pdcr_iniciada=True
+                                                
                                                 #se avisa a la variable de cajas_habilitadas que ya se escaneó la caja
                                                 self.model.cajas_habilitadas[i] = 1
                                                 print("cajas habilitadas: ",self.model.cajas_habilitadas)
@@ -771,7 +744,7 @@ class Controller (QObject):
                                                 #variable donde se guardan los seriales de cada caja (si se acaba el tiempo se reemplazará al escanear nuevamente para clampear)
                                                 self.model.qr_codes[i] = qr_box
 
-                                                Timer(15, self.boxTimeout, args = (i, qr_box)).start()
+                                                #Timer(15, self.boxTimeout, args = (i, qr_box)).start()
 
                                     
                                     else:
@@ -983,134 +956,241 @@ class Controller (QObject):
                                             self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
 
                                     elif (caja_repetida and qr_box in self.model.qr_validado) or self.model.arnes_misma_caja==True:
-                                        print("caja validada por calidad", self.model.qr_validado)
-                                        ok = True
-                                        self.model.key_calidad_caja_repetida=False
-                                        print("QR ACEPTADO: ",qr_box)
-                                        
-                                        #serial de la caja
-                                        print("------QR ACEPTADO: "+str(qr_box))
-                                        print("------Colocar Caja "+ str(i) +" para clampear: ")
-                                        if i == "PDC-RS":
-                                            self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"PDC-RMID": True}), qos = 2)
-                                        else:
-                                            self.client.client.publish(self.model.pub_topics["plc"],json.dumps({i: True}), qos = 2)
-                                            print("zonas en else")
-                                        
-                                        if i in self.model.boxPos1:
-                                            command = {
-                                            "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"},
-                                            "lbl_result" : {"text": "", "color": "red"},
-                                            "lbl_boxNEW" : {"text":"", "color": "green"},
-                                            }
-                                            self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
-                                            command = {
-                                            "lbl_steps" : {"text": " ", "color": "black"},
-                                            "lbl_result" : {"text": " ", "color": "red"},
-                                            "lbl_boxNEW" : {"text": " ", "color": "green"},
-                                            }
-                                            self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
-                                        if i in self.model.boxPos2:
-
-                                            print("pos2hhhhhhhhhhhhhhhhhhhhhhhhh")
-                                            command = {
-                                            "lbl_steps" : {"text": "", "color": "black"},
-                                            "lbl_result" : {"text": "", "color": "red"},
-                                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                                        if i== "PDC-P":
+                                            self.model.qr_box_actual=qr_box
+                                            self.model.key_calidad_caja_sin_FET=False
+                                            print("QR ACEPTADO: ",qr_box)
                                             
-                                            }
-                                            self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                            #serial de la caja
+                                            print("------QR ACEPTADO: "+str(qr_box))
+                                            print("------Colocar Caja "+ str(i) +" para clampear: ")
+                                            
+                                            self.model.validacion_conectores_pdcp=True
+                                            if i in self.model.boxPos1:
+                                                command = {
+                                                "lbl_steps" : {"text": f"Coloca la caja {i} para validar CONECTORES", "color": "green"},
+                                                "img_center" : "PDCP_CANDADOS.JPG",
+                                                "lbl_result" : {"text": "", "color": "red"},
+                                                "lbl_boxNEW" : {"text":"", "color": "green"},
+                                                }
+                                                self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                                command = {
+                                                "lbl_steps" : {"text": " ", "color": "black"},
+                                                "lbl_result" : {"text": " ", "color": "red"},
+                                                "lbl_boxNEW" : {"text": " ", "color": "green"},
+                                                }
+                                                self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                            if i in self.model.boxPos2:
 
-                                            command = {
-                                            "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"},
-                                            "lbl_result" : {"text": "", "color": "red"},
-                                            "lbl_boxNEW" : {"text":"", "color": "green"},
-                                            }
-                                            self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
-                                        
-                                        #caja adecuada:
-                                        if "PDC-R" in i:
-                                            if self.model.smallflag == True:
-                                                i = "PDC-RMID"
-                                                self.model.pdcr_iniciada=True
-                                            if self.model.mediumflag == True:
-                                                i = "PDC-RMID"
-                                                self.model.pdcr_iniciada=True
-                                                print("medium flag activacion")
-                                            elif self.model.largeflag == True:
-                                                i = "PDC-R"
-                                                self.model.pdcr_iniciada=True
-                                        #se avisa a la variable de cajas_habilitadas que ya se escaneó la caja
-                                        self.model.cajas_habilitadas[i] = 1
-                                        print("cajas habilitadas: ",self.model.cajas_habilitadas)
-                                        #if bandera_mfbp2_derecha_nueva == True:
-                                        #   bandera_mfbp2_derecha_nueva = False
-                                        #   qr_box = qr_box.replace("12975407216","12975407830")
-                                        #variable donde se guardan los seriales de cada caja (si se acaba el tiempo se reemplazará al escanear nuevamente para clampear)
-                                        self.model.qr_codes[i] = qr_box
+                                                command = {
+                                                "lbl_steps" : {"text": "", "color": "black"},
+                                                "lbl_result" : {"text": "", "color": "red"},
+                                                "lbl_boxNEW" : {"text":"", "color": "green"},
+                                                
+                                                }
+                                                self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
 
-                                        Timer(15, self.boxTimeout, args = (i, qr_box)).start()
-                                    elif caja_repetida==False:
-                                        
-                                        #serial de la caja
-                                        print("------QR ACEPTADO: "+str(qr_box))
-                                        print("------Colocar Caja "+ str(i) +" para clampear: ")
-                                        if i == "PDC-RS":
-                                            self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"PDC-RMID": True}), qos = 2)
+                                                command = {
+                                                "lbl_steps" : {"text": f"Coloca la caja {i} para validar CONECTORES", "color": "green"},
+                                                "img_center" : "PDCP_CANDADOS.JPG",
+                                                "lbl_result" : {"text": "", "color": "red"},
+                                                "lbl_boxNEW" : {"text":"", "color": "green"},
+                                                }
+                                                self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                            
+                                            
+                                            #se avisa a la variable de cajas_habilitadas que ya se escaneó la caja
+                                            self.model.cajas_habilitadas[i] = 1
+                                            print("cajas habilitadas: ",self.model.cajas_habilitadas)
+                                            #if bandera_mfbp2_derecha_nueva == True:
+                                            #   bandera_mfbp2_derecha_nueva = False
+                                            #   qr_box = qr_box.replace("12975407216","12975407830")
+                                            #variable donde se guardan los seriales de cada caja (si se acaba el tiempo se reemplazará al escanear nuevamente para clampear)
+                                            self.model.qr_codes[i] = qr_box
+
+                                            #Timer(15, self.boxTimeout, args = (i, qr_box)).start()
                                         else:
-                                            self.client.client.publish(self.model.pub_topics["plc"],json.dumps({i: True}), qos = 2)
-                                            print("zonas en else")
-                                        
-                                        if i in self.model.boxPos1:
-                                            command = {
-                                            "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"},
-                                            "lbl_result" : {"text": "", "color": "red"},
-                                            "lbl_boxNEW" : {"text":"", "color": "green"},
-                                            }
-                                            self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
-                                            command = {
-                                            "lbl_steps" : {"text": f" ", "color": "black"},
-                                            "lbl_result" : {"text": "", "color": "red"},
-                                            "lbl_boxNEW" : {"text":"", "color": "green"},
-                                            }
-                                            self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
-                                        if i in self.model.boxPos2:
+                                            print("caja validada por calidad", self.model.qr_validado)
+                                            ok = True
+                                            self.model.key_calidad_caja_repetida=False
+                                            print("QR ACEPTADO: ",qr_box)
+                                            
+                                            #serial de la caja
+                                            print("------QR ACEPTADO: "+str(qr_box))
+                                            print("------Colocar Caja "+ str(i) +" para clampear: ")
+                                            if i == "PDC-RS":
+                                                self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"PDC-RMID": True}), qos = 2)
+                                            else:
+                                                self.client.client.publish(self.model.pub_topics["plc"],json.dumps({i: True}), qos = 2)
+                                                print("zonas en else")
+                                            
+                                            if i in self.model.boxPos1:
+                                                command = {
+                                                "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"},
+                                                "lbl_result" : {"text": "", "color": "red"},
+                                                "lbl_boxNEW" : {"text":"", "color": "green"},
+                                                }
+                                                self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                                command = {
+                                                "lbl_steps" : {"text": " ", "color": "black"},
+                                                "lbl_result" : {"text": " ", "color": "red"},
+                                                "lbl_boxNEW" : {"text": " ", "color": "green"},
+                                                }
+                                                self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                            if i in self.model.boxPos2:
 
-                                            command = {
-                                            "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"},
-                                            "lbl_result" : {"text": "", "color": "red"},
-                                            "lbl_boxNEW" : {"text":"", "color": "green"},
-                                            }
-                                            self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
-                                            command = {
-                                            "lbl_steps" : {"text": f" ", "color": "black"},
-                                            "lbl_result" : {"text": "", "color": "red"},
-                                            "lbl_boxNEW" : {"text":"", "color": "green"},
-                                            }
-                                            self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
-                                        
-                                        #caja adecuada:
-                                        if "PDC-R" in i:
-                                            if self.model.smallflag == True:
-                                                i = "PDC-RMID"
-                                                self.model.pdcr_iniciada=True
-                                            if self.model.mediumflag == True:
-                                                i = "PDC-RMID"
-                                                self.model.pdcr_iniciada=True
-                                                print("medium flag activacion")
-                                            elif self.model.largeflag == True:
-                                                i = "PDC-R"
-                                                self.model.pdcr_iniciada=True
-                                        #se avisa a la variable de cajas_habilitadas que ya se escaneó la caja
-                                        self.model.cajas_habilitadas[i] = 1
-                                        print("cajas habilitadas: ",self.model.cajas_habilitadas)
-                                        #if bandera_mfbp2_derecha_nueva == True:
-                                        #   bandera_mfbp2_derecha_nueva = False
-                                        #   qr_box = qr_box.replace("12975407216","12975407830")
-                                        #variable donde se guardan los seriales de cada caja (si se acaba el tiempo se reemplazará al escanear nuevamente para clampear)
-                                        self.model.qr_codes[i] = qr_box
+                                                print("pos2hhhhhhhhhhhhhhhhhhhhhhhhh")
+                                                command = {
+                                                "lbl_steps" : {"text": "", "color": "black"},
+                                                "lbl_result" : {"text": "", "color": "red"},
+                                                "lbl_boxNEW" : {"text":"", "color": "green"},
+                                                
+                                                }
+                                                self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
 
-                                        Timer(15, self.boxTimeout, args = (i, qr_box)).start()
+                                                command = {
+                                                "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"},
+                                                "lbl_result" : {"text": "", "color": "red"},
+                                                "lbl_boxNEW" : {"text":"", "color": "green"},
+                                                }
+                                                self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                            
+                                            #caja adecuada:
+                                            if "PDC-R" in i:
+                                                if self.model.smallflag == True:
+                                                    i = "PDC-RMID"
+                                                    self.model.pdcr_iniciada=True
+                                                if self.model.mediumflag == True:
+                                                    i = "PDC-RMID"
+                                                    self.model.pdcr_iniciada=True
+                                                    print("medium flag activacion")
+                                                elif self.model.largeflag == True:
+                                                    i = "PDC-R"
+                                                    self.model.pdcr_iniciada=True
+                                            #se avisa a la variable de cajas_habilitadas que ya se escaneó la caja
+                                            self.model.cajas_habilitadas[i] = 1
+                                            print("cajas habilitadas: ",self.model.cajas_habilitadas)
+                                            #if bandera_mfbp2_derecha_nueva == True:
+                                            #   bandera_mfbp2_derecha_nueva = False
+                                            #   qr_box = qr_box.replace("12975407216","12975407830")
+                                            #variable donde se guardan los seriales de cada caja (si se acaba el tiempo se reemplazará al escanear nuevamente para clampear)
+                                            self.model.qr_codes[i] = qr_box
+
+                                            Timer(15, self.boxTimeout, args = (i, qr_box)).start()
+                                    elif caja_repetida==False:
+                                        if i== "PDC-P":
+                                            self.model.qr_box_actual=qr_box
+                                            self.model.key_calidad_caja_sin_FET=False
+                                            print("QR ACEPTADO: ",qr_box)
+                                            
+                                            #serial de la caja
+                                            print("------QR ACEPTADO: "+str(qr_box))
+                                            print("------Colocar Caja "+ str(i) +" para clampear: ")
+                                            
+                                            self.model.validacion_conectores_pdcp=True
+                                            if i in self.model.boxPos1:
+                                                command = {
+                                                "lbl_steps" : {"text": f"Coloca la caja {i} para validar CONECTORES", "color": "green"},
+                                                "img_center" : "PDCP_CANDADOS.JPG",
+                                                "lbl_result" : {"text": "", "color": "red"},
+                                                "lbl_boxNEW" : {"text":"", "color": "green"},
+                                                }
+                                                self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                                command = {
+                                                "lbl_steps" : {"text": " ", "color": "black"},
+                                                "lbl_result" : {"text": " ", "color": "red"},
+                                                "lbl_boxNEW" : {"text": " ", "color": "green"},
+                                                }
+                                                self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                            if i in self.model.boxPos2:
+
+                                                command = {
+                                                "lbl_steps" : {"text": "", "color": "black"},
+                                                "lbl_result" : {"text": "", "color": "red"},
+                                                "lbl_boxNEW" : {"text":"", "color": "green"},
+                                                
+                                                }
+                                                self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+
+                                                command = {
+                                                "lbl_steps" : {"text": f"Coloca la caja {i} para validar CONECTORES", "color": "green"},
+                                                "img_center" : "PDCP_CANDADOS.JPG",
+                                                "lbl_result" : {"text": "", "color": "red"},
+                                                "lbl_boxNEW" : {"text":"", "color": "green"},
+                                                }
+                                                self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                            
+                                            
+                                            #se avisa a la variable de cajas_habilitadas que ya se escaneó la caja
+                                            self.model.cajas_habilitadas[i] = 1
+                                            print("cajas habilitadas: ",self.model.cajas_habilitadas)
+                                            #if bandera_mfbp2_derecha_nueva == True:
+                                            #   bandera_mfbp2_derecha_nueva = False
+                                            #   qr_box = qr_box.replace("12975407216","12975407830")
+                                            #variable donde se guardan los seriales de cada caja (si se acaba el tiempo se reemplazará al escanear nuevamente para clampear)
+                                            self.model.qr_codes[i] = qr_box
+
+                                            #Timer(15, self.boxTimeout, args = (i, qr_box)).start()
+                                        else:
+                                            #serial de la caja
+                                            print("------QR ACEPTADO: "+str(qr_box))
+                                            print("------Colocar Caja "+ str(i) +" para clampear: ")
+                                            if i == "PDC-RS":
+                                                self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"PDC-RMID": True}), qos = 2)
+                                            else:
+                                                self.client.client.publish(self.model.pub_topics["plc"],json.dumps({i: True}), qos = 2)
+                                                print("zonas en else")
+                                            
+                                            if i in self.model.boxPos1:
+                                                command = {
+                                                "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"},
+                                                "lbl_result" : {"text": "", "color": "red"},
+                                                "lbl_boxNEW" : {"text":"", "color": "green"},
+                                                }
+                                                self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                                command = {
+                                                "lbl_steps" : {"text": f" ", "color": "black"},
+                                                "lbl_result" : {"text": "", "color": "red"},
+                                                "lbl_boxNEW" : {"text":"", "color": "green"},
+                                                }
+                                                self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                            if i in self.model.boxPos2:
+
+                                                command = {
+                                                "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"},
+                                                "lbl_result" : {"text": "", "color": "red"},
+                                                "lbl_boxNEW" : {"text":"", "color": "green"},
+                                                }
+                                                self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                                command = {
+                                                "lbl_steps" : {"text": f" ", "color": "black"},
+                                                "lbl_result" : {"text": "", "color": "red"},
+                                                "lbl_boxNEW" : {"text":"", "color": "green"},
+                                                }
+                                                self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                            
+                                            #caja adecuada:
+                                            if "PDC-R" in i:
+                                                if self.model.smallflag == True:
+                                                    i = "PDC-RMID"
+                                                    self.model.pdcr_iniciada=True
+                                                if self.model.mediumflag == True:
+                                                    i = "PDC-RMID"
+                                                    self.model.pdcr_iniciada=True
+                                                    print("medium flag activacion")
+                                                elif self.model.largeflag == True:
+                                                    i = "PDC-R"
+                                                    self.model.pdcr_iniciada=True
+                                            #se avisa a la variable de cajas_habilitadas que ya se escaneó la caja
+                                            self.model.cajas_habilitadas[i] = 1
+                                            print("cajas habilitadas: ",self.model.cajas_habilitadas)
+                                            #if bandera_mfbp2_derecha_nueva == True:
+                                            #   bandera_mfbp2_derecha_nueva = False
+                                            #   qr_box = qr_box.replace("12975407216","12975407830")
+                                            #variable donde se guardan los seriales de cada caja (si se acaba el tiempo se reemplazará al escanear nuevamente para clampear)
+                                            self.model.qr_codes[i] = qr_box
+
+                                            Timer(15, self.boxTimeout, args = (i, qr_box)).start()
 
                                 elif self.model.config_data["cajas_repetidas"]==False and self.model.config_data["comparacion_cajasDP"]==True:
                                     if i== "PDC-D":
@@ -1292,18 +1372,7 @@ class Controller (QObject):
                                                     }
                                                     self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                                                 
-                                                #caja adecuada:
-                                                if "PDC-R" in i:
-                                                    if self.model.smallflag == True:
-                                                        i = "PDC-RMID"
-                                                        self.model.pdcr_iniciada=True
-                                                    if self.model.mediumflag == True:
-                                                        i = "PDC-RMID"
-                                                        self.model.pdcr_iniciada=True
-                                                        print("medium flag activacion")
-                                                    elif self.model.largeflag == True:
-                                                        i = "PDC-R"
-                                                        self.model.pdcr_iniciada=True
+                                                
                                                 #se avisa a la variable de cajas_habilitadas que ya se escaneó la caja
                                                 self.model.cajas_habilitadas[i] = 1
                                                 print("cajas habilitadas: ",self.model.cajas_habilitadas)
@@ -1349,6 +1418,7 @@ class Controller (QObject):
                                                 }
                                                 self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
 
+
                                         else:
                                             self.model.qr_box_actual=qr_box
                                             
@@ -1359,29 +1429,28 @@ class Controller (QObject):
                                                     print("esta en pos1")
                                                     command = {
                                                     "lbl_steps" : {"text": "Escanea Gafet de calidad para autorizar", "color": "black"},
-                                                    "lbl_result" : {"text": f"caja {i} pertenece a otro arnés", "color": "red"},
-                                                    "lbl_boxNEW" : {"text":"HM Asociado \n"+respuesta_FET["HM"], "color": "green"},
+                                                    "lbl_result" : {"text": f"caja {i} no coincide con registros de FET", "color": "red"},
+                                                    "lbl_boxNEW" : {"text":"", "color": "green"},
                                                     }
                                                     self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                                                     command = {
-                                                    "lbl_steps" : {"text":"Escanea Gafet de calidad para autorizar", "color": "black"},
-                                                    "lbl_result" : {"text": f"caja {i} pertenece a otro arnés", "color": "red"},
-                                                    "lbl_boxNEW" : {"text":"HM Asociado \n"+respuesta_FET["HM"], "color": "green"},
+                                                    "lbl_steps" : {"text": "Escanea Gafet de calidad para autorizar", "color": "black"},
+                                                    "lbl_result" : {"text": f"caja {i} no coincide con registros de FET", "color": "red"},
+                                                    "lbl_boxNEW" : {"text":"", "color": "green"},
                                                     }
                                                     self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
                                                 if i in self.model.boxPos2:
 
                                                     command = {
                                                     "lbl_steps" : {"text": "Escanea Gafet de calidad para autorizar", "color": "black"},
-                                                    "lbl_result" : {"text": f"caja {i} pertenece a otro arnés", "color": "red"},
-                                                    "lbl_boxNEW" : {"text":"HM Asociado \n"+respuesta_FET["HM"], "color": "green"},
+                                                    "lbl_result" : {"text": f"caja {i} no coincide con registros de FET", "color": "red"},
+                                                    "lbl_boxNEW" : {"text":"", "color": "green"},
                                                     }
                                                     self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
                                                     command = {
                                                     "lbl_steps" : {"text": "Escanea Gafet de calidad para autorizar", "color": "black"},
-                                                    "lbl_result" : {"text": f"caja {i} pertenece a otro arnés", "color": "red"},
-                                                    "lbl_boxNEW" : {"text":"HM Asociado \n"+respuesta_FET["HM"], "color": "green"},
-                                                    
+                                                    "lbl_result" : {"text": f"caja {i} no coincide con registros de FET", "color": "red"},
+                                                    "lbl_boxNEW" : {"text":"", "color": "green"},
                                                     }
                                                     self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
 
@@ -1393,15 +1462,12 @@ class Controller (QObject):
                                                 #serial de la caja
                                                 print("------QR ACEPTADO: "+str(qr_box))
                                                 print("------Colocar Caja "+ str(i) +" para clampear: ")
-                                                if i == "PDC-RS":
-                                                    self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"PDC-RMID": True}), qos = 2)
-                                                else:
-                                                    self.client.client.publish(self.model.pub_topics["plc"],json.dumps({i: True}), qos = 2)
-                                                    print("zonas en else")
                                                 
+                                                self.model.validacion_conectores_pdcp=True
                                                 if i in self.model.boxPos1:
                                                     command = {
-                                                    "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"},
+                                                    "lbl_steps" : {"text": f"Coloca la caja {i} para validar CONECTORES", "color": "green"},
+                                                    "img_center" : "PDCP_CANDADOS.JPG",
                                                     "lbl_result" : {"text": "", "color": "red"},
                                                     "lbl_boxNEW" : {"text":"", "color": "green"},
                                                     }
@@ -1424,24 +1490,14 @@ class Controller (QObject):
                                                     self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
 
                                                     command = {
-                                                    "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"},
+                                                    "lbl_steps" : {"text": f"Coloca la caja {i} para validar CONECTORES", "color": "green"},
+                                                    "img_center" : "PDCP_CANDADOS.JPG",
                                                     "lbl_result" : {"text": "", "color": "red"},
                                                     "lbl_boxNEW" : {"text":"", "color": "green"},
                                                     }
                                                     self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
                                                 
-                                                #caja adecuada:
-                                                if "PDC-R" in i:
-                                                    if self.model.smallflag == True:
-                                                        i = "PDC-RMID"
-                                                        self.model.pdcr_iniciada=True
-                                                    if self.model.mediumflag == True:
-                                                        i = "PDC-RMID"
-                                                        self.model.pdcr_iniciada=True
-                                                        print("medium flag activacion")
-                                                    elif self.model.largeflag == True:
-                                                        i = "PDC-R"
-                                                        self.model.pdcr_iniciada=True
+                                                
                                                 #se avisa a la variable de cajas_habilitadas que ya se escaneó la caja
                                                 self.model.cajas_habilitadas[i] = 1
                                                 print("cajas habilitadas: ",self.model.cajas_habilitadas)
@@ -1451,21 +1507,17 @@ class Controller (QObject):
                                                 #variable donde se guardan los seriales de cada caja (si se acaba el tiempo se reemplazará al escanear nuevamente para clampear)
                                                 self.model.qr_codes[i] = qr_box
 
-                                                Timer(15, self.boxTimeout, args = (i, qr_box)).start()
+                                                #Timer(15, self.boxTimeout, args = (i, qr_box)).start()
 
                                             elif self.model.qr_coincide_FET==True:
                                                 #serial de la caja
                                                 print("------QR ACEPTADO: "+str(qr_box))
                                                 print("------Colocar Caja "+ str(i) +" para clampear: ")
-                                                if i == "PDC-RS":
-                                                    self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"PDC-RMID": True}), qos = 2)
-                                                else:
-                                                    self.client.client.publish(self.model.pub_topics["plc"],json.dumps({i: True}), qos = 2)
-                                                    print("zonas en else")
-                                                
+                                                self.model.validacion_conectores_pdcp=True
                                                 if i in self.model.boxPos1:
                                                     command = {
-                                                    "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"},
+                                                    "lbl_steps" : {"text": f"Coloca la caja {i} para validar CONECTORES", "color": "green"},
+                                                    "img_center" : "PDCP_CANDADOS.JPG",
                                                     "lbl_result" : {"text": "", "color": "red"},
                                                     "lbl_boxNEW" : {"text":"", "color": "green"},
                                                     }
@@ -1479,7 +1531,8 @@ class Controller (QObject):
                                                 if i in self.model.boxPos2:
 
                                                     command = {
-                                                    "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"},
+                                                    "lbl_steps" : {"text": f"Coloca la caja {i} para validar CONECTORES", "color": "green"},
+                                                    "img_center" : "PDCP_CANDADOS.JPG",
                                                     "lbl_result" : {"text": "", "color": "red"},
                                                     "lbl_boxNEW" : {"text":"", "color": "green"},
                                                     }
@@ -1491,18 +1544,7 @@ class Controller (QObject):
                                                     }
                                                     self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                                                 
-                                                #caja adecuada:
-                                                if "PDC-R" in i:
-                                                    if self.model.smallflag == True:
-                                                        i = "PDC-RMID"
-                                                        self.model.pdcr_iniciada=True
-                                                    if self.model.mediumflag == True:
-                                                        i = "PDC-RMID"
-                                                        self.model.pdcr_iniciada=True
-                                                        print("medium flag activacion")
-                                                    elif self.model.largeflag == True:
-                                                        i = "PDC-R"
-                                                        self.model.pdcr_iniciada=True
+                                                
                                                 #se avisa a la variable de cajas_habilitadas que ya se escaneó la caja
                                                 self.model.cajas_habilitadas[i] = 1
                                                 print("cajas habilitadas: ",self.model.cajas_habilitadas)
@@ -1512,9 +1554,8 @@ class Controller (QObject):
                                                 #variable donde se guardan los seriales de cada caja (si se acaba el tiempo se reemplazará al escanear nuevamente para clampear)
                                                 self.model.qr_codes[i] = qr_box
 
-                                                Timer(15, self.boxTimeout, args = (i, qr_box)).start()
-
-                                    
+                                                #Timer(15, self.boxTimeout, args = (i, qr_box)).start()
+                                   
                                     else:
                                         #serial de la caja
                                         print("------QR ACEPTADO: "+str(qr_box))
@@ -1577,65 +1618,123 @@ class Controller (QObject):
                                         Timer(15, self.boxTimeout, args = (i, qr_box)).start()
                                 
                                 elif self.model.config_data["cajas_repetidas"]==False and self.model.config_data["comparacion_cajasDP"]==False:
-                                    #serial de la caja
-                                    print("------QR ACEPTADO: "+str(qr_box))
-                                    print("------Colocar Caja "+ str(i) +" para clampear: ")
-                                    if i == "PDC-RS":
-                                        self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"PDC-RMID": True}), qos = 2)
+                                    if i== "PDC-P":
+                                        
+                                        self.model.qr_box_actual=qr_box
+                                        
+                                       
+                                        self.model.key_calidad_caja_sin_FET=False
+                                        print("QR ACEPTADO: ",qr_box)
+                                        
+                                        #serial de la caja
+                                        print("------QR ACEPTADO: "+str(qr_box))
+                                        print("------Colocar Caja "+ str(i) +" para clampear: ")
+                                        
+                                        self.model.validacion_conectores_pdcp=True
+                                        if i in self.model.boxPos1:
+                                            command = {
+                                            "lbl_steps" : {"text": f"Coloca la caja {i} para validar CONECTORES", "color": "green"},
+                                            "img_center" : "PDCP_CANDADOS.JPG",
+                                            "lbl_result" : {"text": "", "color": "red"},
+                                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                                            }
+                                            self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                            command = {
+                                            "lbl_steps" : {"text": " ", "color": "black"},
+                                            "lbl_result" : {"text": " ", "color": "red"},
+                                            "lbl_boxNEW" : {"text": " ", "color": "green"},
+                                            }
+                                            self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                        if i in self.model.boxPos2:
+
+                                            command = {
+                                            "lbl_steps" : {"text": "", "color": "black"},
+                                            "lbl_result" : {"text": "", "color": "red"},
+                                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                                            
+                                            }
+                                            self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+
+                                            command = {
+                                            "lbl_steps" : {"text": f"Coloca la caja {i} para validar CONECTORES", "color": "green"},
+                                            "img_center" : "PDCP_CANDADOS.JPG",
+                                            "lbl_result" : {"text": "", "color": "red"},
+                                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                                            }
+                                            self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                        
+                                        
+                                        #se avisa a la variable de cajas_habilitadas que ya se escaneó la caja
+                                        self.model.cajas_habilitadas[i] = 1
+                                        print("cajas habilitadas: ",self.model.cajas_habilitadas)
+                                        #if bandera_mfbp2_derecha_nueva == True:
+                                        #   bandera_mfbp2_derecha_nueva = False
+                                        #   qr_box = qr_box.replace("12975407216","12975407830")
+                                        #variable donde se guardan los seriales de cada caja (si se acaba el tiempo se reemplazará al escanear nuevamente para clampear)
+                                        self.model.qr_codes[i] = qr_box
+
+                                        #Timer(15, self.boxTimeout, args = (i, qr_box)).start()
                                     else:
-                                        self.client.client.publish(self.model.pub_topics["plc"],json.dumps({i: True}), qos = 2)
-                                        print("zonas en else")
-                                    
-                                    if i in self.model.boxPos1:
-                                        command = {
-                                        "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"},
-                                        "lbl_result" : {"text": "", "color": "red"},
-                                        "lbl_boxNEW" : {"text":"", "color": "green"},
-                                        }
-                                        self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
-                                        command = {
-                                        "lbl_steps" : {"text": f" ", "color": "black"},
-                                        "lbl_result" : {"text": "", "color": "red"},
-                                        "lbl_boxNEW" : {"text":"", "color": "green"},
-                                        }
-                                        self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
-                                    if i in self.model.boxPos2:
 
-                                        command = {
-                                        "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"},
-                                        "lbl_result" : {"text": "", "color": "red"},
-                                        "lbl_boxNEW" : {"text":"", "color": "green"},
-                                        }
-                                        self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
-                                        command = {
-                                        "lbl_steps" : {"text": f" ", "color": "black"},
-                                        "lbl_result" : {"text": "", "color": "red"},
-                                        "lbl_boxNEW" : {"text":"", "color": "green"},
-                                        }
-                                        self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
-                                    
-                                    #caja adecuada:
-                                    if "PDC-R" in i:
-                                        if self.model.smallflag == True:
-                                            i = "PDC-RMID"
-                                            self.model.pdcr_iniciada=True
-                                        if self.model.mediumflag == True:
-                                            i = "PDC-RMID"
-                                            self.model.pdcr_iniciada=True
-                                            print("medium flag activacion")
-                                        elif self.model.largeflag == True:
-                                            i = "PDC-R"
-                                            self.model.pdcr_iniciada=True
-                                    #se avisa a la variable de cajas_habilitadas que ya se escaneó la caja
-                                    self.model.cajas_habilitadas[i] = 1
-                                    print("cajas habilitadas: ",self.model.cajas_habilitadas)
-                                    #if bandera_mfbp2_derecha_nueva == True:
-                                    #   bandera_mfbp2_derecha_nueva = False
-                                    #   qr_box = qr_box.replace("12975407216","12975407830")
-                                    #variable donde se guardan los seriales de cada caja (si se acaba el tiempo se reemplazará al escanear nuevamente para clampear)
-                                    self.model.qr_codes[i] = qr_box
+                                        #serial de la caja
+                                        print("------QR ACEPTADO: "+str(qr_box))
+                                        print("------Colocar Caja "+ str(i) +" para clampear: ")
+                                        if i == "PDC-RS":
+                                            self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"PDC-RMID": True}), qos = 2)
+                                        else:
+                                            self.client.client.publish(self.model.pub_topics["plc"],json.dumps({i: True}), qos = 2)
+                                            print("zonas en else")
+                                        
+                                        if i in self.model.boxPos1:
+                                            command = {
+                                            "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"},
+                                            "lbl_result" : {"text": "", "color": "red"},
+                                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                                            }
+                                            self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                            command = {
+                                            "lbl_steps" : {"text": f" ", "color": "black"},
+                                            "lbl_result" : {"text": "", "color": "red"},
+                                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                                            }
+                                            self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                        if i in self.model.boxPos2:
 
-                                    Timer(15, self.boxTimeout, args = (i, qr_box)).start()
+                                            command = {
+                                            "lbl_steps" : {"text": f"Coloca la caja {i} en su lugar", "color": "black"},
+                                            "lbl_result" : {"text": "", "color": "red"},
+                                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                                            }
+                                            self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                            command = {
+                                            "lbl_steps" : {"text": f" ", "color": "black"},
+                                            "lbl_result" : {"text": "", "color": "red"},
+                                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                                            }
+                                            self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                        
+                                        #caja adecuada:
+                                        if "PDC-R" in i:
+                                            if self.model.smallflag == True:
+                                                i = "PDC-RMID"
+                                                self.model.pdcr_iniciada=True
+                                            if self.model.mediumflag == True:
+                                                i = "PDC-RMID"
+                                                self.model.pdcr_iniciada=True
+                                                print("medium flag activacion")
+                                            elif self.model.largeflag == True:
+                                                i = "PDC-R"
+                                                self.model.pdcr_iniciada=True
+                                        #se avisa a la variable de cajas_habilitadas que ya se escaneó la caja
+                                        self.model.cajas_habilitadas[i] = 1
+                                        print("cajas habilitadas: ",self.model.cajas_habilitadas)
+                                        #if bandera_mfbp2_derecha_nueva == True:
+                                        #   bandera_mfbp2_derecha_nueva = False
+                                        #   qr_box = qr_box.replace("12975407216","12975407830")
+                                        #variable donde se guardan los seriales de cada caja (si se acaba el tiempo se reemplazará al escanear nuevamente para clampear)
+                                        self.model.qr_codes[i] = qr_box
+
+                                        Timer(15, self.boxTimeout, args = (i, qr_box)).start()
                             else:
                                 print("else general")
                                 command = {
@@ -1755,6 +1854,7 @@ class Controller (QObject):
             #Si existe el HM en FAMX2
             else:
                 print("FAMX2 ",famx2response)
+
                 if qr in famx2response[caja]:
                     print("si coincide")
                     self.model.qr_coincide_FET=True

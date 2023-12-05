@@ -459,6 +459,76 @@ class MqttClient (QObject):
                         self.pin.emit()
                     else:
                         self.model.pin_pressed = False
+                if "Precencia_PDCP" in payload:
+                    if payload["Precencia_PDCP"] == True:
+                        self.model.caja_puesta=True
+                        command = {
+                            "lbl_steps" : {"text": f"Caja PDC-P detectada ", "color": "green"},
+                            "lbl_result" : {"text": "Coloque candados", "color": "red"},
+                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                            }
+                        self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                    else:
+                        self.model.caja_puesta=False
+                        command = {
+                            "lbl_steps" : {"text": f"Coloca la Caja PDCP para Validación", "color": "green"},
+                            "lbl_result" : {"text": "", "color": "red"},
+                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                            }
+                        self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                if "PDCP_Validacion" in payload and self.model.validacion_conectores_pdcp==True:
+                    if payload["PDCP_Validacion"] == True:
+                        self.validacion_conectores_pdcp=True
+                        self.client.publish(self.model.pub_topics["plc"],json.dumps({"PDC-P": True}), qos = 2)
+                        command = {
+                            "lbl_steps" : {"text": f"Coloca la Caja PDC-P en su lugar", "color": "green"},
+                            "img_center" : "logo.jpg",
+                            "lbl_result" : {"text": "", "color": "red"},
+                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                            }
+                        self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                        command = {
+                            "lbl_steps" : {"text": f"", "color": "green"},
+                            "lbl_result" : {"text": "", "color": "red"},
+                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                            }
+                        self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                        Timer(15, self.boxTimeout, args = (self.model.caja_por_validar, self.model.qr_box_actual)).start()
+                if "Conector_S1" in payload and self.model.validacion_conectores_pdcp==True:
+                    if payload["Conector_S1"] == True:
+                        command = {
+                            "lbl_steps" : {"text": f"Caja PDC-P detectada ", "color": "green"},
+                            "lbl_result" : {"text": "Coloca el conector S1", "color": "red"},
+                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                            }
+                        self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                    else:
+                        self.model.conector_s1=False
+                        command = {
+                            "lbl_steps" : {"text": "", "color": "red"},
+                            "lbl_result" : {"text": "", "color": "red"},
+                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                            }
+                        self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                if "Conector_S2" in payload and self.model.validacion_conectores_pdcp==True and self.model.caja_puesta==True:
+                    if payload["Conector_S2"] == True:
+                        command = {
+                            "lbl_steps" : {"text": f"Caja PDC-P detectada ", "color": "green"},
+                            "lbl_result" : {"text": "Coloca el conector S2", "color": "red"},
+                            "lbl_result" : {"text": "", "color": "red"},
+                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                            }
+                        self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                    else:
+                        self.model.conector_s2=False
+                        command = {
+                            "lbl_steps" : {"text": "", "color": "red"},
+                            "lbl_result" : {"text": "", "color": "red"},
+                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                            }
+                        self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+
+
 
                 if "candados_finish" in payload:
                     if payload["candados_finish"] == True:
@@ -852,41 +922,77 @@ class MqttClient (QObject):
                                         
                                         print("QR ACEPTADO validado calidad: ",self.model.qr_box_actual)
                                         print("colocar caja para clampear: ",self.model.caja_por_validar)
-                                        self.client.publish(self.model.pub_topics["plc"],json.dumps({self.model.caja_por_validar: True}), qos = 2)
+                                        if self.model.caja_por_validar=="PDC-P":
+                                            if self.model.caja_por_validar in self.model.boxPos1:
+                                                command = {
+                                                    "lbl_steps" : {"text": f"Coloca la caja PDC-P para validar CONECTORES", "color": "green"},
+                                                    "img_center" : "PDCP_CANDADOS.JPG",
+                                                    "lbl_result" : {"text": "", "color": "red"},
+                                                    "lbl_boxNEW" : {"text":"", "color": "green"},
+                                                    }
+                                                self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                                command = {
+                                                    "lbl_steps" : {"text": "", "color": "black"},
+                                                    "lbl_result" : {"text": "", "color": "red"},
+                                                    "lbl_boxNEW" : {"text":"", "color": "green"},
+                                                    }
+                                                self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                            if self.model.caja_por_validar in self.model.boxPos2:
 
-                                        if self.model.caja_por_validar in self.model.boxPos1:
-                                            command = {
-                                            "lbl_steps" : {"text": f"Coloca la caja {self.model.caja_por_validar} en su lugar", "color": "black"},
-                                            "lbl_result" : {"text": "", "color": "red"},
-                                            "lbl_boxNEW" : {"text":"", "color": "green"},
-                                            }
-                                            self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
-                                            command = {
-                                            "lbl_steps" : {"text": "", "color": "black"},
-                                            "lbl_result" : {"text": "", "color": "red"},
-                                            "lbl_boxNEW" : {"text":"", "color": "green"},
-                                            }
-                                            self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
-                                        if self.model.caja_por_validar in self.model.boxPos2:
+                                                command = {
+                                                    "lbl_steps" : {"text": f"Coloca la caja PDC-P para validar CONECTORES", "color": "green"},
+                                                    "img_center" : "PDCP_CANDADOS.JPG",
+                                                    "lbl_result" : {"text": "", "color": "red"},
+                                                    "lbl_boxNEW" : {"text":"", "color": "green"},
+                                                    }
+                                                self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                                command = {
+                                                    "lbl_steps" : {"text": f" ", "color": "black"},
+                                                    "lbl_result" : {"text": "", "color": "red"},
+                                                    "lbl_boxNEW" : {"text":"", "color": "green"},
+                                                
+                                                }
+                                                self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
 
-                                            command = {
-                                            "lbl_steps" : {"text": f"Coloca la caja {self.model.caja_por_validar} en su lugar", "color": "black"},
-                                            "lbl_result" : {"text": "", "color": "red"},
-                                            "lbl_boxNEW" : {"text":"", "color": "green"},
-                                            }
-                                            self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
-                                            command = {
-                                            "lbl_steps" : {"text": f" ", "color": "black"},
-                                            "lbl_result" : {"text": "", "color": "red"},
-                                            "lbl_boxNEW" : {"text":"", "color": "green"},
-                                            
-                                            }
-                                            self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                            self.model.qr_validado.append(copy(self.model.qr_box_actual))
+                                            endpoint = "http://{}/api/post/login".format(self.model.server)
+                                            resp = requests.post(endpoint, data=json.dumps(data))
+                                        else:
+                                            self.client.publish(self.model.pub_topics["plc"],json.dumps({self.model.caja_por_validar: True}), qos = 2)
 
-                                        self.model.qr_validado.append(copy(self.model.qr_box_actual))
-                                        endpoint = "http://{}/api/post/login".format(self.model.server)
-                                        resp = requests.post(endpoint, data=json.dumps(data))
-                                        Timer(10, self.boxTimeout, args = (self.model.caja_por_validar, self.model.qr_box_actual)).start()
+                                            if self.model.caja_por_validar in self.model.boxPos1:
+                                                command = {
+                                                    "lbl_steps" : {"text": f"Coloca la caja {self.model.caja_por_validar} en su lugar", "color": "black"},
+                                                    "lbl_result" : {"text": "", "color": "red"},
+                                                    "lbl_boxNEW" : {"text":"", "color": "green"},
+                                                    }
+                                                self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                                command = {
+                                                    "lbl_steps" : {"text": "", "color": "black"},
+                                                    "lbl_result" : {"text": "", "color": "red"},
+                                                    "lbl_boxNEW" : {"text":"", "color": "green"},
+                                                    }
+                                                self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                            if self.model.caja_por_validar in self.model.boxPos2:
+
+                                                command = {
+                                                    "lbl_steps" : {"text": f"Coloca la caja {self.model.caja_por_validar} en su lugar", "color": "black"},
+                                                    "lbl_result" : {"text": "", "color": "red"},
+                                                    "lbl_boxNEW" : {"text":"", "color": "green"},
+                                                    }
+                                                self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                                command = {
+                                                    "lbl_steps" : {"text": f" ", "color": "black"},
+                                                    "lbl_result" : {"text": "", "color": "red"},
+                                                    "lbl_boxNEW" : {"text":"", "color": "green"},
+                                                
+                                                }
+                                                self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+
+                                            self.model.qr_validado.append(copy(self.model.qr_box_actual))
+                                            endpoint = "http://{}/api/post/login".format(self.model.server)
+                                            resp = requests.post(endpoint, data=json.dumps(data))
+                                            Timer(10, self.boxTimeout, args = (self.model.caja_por_validar, self.model.qr_box_actual)).start()
 
                                 #elif self.model.reintento_torque == True:
                                 #    print("key_process!!!!!!!!!!!!!!!!!!!!!!")
@@ -971,14 +1077,12 @@ class MqttClient (QObject):
         if not(i in self.model.input_data["plc"]["clamps"]):
             print("tiempo terminado... caja desclampeada: ",i)
             self.client.publish(self.model.pub_topics["plc"],json.dumps({i: False}), qos = 2)
-            command = {
-                "lbl_steps" : {"text": f"Vuelve a escanear la caja {i}", "color": "red"},
-                }
-            self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+            
 
             if self.model.caja_por_validar in self.model.boxPos1:
                 command = {
                 "lbl_steps" : {"text": f"Vuelve a escanear la caja {self.model.caja_por_validar}", "color": "red"},
+                "img_center" : "logo.jpg",
                 "lbl_result" : {"text": "", "color": "red"},
                 "lbl_boxNEW" : {"text":"", "color": "green"},
                 }
@@ -993,12 +1097,14 @@ class MqttClient (QObject):
 
                 command = {
                 "lbl_steps" : {"text": f"Vuelve a escanear la caja {self.model.caja_por_validar}", "color": "red"},
+                "img_center" : "logo.jpg",
                 "lbl_result" : {"text": "", "color": "red"},
                 "lbl_boxNEW" : {"text":"", "color": "green"},
                 }
                 self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
                 command = {
                 "lbl_steps" : {"text": f" ", "color": "black"},
+
                 "lbl_result" : {"text": "", "color": "red"},
                 "lbl_boxNEW" : {"text":"", "color": "green"},
 

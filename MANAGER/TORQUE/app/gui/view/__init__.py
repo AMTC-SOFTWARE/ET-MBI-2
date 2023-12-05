@@ -114,6 +114,7 @@ class MainWindow (QMainWindow):
         self.cycle_started      = False
         self.shutdown           = False
 
+        self.login_show         = True
     def menuProcess(self, q):
         try:
             case = q.text()               

@@ -65,7 +65,7 @@ class Model (object):
         self.arnes_misma_caja=False
         self.qr_coincide_FET=False
         self.qr_error=""
-
+        self.validacion_conectores_pdcp=False
         #señal para dejar un delay entre cada candado
         self.nuevo_pin = False
 

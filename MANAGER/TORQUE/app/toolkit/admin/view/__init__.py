@@ -267,7 +267,6 @@ class Admin (QDialog):
                 
             endpoint = "http://{}/api/post/login".format(self.data.server)
             resp = requests.post(endpoint, data=json.dumps(data))
-            
     def onClicked_4(self):
         if self.ui.checkBox_4.isChecked():
             self.data.config_data["untwist"] = True

@@ -255,6 +255,7 @@ class StartCycle (QState):
         self.model.qr_validado=[]
         self.model.key_calidad_caja_repetida=False
         self.model.caja_por_validar=""
+        self.model.en_ciclo=False
         #reiniciar variable para dar delay entre cada pin
         self.model.nuevo_pin = False
         #para avisar que se finalizó el modo de revisión de candados
