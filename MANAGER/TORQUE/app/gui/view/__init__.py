@@ -17,7 +17,6 @@ from copy import copy
 import requests
 import pandas as pd
 from gui.view import resources_rc, main, login, scanner, img_popout, Tabla_horas
-from gui.view import resources_rc, main, login, scanner, img_popout
 from gui.view.comm import MqttClient
 from gui.model import Model
 import math
