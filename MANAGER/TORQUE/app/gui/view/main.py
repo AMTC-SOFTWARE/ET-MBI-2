@@ -657,13 +657,19 @@ class Ui_main(object):
         self.menuMenu.setObjectName("menuMenu")
         main.setMenuBar(self.menubar)
         self.menubar.addAction(self.menuMenu.menuAction())
-
+        self.btn_hxh = QtWidgets.QPushButton(main)
+        self.btn_hxh.setGeometry(QtCore.QRect(250, 0, 140, 35)) #posx, posy, ancho, alto
+        self.btn_hxh.setObjectName("btn_eifm")
+        #self.btn_eimf.setStyleSheet('background-color: silver; color: white; font-weight:bold; font-size:15pt; font: Century Schoolbook')
+        self.btn_hxh.setStyleSheet('background-color: cyan; color: black; font-weight:bold; font-size:12pt; font: Segoe UI Black')
         self.retranslateUi(main)
         QtCore.QMetaObject.connectSlotsByName(main)
 
     def retranslateUi(self, main):
         _translate = QtCore.QCoreApplication.translate
         main.setWindowTitle(_translate("main", "MainWindow"))
+         ########################################################
+        self.btn_hxh.setText(_translate("main", "Hora por Hora"))
         self.lbl_user.setText(_translate("main", "Usuario"))
         self.lbl_info3.setText(_translate("main", "MODO\n"
 "ADMIN"))
