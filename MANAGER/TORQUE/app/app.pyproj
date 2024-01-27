@@ -31,6 +31,7 @@
     <Compile Include="gui\view\main.py" />
     <Compile Include="gui\view\resources_rc.py" />
     <Compile Include="gui\view\scanner.py" />
+    <Compile Include="gui\view\Tabla_horas.py" />
     <Compile Include="gui\view\__init__.py" />
     <Compile Include="gui\__init__.py" />
     <Compile Include="manager\controller\basics.py" />
