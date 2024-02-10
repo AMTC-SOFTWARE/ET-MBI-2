@@ -923,6 +923,7 @@ class MqttClient (QObject):
                                         print("QR ACEPTADO validado calidad: ",self.model.qr_box_actual)
                                         print("colocar caja para clampear: ",self.model.caja_por_validar)
                                         if self.model.caja_por_validar=="PDC-P":
+                                            self.model.validacion_conectores_pdcp=True
                                             if self.model.caja_por_validar in self.model.boxPos1:
                                                 command = {
                                                     "lbl_steps" : {"text": f"Coloca la caja PDC-P para validar CONECTORES", "color": "green"},
