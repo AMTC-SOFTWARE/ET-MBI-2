@@ -12,6 +12,7 @@ import pprint
 import json
 from time import sleep              # Para usar la función sleep(segundos)
 from toolkit.admin import Admin
+import pandas as pd
 
 class Startup(QState):
     ok  = pyqtSignal()
@@ -63,7 +64,7 @@ class Startup(QState):
             "lbl_user" : {"type":"", "user": "", "color": "black"},
             "lbl_instructions" : {"text": "                                 ", "color": "black"},
             "img_nuts" : "blanco.jpg",
-            "lcdNumber": {"value": "0", "visible": False},
+            "lcdNumber": {"value": "0", "visible": True},
             "lbl_nuts"  : {"text": "", "color": "black"},
             "img_toolCurrent" : "blanco.jpg",
             "lbl_toolCurrent"  : {"text": "", "color": "black"},
@@ -72,8 +73,6 @@ class Startup(QState):
             }
         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         command["position"]["text"] = "POSICIÓN 2"
-        command["lcdNumber"]["value"] = "0"
-        command["lcdNumber"]["visible"] = True
         #command = {"position":{"text": "POSICIÓN 2"}, "lcdNumber": {"value": "0", "visible": True},#}
         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         try:
@@ -368,6 +367,96 @@ class StartCycle (QState):
         except Exception as ex:
             print("Error en el conteo ", ex)
                 
+        try:
+            turnos = {
+            "1":["07-00","18-59"],
+            "2":["19-00","06-59"],
+            }
+
+            endpoint = "http://{}/contar/historial/FIN".format(self.model.server)
+            response = requests.get(endpoint, data=json.dumps(turnos))
+            response = response.json()
+            print("response: ",response)
+            print("Por qué los papeleros venden papel, eh?")
+
+            command = {
+                    "lcdNumber" : {"value": response["conteo"]}
+                    }
+            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+        except Exception as ex:
+            print("Error en el conteo ", ex)
+        try:
+            turnos = {
+            "1":["07-00","18-59"],
+            "2":["19-00","06-59"],
+            }
+            horario_turno1={"7":0,
+                        "8":0,
+                        "9":0,
+                        "10":0,
+                        "11":0,
+                        "12":0,
+                        "13":0,
+                        "14":0,
+                        "15":0,
+                        "16":0,
+                        "17":0,
+                        "18":0,
+                        "19":0,
+                        "20":0,
+                        "21":0,
+                        "22":0,
+                        "23":0,
+                        "00":0,
+                        "01":0,
+                        "02":0,
+                        "03":0,
+                        "04":0,
+                        "05":0,
+                        "06":0,
+                        }
+            endpoint = "http://{}/horaxhora/historial/FIN".format(self.model.server)
+            response = requests.get(endpoint, data=json.dumps(turnos))
+            response = response.json()
+            
+            arneses_turno=pd.DataFrame({'HM': response['HM'],
+                   'INICIO': response['INICIO'],
+                   'FIN': response['FIN'],
+                   'RESULTADO': response['RESULTADO'],
+                   'USUARIO': response['USUARIO']})
+            
+            
+            arneses_turno['INICIO']=pd.to_datetime(arneses_turno['INICIO']).dt.tz_localize(None)
+            #arneses_turno['INICIO']=datetime.strptime(arneses_turno['INICIO'], '%a, %d %b %Y %H:%M:%S GMT')
+            arneses_turno['FIN']=pd.to_datetime(arneses_turno['FIN']).dt.tz_localize(None)
+            # Extrae solo la parte de la fecha
+            arneses_turno['INICIO'] = arneses_turno['INICIO']
+            arneses_turno['FIN'] = arneses_turno['FIN']
+            
+            arneses_turno['RESULTADO']=arneses_turno['RESULTADO'].astype("string")
+            #Calcula Duración de ciclo de los arneses
+            arneses_turno["INTERVALO"]=arneses_turno['FIN']-arneses_turno['INICIO']
+            
+            base_temporal = arneses_turno[(arneses_turno['RESULTADO']=="1")]
+            promedio_ciclo_turno=base_temporal["INTERVALO"].mean().total_seconds() / 60
+            
+            # Obtener la parte entera y decimal
+            parte_entera = int(promedio_ciclo_turno)
+            parte_decimal = promedio_ciclo_turno - parte_entera
+            
+            # Convertir la parte decimal a segundos
+            segundos = round(parte_decimal * 60)
+            if segundos<10:
+                segundos="0"+str(segundos)
+            tiempo_ciclo_promedio=str(parte_entera)+":"+str(segundos)
+            command["lcdNumtiempo"] = {"value": tiempo_ciclo_promedio}
+            
+            publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+
+        except Exception as ex:
+            print("Error en el conteo ", ex)
         QTimer.singleShot(100, self.stopTorque)
 
         if not(self.model.shutdown):
@@ -1760,7 +1849,7 @@ class Finish (QState):
         endpoint = "http://{}/api/post/historial".format(self.model.server)
         resp = requests.post(endpoint, data=json.dumps(historial))
         resp = resp.json()
-
+        self.model.cronometro_ciclo=False
         #### Trazabilidad FAMX2 Update de Información
         if self.model.config_data["trazabilidad"] and self.model.config_data["untwist"]==False and self.model.config_data["flexible_mode"]==False:
             if flag_1:
@@ -1925,7 +2014,7 @@ class Reset (QState):
         self.model.qr_validado=[]
         self.model.key_calidad_caja_repetida=False
         self.model.caja_por_validar=""
-        
+        self.model.cronometro_ciclo=False
         command = {
             "show":{"login": False}
             }

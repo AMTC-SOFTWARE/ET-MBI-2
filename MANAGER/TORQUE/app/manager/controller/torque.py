@@ -933,8 +933,8 @@ class CheckResponse (QState):
                     #info1 += trq_zone + " ["+ trq_applied + "]\n"
 
                     command = {
-                        "lbl_info1" : {"text": info1, "color": "black"},
-                        "lbl_info2" : {"text": info2, "color": "green"},
+                        #"lbl_info1" : {"text": info1, "color": "black"},
+                        "lbl_info1" : {"text": info2, "color": "green"},
                         "lbl_result" : {"text": "Torque " + trq_zone + " OK", "color": "green"},
                         "lbl_steps" : {"text": "", "color": "black"},
                         "img_center" : self.tool + ".jpg"
@@ -982,7 +982,7 @@ class CheckResponse (QState):
                     imwrite(self.model.imgs_path + self.tool + ".jpg", self.model.imgs[box])
                     #
                     command = {
-                        "lbl_info2" : {"text": info2, "color": "red"},
+                        "lbl_info1" : {"text": info2, "color": "red"},
                         "lbl_result" : {"text": "Torque " + trq_zone + " NOK", "color": "red"},
                         "lbl_steps" : {"text": "", "color": "black"},
                         "img_center" : self.tool + ".jpg",
