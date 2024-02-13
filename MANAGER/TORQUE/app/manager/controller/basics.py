@@ -476,21 +476,21 @@ class CheckQr (QState):
         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
+        Timer(0.05, self.check_etiqueta).start()
 
-        Timer(0.05, self.API_requests).start()
-
-    def API_requests (self):
+    def check_etiqueta (self):
+        print("\ncheck_etiqueta")
         try:
             print("Estado de Sistema de Trazabilidad: ",self.model.config_data["trazabilidad"])
-            pedido = None
-            dbEvent = None
-            coincidencias = 0
+            self.model.pedido = None
+            self.model.dbEvent = None
             self.model.qr_codes["FET"] = self.model.input_data["gui"]["code"]
             temp = self.model.input_data["gui"]["code"].split (" ")
             self.model.qr_codes["HM"] = "--"
             self.model.qr_codes["REF"] = "--"
             correct_lbl = False
-            
+            self.model.cronometro_ciclo=True
+            #i es cada elemento de la etiqueta separado con espacios, temp es la lista
             for i in temp:
                 if "HM" in i:
                     self.model.qr_codes["HM"] = i
@@ -504,7 +504,6 @@ class CheckQr (QState):
                     if "HM000000011920" in i:
                         self.model.config_data["trazabilidad"] = False
 
-
                     if self.model.config_data["trazabilidad"] == False:
                         command = {
                             "lbl_info3" : {"text": "Trazabilidad\nDesactivada", "color": "red"}
@@ -512,16 +511,17 @@ class CheckQr (QState):
                         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
-                ############# MODIFICACIÓN #############
-                if "IL" in i or "IR" in i: #Se agregó la opción de escanear etiquetas con prefijo "IR"
-                ############# MODIFICACIÓN #############
+                #IL para izquierdos, IR para derechos
+                if "IL" in i or "IR" in i: 
                     self.model.qr_codes["REF"] = i
+
                 if "EL." in i:
                     correct_lbl = True
 
             if not(correct_lbl):
+                self.model.cronometro_ciclo=False
                 command = {
-                        "lbl_result" : {"text": "Datamatrix incorrecto", "color": "red"},
+                        "lbl_result" : {"text": "Etiqueta Incorrecta", "color": "red"},
                         "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
                         }
                 publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
@@ -529,130 +529,178 @@ class CheckQr (QState):
                 self.nok.emit()
                 return
 
-            #### Trazabilidad FAMX2
-            if self.model.config_data["trazabilidad"] and self.model.config_data["untwist"]==False and self.model.config_data["flexible_mode"]==False:
-                try:
-                    print("||||||||||||Consulta de HM a FAMX2...")
-                    endpoint = "http://{}/seghm/get/seghm/NAMEPREENSAMBLE/=/INTERIOR/HM/=/{}".format(self.model.server,self.model.qr_codes["HM"])
-                    famx2response = requests.get(endpoint).json()
-                    print("Respuesta de FAMX2: \n",famx2response)
-                    #No existen coincidencias del HM en FAMX2
-                    if "items" in famx2response:
-                        print("ITEMS por que no se encontraron coincidencias en FAMX2")
+            else:
+
+                if self.model.config_data["trazabilidad"] and self.model.config_data["untwist"]==False and self.model.config_data["flexible_mode"]==False:
+                    command = {
+                        "lbl_result" : {"text": "Etiqueta OK", "color": "green"},
+                        "lbl_steps" : {"text": "Consultando TRAZABILIDAD", "color": "black"}
+                        }
+                    publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                    publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                    Timer(0.05, self.check_trazabilidad).start()
+                else:
+                    command = {
+                        "lbl_result" : {"text": "Etiqueta OK", "color": "green"},
+                        "lbl_steps" : {"text": "Revisando Nivel de Ingeniería", "color": "black"}
+                        }
+                    publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                    publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                    Timer(0.05, self.check_evento).start()
+
+
+        except Exception as ex:
+            self.model.cronometro_ciclo=False
+            print("check_etiqueta exception",ex)
+            command = {
+                "lbl_result" : {"text": "Error En Lectura de Etiqueta", "color": "red"},
+                "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
+                }
+            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            self.nok.emit()
+
+    def check_trazabilidad (self): 
+        try:
+            print("\ncheck_trazabilidad")
+            print("||||||||||||Consulta de HM a FAMX2...")
+            endpoint = "http://{}/seghm/get/seghm/NAMEPREENSAMBLE/=/INTERIOR/HM/=/{}".format(self.model.server,self.model.qr_codes["HM"])
+            famx2response = requests.get(endpoint).json()
+            print("Respuesta de FAMX2: \n",famx2response)
+            #No existen coincidencias del HM en FAMX2
+            if "items" in famx2response:
+                self.model.cronometro_ciclo=False
+                print("ITEMS por que no se encontraron coincidencias en FAMX2")
+                command = {
+                    "lbl_result" : {"text": "HM no registrado en Sistema de Trazabilidad", "color": "red"},
+                    "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
+                    }
+                publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                self.nok.emit()
+                return
+
+            #Si existe el HM en FAMX2
+            else:
+                print("FAMX2 Salida de FET: \n",famx2response["SALFET"])
+                print("FAMX2 Ubicación: \n",famx2response["UBICACION"])
+                self.model.name_FET=str(famx2response["NAMEFET"])
+                respuesta_Fet=self.caja_FET_consulta(self.model.qr_codes["HM"])
+                #Si la columna que indica la hora de salida de FET, es diferente a None, significa que completó esa estación y SI puede entrar a Torque.
+                if famx2response["SALFET"] != None: 
+
+                    print("El arnés ya salió de FET")
+                    print("famx2response[UBICACION]",famx2response["UBICACION"])
+                    ubic_sinspace = famx2response["UBICACION"]
+                    ubic_sinspace = ubic_sinspace.replace(" ","")
+
+                    if ubic_sinspace != "SALIDA_DE_FET" and ubic_sinspace != "ENTRADA_A_TORQUE":
+                        self.model.cronometro_ciclo=False
                         command = {
-                            "lbl_result" : {"text": "HM no registrado en Sistema de Trazabilidad", "color": "red"},
-                            "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
-                            }
+                        "lbl_result" : {"text": "Ubicación Incorrecta de HM:" + ubic_sinspace, "color": "red"},
+                        "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
+                        }
                         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                         self.nok.emit()
                         return
-                    #Si existe el HM en FAMX2
-                    else:
-                        print("FAMX2 Salida de FET: \n",famx2response["SALFET"])
-                        print("FAMX2 Ubicación: \n",famx2response["UBICACION"])
-
-                        respuesta_Fet=self.caja_FET_consulta(self.model.qr_codes["HM"])
-                        #Si la columna que indica la hora de salida de FET, es diferente a None, significa que completó esa estación y SI puede entrar a Torque.
-                        if famx2response["SALFET"] != None: #AQUIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
-                            print("El arnés ya salió de FET")
-                            print("famx2response[UBICACION]",famx2response["UBICACION"])
-                            self.model.name_FET=str(famx2response["NAMEFET"])
-                            ubic_sinspace = famx2response["UBICACION"]
-                            ubic_sinspace = ubic_sinspace.replace(" ","")
-                            #Si la ubicación del HM del Arnés se encuentra entrando en reparación, NO podrá entrar a Torque
-                            if ubic_sinspace != "SALIDA_DE_FET" and ubic_sinspace != "ENTRADA_A_TORQUE":
-
-                                command = {
-                                "lbl_result" : {"text": "Ubicación Incorrecta de HM:" + ubic_sinspace, "color": "red"},
-                                "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
-                                }
-                                publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-                                publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-                                self.nok.emit()
-                                return
-                            if self.model.config_data["comparacion_cajasDP"]:
-                                if respuesta_Fet == None:
-                                    print("No se encontró registro en FET")
-                                    FET_arnes_station = str(famx2response["NAMEFET"])
-                                    FET_arnes_station = FET_arnes_station.replace(" ","")
-                            
-                                    command = {
-                                    "lbl_result" : {"text": "No se encontró registros de cajas en FET " + FET_arnes_station, "color": "red"},
-                                    "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
-                                    }
-                                    publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-                                    publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-                                    self.nok.emit()
-                                    return
-
-                            if famx2response["REFERENCIA"] !=self.model.qr_codes["REF"]:
-                                print("La REFERENCIA no coincide con Trazabilidad, NO puede entrar a Torque")
-                                command = {
-                                "lbl_result" : {"text": "REFERENCIA de etiqueta no coincide con trazabilidad", "color": "red"},
-                                "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
-                                }
-                                publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-                                publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-                                self.nok.emit()
-                                return
-                            
-                            else:
-                                #Se guarda el id del arnés de FAMX2 en el modelo para realizar updates en el servidor de FAMX2.
-                                self.model.id_HM = famx2response["id"]
-                                self.model.datetime = datetime.now()
-                                #### Trazabilidad FAMX2 Update de Información
-                                print("||Realizando el Update de ENTRADA a Trazabilidad en FAMX2")
-                                print("ID a la que se realizará el Update para Trazabilidad",self.model.id_HM)
-                                entTrazabilidad = {
-                                    "ENTTORQUE": self.model.datetime.strftime("%Y/%m/%d %H:%M:%S"),
-                                    "UBICACION": "ENTRADA_A_TORQUE",
-                                    "NAMETORQUE": self.model.serial
-                                    }
-                                endpointUpdate = "http://{}/seghm/update/seghm/{}".format(self.model.server,self.model.id_HM)
-
-                                respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(entTrazabilidad))
-                                respTrazabilidad = respTrazabilidad.json()
-                                print("respTrazabilidad del update: ",respTrazabilidad)
-
-                                sleep(0.1)
-                                respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(entTrazabilidad))
-                                respTrazabilidad = respTrazabilidad.json()
-                                print("respTrazabilidad del update: ",respTrazabilidad)
-
-                                sleep(0.1)
-                                respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(entTrazabilidad))
-                                respTrazabilidad = respTrazabilidad.json()
-                                print("respTrazabilidad del update: ",respTrazabilidad)
-
-                                #### Trazabilidad FAMX2 Update de Información
-                        #Si la columna que indica la hora de salida de FET es None, significa que no ha completado esa estación y NO puede entrar aún a Torque.
-                        else:
-                            print("El Arnés no ha pasado por la estación anterior (FET) por lo que no puede entrar a Torque")
+                    if self.model.config_data["comparacion_cajasDP"]:
+                        if respuesta_Fet == None:
+                            print("No se encontró registro en FET")
+                            FET_arnes_station = str(famx2response["NAMEFET"])
+                            FET_arnes_station = FET_arnes_station.replace(" ","")
+                            self.model.cronometro_ciclo=False
                             command = {
-                            "lbl_result" : {"text": "Arnés sin Historial de FET", "color": "red"},
+                            "lbl_result" : {"text": "No se encontró registros de cajas en FET " + FET_arnes_station, "color": "red"},
                             "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
                             }
                             publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                             publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                             self.nok.emit()
                             return
-                except Exception as ex:
-                    print("Conexión con FAMX2 exception: ", ex)
-                    command = {
-                            "lbl_result" : {"text": "Error de Conexión con Sistema de Trazabilidad", "color": "red", "font": "40pt"},
-                            "lbl_steps" : {"text": "Verifique su conexión o deshabilite el Sistema de Trazabilidad con supervisión \nde personal de calidad", "color": "black", "font": "22pt"}
+                    if famx2response["REFERENCIA"] != self.model.qr_codes["REF"]:
+                        print("La REFERENCIA no coincide con Trazabilidad, NO puede entrar a Torque")
+                        self.model.cronometro_ciclo=False
+                        command = {
+                            "lbl_result" : {"text": "REFERENCIA de etiqueta no coincide con trazabilidad", "color": "red"},
+                            "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
+                        }
+                        publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                        publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                        self.nok.emit()
+                        return
+
+                    else:
+                        #Se guarda el id del arnés de FAMX2 en el modelo para realizar updates en el servidor de FAMX2.
+                        self.model.id_HM = famx2response["id"]
+                        self.model.datetime = datetime.now()
+                        #### Trazabilidad FAMX2 Update de Información
+                        print("||Realizando el Update de ENTRADA a Trazabilidad en FAMX2")
+                        print("ID a la que se realizará el Update para Trazabilidad",self.model.id_HM)
+                        entTrazabilidad = {
+                            "ENTTORQUE": self.model.datetime.strftime("%Y/%m/%d %H:%M:%S"),
+                            "UBICACION": "ENTRADA_A_TORQUE",
+                            "NAMETORQUE": self.model.serial
                             }
+                        endpointUpdate = "http://{}/seghm/update/seghm/{}".format(self.model.server,self.model.id_HM)
+                        respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(entTrazabilidad))
+                        respTrazabilidad = respTrazabilidad.json()
+                        print("respTrazabilidad del update: ",respTrazabilidad)
+
+                        if "exception" in respTrazabilidad:
+                            self.model.cronometro_ciclo=False
+                            command = {
+                                "lbl_result" : {"text": "Error al Actualizar Trazabilidad", "color": "red"},
+                                "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
+                            }
+                            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                            publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                            self.nok.emit()
+                            return
+                        else:
+                            command = {
+                                "lbl_result" : {"text": "Trazabilidad OK", "color": "green"},
+                                "lbl_steps" : {"text": "Revisando Nivel de Ingeniería", "color": "black"}
+                                }
+                            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                            publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                            Timer(0.05, self.check_evento).start()
+
+                #Si la columna que indica la hora de salida de FET es None, significa que no ha completado esa estación y NO puede entrar aún a Torque.
+                else:
+                    self.model.cronometro_ciclo=False
+                    print("El Arnés no ha pasado por la estación anterior (FET) por lo que no puede entrar a Torque")
+                    command = {
+                        "lbl_result" : {"text": "Arnés sin Historial de FET", "color": "red"},
+                        "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
+                    }
                     publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                     publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                     self.nok.emit()
                     return
-            ####
 
-            ####### Original
+        except Exception as ex:
+            self.model.cronometro_ciclo=False
+            print("check_trazabilidad exception: ", ex)
+            command = {
+                    "lbl_result" : {"text": "Error de Conexión con Sistema de Trazabilidad", "color": "red", "font": "40pt"},
+                    "lbl_steps" : {"text": "Verifique su conexión", "color": "black", "font": "22pt"}
+                    }
+            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            self.nok.emit()
+            return
+
+    def check_evento (self):   
+        try:
+            print("\ncheck_evento")
+            coincidencias = 0
+
+            #se obtiene el nombre de los eventos
             endpoint = "http://{}/api/get/eventos".format(self.model.server)
             eventos = requests.get(endpoint).json()
-            #print("Lista eventos:\n",eventos)
+            
+            #se busca en cada evento ACTIVO si existe la referencia
             for key in eventos["eventos"].keys():
                 print("++++++++++++++Evento Actual++++++++++++++++:\n ",key)
                 print("Valor Activo del Evento actual: ",eventos["eventos"][key][1])
@@ -661,14 +709,17 @@ class CheckQr (QState):
                     response = requests.get(endpoint).json()
                     #print("Response: ",response)
                     if "PEDIDO" in response:
-                        dbEvent = key
+                        self.model.dbEvent = key
                         coincidencias += 1
-                        print("En este Evento se encuentra la modularidad \n")
-                        pedido = response
+                        print("EN ESTE EVENTO SE ENCUENTRA LA MODULADIDAD-PEDIDO-REFERNCIA-DAT-ARNES \n")
+                        self.model.pedido = response
+            
+            #se muentran los resultados
             print("Coincidencias = ",coincidencias)
-            if dbEvent != None:
-                print("La Modularidad pertenece al Evento: ",dbEvent)
+            if self.model.dbEvent != None:
+                print("La Modularidad pertenece al Evento: ",self.model.dbEvent)
                 if coincidencias != 1:
+                    self.model.cronometro_ciclo=False
                     print("Datamatrix Redundante")
                     command = {
                         "lbl_result" : {"text": "Datamatrix redundante", "color": "red"},
@@ -680,372 +731,510 @@ class CheckQr (QState):
                     return
                 else:
                     print("Datamatrix Correcto")
+                    command = {
+                        "lbl_result" : {"text": "Evento OK", "color": "green"},
+                        "lbl_steps" : {"text": "Revisando Historial", "color": "black"}
+                        }
+                    publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                    publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                    Timer(0.05, self.check_historial_pdcrvar).start()
             else:
+                self.model.cronometro_ciclo=False
                 print("La Modularidad NO pertenece a ningún evento")
                 command = {
-                    "lbl_result" : {"text": "Datamatrix no registrado", "color": "red"},
+                    "lbl_result" : {"text": "Datamatrix No Registrado", "color": "red"},
                     "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
                     }
                 publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                 publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                 self.nok.emit()
                 return
+            
+        except Exception as ex:
+            self.model.cronometro_ciclo=False
+            print("check_evento: ", ex)
+            command = {
+                    "lbl_result" : {"text": "Error de Consulta de Evento", "color": "red", "font": "40pt"},
+                    "lbl_steps" : {"text": "Intentelo de Nuevo", "color": "black", "font": "22pt"}
+                    }
+            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            self.nok.emit()
+            return
 
-            endpoint = "http://{}/api/get/{}/pdcr/variantes".format(self.model.server, dbEvent)
+    def check_historial_pdcrvar (self):
+        try:
+            print("\ncheck_historial & pdcrVariantes")
+
+            endpoint = "http://{}/api/get/{}/pdcr/variantes".format(self.model.server, self.model.dbEvent)
             pdcrVariantes = requests.get(endpoint).json()
             print("Lista Final de Variantes PDC-R:\n",pdcrVariantes)
 
-            endpoint = "http://{}/api/get/historial/HM/=/{}/_/_/_".format(self.model.server, self.model.qr_codes["HM"])
-            response = requests.get(endpoint).json()
+            self.model.pdcrVariantes = pdcrVariantes
+            flag_s = False
+            flag_m = False
+            flag_l = False
+            flag_variantes = True
 
-            if ("items" in response and not(response["items"])) or self.model.local_data["qr_rework"] or self.model.config_data["untwist"] or self.model.config_data["flexible_mode"]:
-                #Si el modo de operación de la máquina es Flexible, Reversa, o Reversa Flexible
-                if self.model.config_data["flexible_mode"] or self.model.config_data["untwist"]:
-                    #Si el arnés ya ha pasado por la máquina anteriormente, y se va a retrabajar (debe tener SERIALES en response), hará lo siguiente:
-                    if "SERIALES" in response:
-                        print("Response*******: ",response["SERIALES"])
-                        if type(response["SERIALES"]) != list:
-                            print("ES UN SOLO REGISTRO!")
-                            qr_retrabajo = json.loads(response["SERIALES"])
-                            [qr_retrabajo.pop(key, None) for key in ['FET','HM','REF']]
-                            self.model.input_data["database"]["qr_retrabajo"] = qr_retrabajo
-                            if "PDC-P" in self.model.input_data["database"]["qr_retrabajo"]:
-                                self.model.input_data["database"]["qr_retrabajo"]["PDC-P"] = "009"
-                            if "MFB-E" in self.model.input_data["database"]["qr_retrabajo"]:
-                                self.model.input_data["database"]["qr_retrabajo"]["MFB-E"] = "004"
-                            print("Qr_retrabajo modelo: ",self.model.input_data["database"]["qr_retrabajo"])
-                        else:
-                            print("ES UNA LISTA DE REGISTROS!")
-                            qr_retrabajo = json.loads(response["SERIALES"][-1])
-                            [qr_retrabajo.pop(key, None) for key in ['FET','HM','REF']]
-                            self.model.input_data["database"]["qr_retrabajo"] = qr_retrabajo
-                            if "PDC-P" in self.model.input_data["database"]["qr_retrabajo"]:
-                                self.model.input_data["database"]["qr_retrabajo"]["PDC-P"] = "009"
-                            if "MFB-E" in self.model.input_data["database"]["qr_retrabajo"]:
-                                self.model.input_data["database"]["qr_retrabajo"]["MFB-E"] = "004"
-                            print("Qr_retrabajo modelo: ",self.model.input_data["database"]["qr_retrabajo"])
-                    # Si el arnés que intentan retrabajar es la primera vez que entra a la máquina indicará un error al usuario
-                    else:
-                        command = {
-                            "lbl_result" : {"text": "ERROR DE RETRABAJO", "color": "red"},
-                            "lbl_steps" : {"text": "No se encontraron registros de este arnés", "color": "black"}
+            #modules = json.loads(self.model.pedido["MODULOS_TORQUE"]) #se obtiene el dato del pedido, de modulos torques y se convierte a json, porque es string
+            modules = self.model.pedido["MODULOS_TORQUE"] #se obtiene el dato del pedido, de modulos torques y se convierte a json, porque es string
+
+            #Revisando que CAJA PDC-R Tiene
+            for s in self.model.pdcrVariantes["small"]: #se recorren todos los módulos cargados que contengan la PDC-RS
+                if s in modules:                        #si en alguno de los módulos del arnés (.DAT) se encuentra alguno de los determinantes para que sea una caja PDC-RS se hace true
+                    flag_s = True
+            for m in self.model.pdcrVariantes["medium"]:
+                if m in modules:
+                    flag_m = True
+            for l in self.model.pdcrVariantes["large"]:
+                if l in modules:
+                    flag_l = True
+
+            print(":::::::::::::::::::::::::BANDERAS:::::::::::::::::::::::::")
+            print("\t\tFLAGS:\n Flag S - ",flag_s," Flag M - ",flag_m," Flag L - ",flag_l)
+            if flag_s == False and flag_m == False and flag_l == False:
+                flag_variantes = False
+            print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+
+            if flag_l == True:
+                self.model.varianteDominante = "PDC-R"
+                self.model.largeflag = True
+            if flag_m == True and flag_l == False:
+                self.model.varianteDominante = "PDC-RMID"
+                self.model.mediumflag = True
+            if flag_s == True and flag_m == False and flag_l == False:
+                self.model.varianteDominante = "PDC-RS"
+                self.model.smallflag = True
+
+            #si la caja PDCR tiene variante
+            if flag_variantes == True:
+
+                endpoint = "http://{}/api/get/historial/HM/=/{}/_/_/_".format(self.model.server, self.model.qr_codes["HM"])
+                response = requests.get(endpoint).json()
+
+                if ("items" in response and not(response["items"])) or self.model.local_data["qr_rework"] or self.model.config_data["untwist"] or self.model.config_data["flexible_mode"]:
+                    command = {
+                        "lbl_result" : {"text": "Historial OK", "color": "green"},
+                        "lbl_steps" : {"text": "Generando Torques de Arnés", "color": "black"}
+                        }
+                    if self.model.local_data["qr_rework"]:
+                        command["lbl_result"] =  {"text": "Retrabajo OK", "color": "green"}
+                    if self.model.config_data["untwist"]:
+                        command["lbl_result"] =  {"text": "Modo Desapriete", "color": "green"}
+                    if self.model.config_data["flexible_mode"]:
+                        command["lbl_result"] =  {"text": "Modo Flexible OK", "color": "green"}
+
+                    publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                    publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                    Timer(0.05, self.build_contenido_torques).start()
+                else:
+                    self.model.retrabajo=True
+                    print("retrabajo true en checkqr")
+                    self.rework.emit()
+                    return
+
+            #si la PDCR no tiene variante small, medium ni large
+            else:
+                self.model.cronometro_ciclo=False
+                command = {
+                    "lbl_result" : {"text": "La Modularidad no contiene módulos que especifiquen su variante en la PDC-R", "color": "red"},
+                    "lbl_steps" : {"text": "Volver a Cargar Arnés", "color": "black"}
+                    }
+                publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                self.nok.emit()
+
+        except Exception as ex:
+            self.model.cronometro_ciclo=False
+            print("check_historial & pdcrVariantes exception: ", ex)
+            command = {
+                    "lbl_result" : {"text": "Error de Consulta de Historial", "color": "red", "font": "40pt"},
+                    "lbl_steps" : {"text": "Intentelo de Nuevo", "color": "black", "font": "22pt"}
+                    }
+            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            self.nok.emit()
+            return
+
+    def build_contenido_torques (self):
+        print("\nbuild_contenido")
+        try:
+                     
+                #se leen los módulos de Torque y los Módulos de Visión cargados en la estación
+                modules = json.loads(self.model.pedido["MODULOS_TORQUE"])
+                modules = modules[list(modules)[0]]
+
+                print("\n\t+++++++++++MODULARIDAD REFERENCIA+++++++++++\n",self.model.qr_codes["REF"])
+                print(f"\n\t\tMODULOS_TORQUE PARA ESTA REFERENCIA:\n{modules}")
+
+
+                #################################################################### TORQUE NUEVO METODO CONSULTA ####################################################################
+
+                endpoint = "http://{}/api/get/{}/modulos_torques/all/_/_/_/_/_".format(self.model.server, self.model.dbEvent)
+                response = requests.get(endpoint).json()
+
+                if "MODULO" in response:
+                    pass
+                else:
+                    self.model.cronometro_ciclo=False
+                    command = {
+                            "lbl_result" : {"text": "Modulos de torque no encontrados", "color": "red"},
+                            "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
                             }
+                    publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                    publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                    self.nok.emit()
+                    return
+
+                modulos_de_evento = {} #se inicializa variable vacía para guardar contenido de evento
+
+                contenido = list(response.keys())
+                contenido.pop(contenido.index("ID"))
+                contenido.pop(contenido.index("MODULO"))
+                print("contenido: ",contenido) #se deja la lista contenido solamente con las cajas
+                
+                #response[MODULO] contiene una lista de los modulos que existen para este evento
+                for modulo in response['MODULO']:
+                    modulo = modulo.replace(" ","") #se eliminan los espacios
+                    modulos_de_evento[modulo] = {} #se crea el diccionario vacío para ese módulo
+                    indice_modulo = response['MODULO'].index(modulo) #se obtiene el indice en la lista del módulo
+                    for caja in contenido:
+                        #si la caja en su indice igual al del módulo está vacío, no hace nada, de lo contrario se agrega el dato
+                        if response[caja][indice_modulo] != "" and response[caja][indice_modulo] != "{}" and response[caja][indice_modulo] != 0:
+                            modulos_de_evento[modulo][caja] = response[caja][indice_modulo]
+
+                #los modulos vacíos deben ir en el resultado final para saber cuando un módulo que lleve la modularidad no significa torque o fusible
+                print("modulos_de_evento")
+                pprint.pprint(modulos_de_evento)
+
+                for modulo in modules:
+                    if modulo in modulos_de_evento:
+                        temp = {} #se reinicia temp en cada modulo
+                        for elemento in modulos_de_evento[modulo]: #elemento son los valores de las columnas CAJA_1,CAJA_2,etc de la tabla de modulos del evento correspondientes al módulo actual
+                            if "CAJA_" in elemento:
+                                #se agregan a la variable temp todos los contenidos de CAJA_1,CAJA_2,etc. del módulo que se está evaluando
+                                temp.update(json.loads(modulos_de_evento[modulo][elemento]))
+                        for caja in temp:
+                            caja_nueva = False
+                            #si el contenido del elemento es vacío: CAJA_1:{} entonces se inspecciona el siguiente: CAJA_2:{"MFB-P2": {"A22": true,"A23": true}}
+                            if len(temp[caja]) == 0:
+                                continue
+                            #si la caja si tiene contenido...
+                            else:
+                                #se recorren las tuercas de la caja: MFB-P2": {"A22": true,"A23": true}
+                                for tuerca in temp[caja]:
+                                    #si la tuerca está activa, tiene true...
+                                    if temp[caja][tuerca] == True:
+
+                                        valor_tuerca = copy(tuerca) #se hace una copia de tuerca (esto porque al ser una PDC-R diferente cambiarías el valor de caja y no accesarías al valor que tenía tuerca)
+
+                                        #si hay una caja PDC-R se modifica por la variable PDC-R dominante
+                                        if caja == "PDC-R" or caja == "PDC-RMID" or caja == "PDC-RS":
+                                            caja = self.model.varianteDominante
+
+                                        #si la caja no existe aún en la variable del modelo...
+                                        if not(caja in self.model.input_data["database"]["modularity"]):
+                                            self.model.input_data["database"]["modularity"][caja] = [] #se agrega la nueva caja
+
+                                        #si no existe la tuerca en la caja de modularity...
+                                        if not(valor_tuerca in self.model.input_data["database"]["modularity"][caja]):
+                                            self.model.input_data["database"]["modularity"][caja].append(valor_tuerca)#se agrega la tuerca en esta caja
+
+
+                                #Si la caja es MFB-P2, se acomodan sus torques de manera inversa (A29,A28...) a excepción de los torques para la Tool de 8mm (A20,A25 y A30)
+                                if caja == "MFB-P2":
+                                    self.model.input_data["database"]["modularity"][caja].sort(reverse=True)
+                                    if "A20" in self.model.input_data["database"]["modularity"][caja]:
+                                        self.model.input_data["database"]["modularity"][caja].pop(self.model.input_data["database"]["modularity"][caja].index("A20"))
+                                        self.model.input_data["database"]["modularity"][caja].append("A20")
+                                    if "A25" in self.model.input_data["database"]["modularity"][caja]:
+                                        self.model.input_data["database"]["modularity"][caja].pop(self.model.input_data["database"]["modularity"][caja].index("A25"))
+                                        self.model.input_data["database"]["modularity"][caja].append("A25")
+                                    if "A30" in self.model.input_data["database"]["modularity"][caja]:
+                                        self.model.input_data["database"]["modularity"][caja].pop(self.model.input_data["database"]["modularity"][caja].index("A30"))
+                                        self.model.input_data["database"]["modularity"][caja].append("A30")
+
+                                #El resto de cajas ordenan sus torques de manera ascendente
+                                else:
+                                    self.model.input_data["database"]["modularity"][caja].sort()
+
+                    else:
+                        self.model.cronometro_ciclo=False
+                        command = {
+                                "lbl_result" : {"text": "Modulo de Torque NO encontrado", "color": "red"},
+                                "lbl_steps" : {"text": f"{modulo}, Inténtalo de nuevo", "color": "black"}
+                                }
                         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                         self.nok.emit()
                         return
-                modules = json.loads(pedido["MODULOS_TORQUE"])
-                modules = modules[list(modules)[0]]
-                modules_v = json.loads(pedido["MODULOS_VISION"])
+                    
+                print("-------------------------------------TAREAS: TUERCAS -----------------------------------")
+                print(self.model.input_data["database"]["modularity"])
+
+                ################################################################### TORQUE ANTERIOR METODO CONSULTA ####################################################################
+                #for i in modules:
+                #    endpoint = "http://{}/api/get/{}/modulos_torques/MODULO/=/{}/_/=/_".format(self.model.server, self.model.dbEvent, i)
+                #    response = requests.get(endpoint).json()
+                #    if "MODULO" in response:
+                #        if type(response["MODULO"]) != list:
+                #            temp = {}
+                #            for i in response:
+                #                if "CAJA_" in i:
+                #                    temp.update(json.loads(response[i]))
+                #            for i in temp:
+                #                newBox = False
+                #                #print("Caja: ******: ",i)
+                #                if len(temp[i]) == 0:
+                #                    continue
+                #                if not(i in self.model.input_data["database"]["modularity"]):
+                #                    newBox = True
+                #                for j in temp[i]:
+                #                    if temp[i][j] == True:
+                #                        if newBox:
+                #                            #si hay una caja PDC-R se modifica por la variable PDC-R dominante
+                #                            if i == "PDC-R" or i == "PDC-RMID" or i == "PDC-RS":
+                #                                i = self.model.varianteDominante
+                #                            self.model.input_data["database"]["modularity"][i] = []
+                #                            #print(" AQUI ESTÁ EL NUEVO I!!!!!!!!!: ",i)#### MODIFICACIÓN PDCR ####
+                #                            newBox = False
+                #                        if not(j in self.model.input_data["database"]["modularity"][i]):
+                #                            self.model.input_data["database"]["modularity"][i].append(j)
+                #                            #print(" AQUI ESTÁ EL J valor!!!!!!!!!: ",j)#### MODIFICACIÓN PDCR ####
+                #                if not(newBox):
+                #                    #Si la caja es MFB-P2, se acomodan sus torques de manera inversa (A29,A28...) a excepción de los torques para la Tool de 8mm (A20,A25 y A30)
+                #                    if i == "MFB-P2":
+                #                        self.model.input_data["database"]["modularity"][i].sort(reverse=True)
+                #                        if "A20" in self.model.input_data["database"]["modularity"][i]:
+                #                            self.model.input_data["database"]["modularity"][i].pop(self.model.input_data["database"]["modularity"][i].index("A20"))
+                #                            self.model.input_data["database"]["modularity"][i].append("A20")
+                #                        if "A25" in self.model.input_data["database"]["modularity"][i]:
+                #                            self.model.input_data["database"]["modularity"][i].pop(self.model.input_data["database"]["modularity"][i].index("A25"))
+                #                            self.model.input_data["database"]["modularity"][i].append("A25")
+                #                        if "A30" in self.model.input_data["database"]["modularity"][i]:
+                #                            self.model.input_data["database"]["modularity"][i].pop(self.model.input_data["database"]["modularity"][i].index("A30"))
+                #                            self.model.input_data["database"]["modularity"][i].append("A30")
+                #                    #El resto de cajas ordenan sus torques de manera ascendente
+                #                    else:
+                #                        self.model.input_data["database"]["modularity"][i].sort()
+                #        else:
+                #            print(response["MODULO"])
+                #            modulo_redundante_torque = response["MODULO"][0]
+                #            command = {
+                #                    "lbl_result" : {"text": "Módulos de torque redundantes", "color": "red"},
+                #                    "lbl_steps" : {"text": f"{modulo_redundante_torque}, Inténtalo de nuevo", "color": "black"}
+                #                  }
+                #            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                #            publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                #            self.nok.emit()
+                #            return
+                #    else:
+                #        command = {
+                #                "lbl_result" : {"text": "Modulos de torque no encontrados", "color": "red"},
+                #                "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
+                #                }
+                #        publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                #        publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                #        self.nok.emit()
+                #        return
+                #print("METODO ANTERIOR, CONSULTA DE CADA MODULO EN DB")
+                #print(self.model.input_data["database"]["modularity"])
+                ##########################################################################################################################################################################
+
+                command = {
+                    "lbl_result" : {"text": "Torques Generados Correctamente", "color": "green"},
+                    "lbl_steps" : {"text": "Generando Candados", "color": "black"}
+                    }
+                publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                Timer(0.05, self.build_contenido_candados).start()
+
+        except Exception as ex:
+            self.model.cronometro_ciclo=False
+            self.model.input_data["database"]["modularity"].clear()
+            self.model.torque_data["tool1"]["queue"].clear()
+            self.model.torque_data["tool2"]["queue"].clear()
+            self.model.torque_data["tool3"]["queue"].clear()
+            print("build_content exception: ", ex)
+            command = {
+                    "lbl_result" : {"text": "Error de Carga de Arnés", "color": "red", "font": "40pt"},
+                    "lbl_steps" : {"text": "Intentelo de Nuevo", "color": "black", "font": "22pt"}
+                    }
+            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            self.nok.emit()
+            return
+
+    def build_contenido_candados (self):
+        print("\nbuild_contenido_candados")
+        try:
+                     
+                #se leen los Módulos de Visión cargados en la estación
+                modules_v = json.loads(self.model.pedido["MODULOS_VISION"])
                 modules_v = modules_v[list(modules_v)[0]]
 
-                print(f"\n\t\tMODULOS_VISION:\n{modules_v}")
                 print("\n\t+++++++++++MODULARIDAD REFERENCIA+++++++++++\n",self.model.qr_codes["REF"])
-                print(f"\n\t\tMODULOS_TORQUE:\n{modules}")
-                #### MODIFICACIÓN PDCR ####
-                flag_s = False
-                flag_m = False
-                flag_l = False
-                flag_variantes = True
-                flag_mfbp2_der = False
-                flag_mfbp2_izq = False
-                mfbp2_serie = ""
-                mfbeBox = ""
-                battery2Box = ""
-                flag_294 = False
-                flag_296 = False
-                if "294" in self.model.qr_codes["REF"]:
-                    print("Evento 294")
-                    flag_294 = True
-                if "296" in self.model.qr_codes["REF"]:
-                    print("Evento 296")
-                    flag_296 = True
-                    #print("Aqui",pdcrVariantes)
-                for s in pdcrVariantes["small"]:
-                    if s in modules:
-                        #print("Tiene un modulo de caja SMALL")
-                        flag_s = True
-                for m in pdcrVariantes["medium"]:
-                    if m in modules:
-                        #print("Tiene un modulo de caja Medium")
-                        flag_m = True
-                for l in pdcrVariantes["large"]:
-                    if l in modules:
-                        #print("Tiene un modulo de caja LARGE")
-                        flag_l = True
-                if "IL" in self.model.qr_codes["REF"]:
-                    print("Modularidad de MFB-P2 Izquierda")
-                    flag_mfbp2_izq = True
-                if "IR" in self.model.qr_codes["REF"]:
-                    print("Modularidad de MFB-P2 Derecha")
-                    flag_mfbp2_der = True
+                print(f"\n\t\tMODULOS_VISION:\n{modules_v}")
 
-                print("\t\tFLAGS:\n Flag S - ",flag_s," Flag M - ",flag_m," Flag L - ",flag_l,"\n Flag MFB-P2 DER - ",flag_mfbp2_der," Flag MFB-P2 IZQ - ",flag_mfbp2_izq)
-                if flag_s == False and flag_m == False and flag_l == False:
-                    flag_variantes = False
 
-                #para mensajes que se publican
-                if flag_l == True:
-                    varianteDominante = "PDC-R"
-                    self.model.largeflag = True
-                    self.model.pdcr_serie = "12239061602"
-                if flag_m == True and flag_l == False:
-                    varianteDominante = "PDC-RMID"
-                    self.model.mediumflag = True
-                    self.model.pdcr_serie = "12239061502"
-                if flag_s == True and flag_m == False and flag_l == False:
-                    varianteDominante = "PDC-RS"
-                    self.model.smallflag = True
-                    self.model.pdcr_serie = "12239061402"
+                ######################################################################## METODO NUEVO #############################################################################
 
-                ################# TORQUE #################
-                for i in modules:
-                    endpoint = "http://{}/api/get/{}/modulos_torques/MODULO/=/{}/_/=/_".format(self.model.server, dbEvent, i)
-                    response = requests.get(endpoint).json()
-                    if "MODULO" in response:
-                        if type(response["MODULO"]) != list:
-                            temp = {}
-                            for i in response:
-                                if "CAJA_" in i:
-                                    temp.update(json.loads(response[i]))
-                            for i in temp:
-                                newBox = False
-                                #print("Caja: ******: ",i)
-                                if len(temp[i]) == 0:
-                                    continue
-                                if not(i in self.model.input_data["database"]["modularity"]):
-                                    newBox = True
-                                for j in temp[i]:
-                                    if temp[i][j] == True:
-                                        if newBox:
-                                            if flag_296 == True or flag_294 == True:
-                                                if flag_variantes == True:
-                                                    #si hay una caja PDC-R se modifica por la variable PDC-R dominante
-                                                    if i == "PDC-R" or i == "PDC-RMID" or i == "PDC-RS":
-                                                        i = varianteDominante
-                                                else:
-                                                    #print("LA MODULARIDAD NO CONTIENE MÓDULOS QUE ESPECIFIQUEN SU VARIANTE EN LA PDC-R")
-                                                    command = {
-                                                        "lbl_result" : {"text": "La Modularidad no contiene módulos que especifiquen su variante en la PDC-R", "color": "red"},
-                                                        "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
-                                                        }
-                                                    publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-                                                    publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-                                                    self.model.input_data["database"]["modularity"].clear()
-                                                    self.model.torque_data["tool1"]["queue"].clear()
-                                                    self.model.torque_data["tool2"]["queue"].clear()
-                                                    self.model.torque_data["tool3"]["queue"].clear()
-                                                    self.nok.emit()
-                                            self.model.input_data["database"]["modularity"][i] = []
-                                            #print(" AQUI ESTÁ EL NUEVO I!!!!!!!!!: ",i)#### MODIFICACIÓN PDCR ####
-                                            newBox = False
-                                        if not(j in self.model.input_data["database"]["modularity"][i]):
-                                            self.model.input_data["database"]["modularity"][i].append(j)
-                                            #print(" AQUI ESTÁ EL J valor!!!!!!!!!: ",j)#### MODIFICACIÓN PDCR ####
-                                if not(newBox):
-                                    #Si la caja es MFB-P2, se acomodan sus torques de manera inversa (A29,A28...) a excepción de los torques para la Tool de 8mm (A20,A25 y A30)
-                                    if i == "MFB-P2":
-                                        self.model.input_data["database"]["modularity"][i].sort(reverse=True)
-                                        if "A20" in self.model.input_data["database"]["modularity"][i]:
-                                            self.model.input_data["database"]["modularity"][i].pop(self.model.input_data["database"]["modularity"][i].index("A20"))
-                                            self.model.input_data["database"]["modularity"][i].append("A20")
-                                        if "A25" in self.model.input_data["database"]["modularity"][i]:
-                                            self.model.input_data["database"]["modularity"][i].pop(self.model.input_data["database"]["modularity"][i].index("A25"))
-                                            self.model.input_data["database"]["modularity"][i].append("A25")
-                                        if "A30" in self.model.input_data["database"]["modularity"][i]:
-                                            self.model.input_data["database"]["modularity"][i].pop(self.model.input_data["database"]["modularity"][i].index("A30"))
-                                            self.model.input_data["database"]["modularity"][i].append("A30")
-                                    #El resto de cajas ordenan sus torques de manera ascendente
-                                    else:
-                                        self.model.input_data["database"]["modularity"][i].sort()
-                        else:
-                            command = {
-                                    "lbl_result" : {"text": "Módulos de torque redundantes", "color": "red"},
-                                    "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
-                                  }
-                            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-                            publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-                            self.nok.emit()
-                            return
+                endpoint = "http://{}/api/get/{}/modulos_fusibles/all/_/_/_/_/_".format(self.model.server, self.model.dbEvent)
+                response = requests.get(endpoint).json()
+
+                #print("modulos_fusibles de evento:")
+                #print(response)
+
+                if "MODULO" in response:
+                    pass
+                else:
+                    self.model.cronometro_ciclo=False
+                    command = {
+                            "lbl_result" : {"text": "Modulos para candados no encontrados", "color": "red"},
+                            "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
+                            }
+                    publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                    publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                    self.nok.emit()
+                    return
+
+                modulos_de_evento = {} #se inicializa variable vacía para guardar contenido de evento
+
+                contenido = list(response.keys())
+                contenido.pop(contenido.index("ID"))
+                contenido.pop(contenido.index("MODULO"))
+                print("contenido: ",contenido) #se deja la lista contenido solamente con las cajas
+                
+                #response[MODULO] contiene una lista de los modulos que existen para este evento
+                for modulo in response['MODULO']:
+                    modulo = modulo.replace(" ","") #se eliminan los espacios
+                    modulos_de_evento[modulo] = {} #se crea el diccionario vacío para ese módulo
+                    indice_modulo = response['MODULO'].index(modulo) #se obtiene el indice en la lista del módulo
+                    for caja in contenido:
+                        #si la caja en su indice igual al del módulo está vacío, no hace nada, de lo contrario se agrega el dato
+                        if response[caja][indice_modulo] != "" and response[caja][indice_modulo] != "{}" and response[caja][indice_modulo] != 0:
+                            modulos_de_evento[modulo][caja] = response[caja][indice_modulo]
+
+                #los modulos vacíos deben ir en el resultado final para saber cuando un módulo que lleve la modularidad no significa torque o fusible
+                print("modulos_de_evento")
+                pprint.pprint(modulos_de_evento)
+
+                for modulo in modules_v:
+                    if modulo in modulos_de_evento:
+                        current_module = {}
+                        for elemento in modulos_de_evento[modulo]: #elemento son los valores de las columnas CAJA_1,CAJA_2,etc de la tabla de modulos del evento correspondientes al módulo actual
+                            if "CAJA_" in elemento and len(modulos_de_evento[modulo][elemento]):
+                                
+                                valor_elemento = modulos_de_evento[modulo][elemento] #se obtiene el valor dentro de ese modulo y esa "CAJA_X": "{}" el cuál es un string
+
+                                #solamente puede existir una "PDC-R" por elemento, y lo que sí cambia es el valor de esta, ya sea small,mid o large
+                                if "PDC-R" in valor_elemento:
+                                    #si la caja determinante es PDC-R en los módulos pueden existir PDC-RS, PDC-RMID y PDC-R
+                                    if self.model.varianteDominante == "PDC-R":
+                                        if "PDC-RS" in valor_elemento:
+                                            valor_elemento = valor_elemento.replace("PDC-RS",self.model.varianteDominante)
+                                        if "PDC-RMID" in elemento:
+                                            valor_elemento = valor_elemento.replace("PDC-RMID",self.model.varianteDominante)
+                                    #si la caja determinante es PDC-RMID en los módulos pueden existir PDC-RS y PDC-RMID
+                                    if self.model.varianteDominante == "PDC-RMID":
+                                        if "PDC-RS" in valor_elemento:
+                                            valor_elemento = valor_elemento.replace("PDC-RS",self.model.varianteDominante)
+                                    #si la caja determinante es PDC-RS en los módulos solo pueden existir PDC-RS, entonces no se hace nada
+
+                                    #a current_module le añades esa información(y se convierte a diccionario)
+                                    current_module.update(json.loads(valor_elemento))
+
+                        #recorremos las cajas en current_module
+                        for box in current_module:
+                            #Solamente se tomarán en cuenta los fusibles pertenecientes a la caja PDC-R para posteriormente en base a ellos determinar cuales CANDADOS revisará el PALPADOR
+                            if "PDC-R" in box:                                 
+                                #recorremos las cavidades de los datos del modulo que tienen esa misma caja
+                                for cavity in current_module[box]:
+                                    #nunca debería de llega una información de la base de datos de los modulos con un vacío, pero si llegara, no entrará al if
+                                    if current_module[box][cavity] != "vacio":
+                                        #si la cavidad no se encuentra en esa caja... y no es una cavidad vacía...
+                                        if not(cavity in self.model.input_data["database"]["fuses"]):
+                                            self.model.input_data["database"]["fuses"].append(cavity)
+
+
                     else:
+                        self.model.cronometro_ciclo=False
                         command = {
-                                "lbl_result" : {"text": "Modulos de torque no encontrados", "color": "red"},
-                                "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
+                                "lbl_result" : {"text": "Modulo para candados no encontrado", "color": "red"},
+                                "lbl_steps" : {"text": f"{modulo}, Inténtalo de nuevo", "color": "black"}
                                 }
                         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                         self.nok.emit()
                         return
-
-                ################# VISION #################
-                for i in modules_v:
-                    #petición a la base de datos local para ver que fusibles lleva cada modulo
-                    endpoint = "http://{}/api/get/{}/modulos_fusibles/MODULO/=/{}/_/=/_".format(self.model.server, dbEvent, i)
-                    response = requests.get(endpoint).json()
-                    #si encuentra el módulo en la respuesta (que si existe en la base de datos local)...
-                    if "MODULO" in response:
-                        #si la respuesta para ese módulo no es de tipo lista ( esto quiere decir que no hay más de un módulo de este tipo)
-                        if type(response["MODULO"]) != list:
-                            current_module = {}
-                            for i in response:
-                                #si i tiene "CAJA_" y además no está vacío el objeto
-                                if "CAJA_" in i and len(response[i]):
-                                    if "PDC-R" in i:
-                                        #si la caja determinante es PDC-R en los módulos pueden existir PDC-RS, PDC-RMID y PDC-R
-                                        if varianteDominante == "PDC-R":
-                                            if "PDC-RS" in i:
-                                                i = i.replace("PDC-RS",varianteDominante)
-                                            if "PDC-RMID" in i:
-                                                i = i.replace("PDC-RMID",varianteDominante)
-                                        #si la caja determinante es PDC-RMID en los módulos pueden existir PDC-RS y PDC-RMID
-                                        if varianteDominante == "PDC-RMID":
-                                            if "PDC-RS" in i:
-                                                i = i.replace("PDC-RS",varianteDominante)
-                                        #si la caja determinante es PDC-RS en los módulos solo pueden existir PDC-RS, entonces no se hace nada
-
-                                    #a current_module le añades esa información
-                                    current_module.update(json.loads(response[i]))
-
-                            #recorremos las cajas en current_module
-                            for box in current_module:
-                                #Solamente se tomarán en cuenta los fusibles pertenecientes a la caja PDC-R para posteriormente en base a ellos determinar cuales CANDADOS revisará el PALPADOR
-                                if "PDC-R" in box:                                 
-                                    #recorremos las cavidades de los datos del modulo que tienen esa misma caja
-                                    for cavity in current_module[box]:
-                                        #nunca debería de llega una información de la base de datos de los modulos con un vacío, pero si llegara, no entrará al if
-                                        if current_module[box][cavity] != "vacio":
-                                            #si la cavidad no se encuentra en esa caja... y no es una cavidad vacía...
-                                            if not(cavity in self.model.input_data["database"]["fuses"]):
-                                                self.model.input_data["database"]["fuses"].append(cavity)
-                        else:
-                            command = {
-                                    "lbl_result" : {"text": "Módulos de visión redundantes", "color": "red"},
-                                    "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
-                                    }
-                            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-                            publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-                            self.nok.emit()
-                            return
-                    else:
-                        command = {
-                                "lbl_result" : {"text": "Modulos de visión no encontrados", "color": "red"},
-                                "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
-                                }
-                        publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-                        publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-                        self.nok.emit()
-                        return
-
-                ###############################
-
-                #esto debe ir antes de donde se actualiza self.model.mfbp2_serie
-                #debe ir después de que ya existe modules
-                #y además ir antes de donde se hace publish de las cajas en los label command = {f"lbl_box{current_boxx}" : {"text": f"{pub_i}", "color": "blue"}}
-
-                print("Evento de este Arnés: ",dbEvent) #puede agregarse un if "aj23_2_pro3" in self.model.dbEvent para limitar a que solamente se cambie en un evento
-                #se recorren todos los módulos del arnés para buscar el que determina la caja nueva
-                
-                self.leer_configuracion()
-                if self.model.parametros["CAJA_VIEJA_SIEMPRE"]=="False":
-                    for modulo in modules:
-                        #para caja MFBP2 izquierda
-                        if "A2975407930" in modulo:
-                            print("contiene el modulo A2975407930")
-                            #si se encuentra el módulo dentro del arnés, se cambia el QR de la caja del generado por la api: 12975407316 al 12975407930
-                            pedido["QR_BOXES"] = pedido["QR_BOXES"].replace("12975407316","12975407930")
-                        #para caja MFBP2 derechaA2975407830
-                        if "A2975407830" in modulo:
-                            print("contiene el modulo A2975407830")
-                            #si se encuentra el módulo dentro del arnés, se cambia el QR de la caja del generado por la api: 12975407316 al 12975407930
-                            pedido["QR_BOXES"] = pedido["QR_BOXES"].replace("12975407216","12975407830")
-                            
-                
-                #self.leer_configuracion() #Función para leer archivo con configuración para caja correr con caja antigua
-                #if self.model.parametros["caja_MFBP2_antigua"]=="True":
-                #    if "aj2023_1_pro3" in dbEvent or "aj23_1_pro3" in dbEvent:                              #cuando se acaben las cajas de stock esto se quitará
-                #        print("Es un caso especial de AJ23 1 PRO3 que debe llevar si o sí la caja vieja")   #cuando se acaben las cajas de stock esto se quitará
-                #        pedido["QR_BOXES"] = pedido["QR_BOXES"].replace("12975407930","12975407316")
-                        
-
-                QR_CAJAS = json.loads(pedido["QR_BOXES"]) #se lee el string y se convierte a formato json, diccionario
-
-                if flag_mfbp2_der == True and flag_mfbp2_izq == False:
-                    self.model.mfbp2_serie = QR_CAJAS["MFB-P2"][0]
-                if flag_mfbp2_der == False and flag_mfbp2_izq == True:
-                    self.model.mfbp2_serie = QR_CAJAS["MFB-P2"][0]
-                if flag_mfbp2_der == False and flag_mfbp2_izq == False:
-                    self.model.mfbp2_serie = "Sin especificar"
-
-                ###############################
-                for i in self.model.input_data["database"]["modularity"]:
-                    print("cajas dentro de modularity: ",i)
-                    current_boxx = i
-                    current_boxx = current_boxx.replace("-","")
-
-                    if "PDC-R" in i:
-                        if self.model.smallflag == True:    
-                            self.model.cajas_habilitadas["PDC-RMID"] = 2
-                        if self.model.mediumflag == True:
-                            self.model.cajas_habilitadas["PDC-RMID"] = 2
-                        if self.model.largeflag == True:
-                            self.model.cajas_habilitadas["PDC-R"] = 2
-                        current_boxx = "PDCR"
-                    else:
-                        self.model.cajas_habilitadas[i] = 2
-
-                    serie = ""
-                    if i == "MFB-P2":
-                        serie = self.model.mfbp2_serie
-                    if "PDC-R" in i:
-                        serie = self.model.pdcr_serie
-
-                    #copia de la caja actual, para utilizar en publish
-                    pub_i = i
-
-                    #cajas que no requieren escanearse (se inician en blue)
-                    if i == "BATTERY" or i == "BATTERY-2":
-                        command = {f"lbl_box{current_boxx}" : {"text": f"{pub_i}", "color": "blue"}}
-
-                    #cajas que requieren escanearse (se inician en purple) #ESTO ES PARA SABER QUE LA LLEVA EL ARNÉS, PERO AÚN NO ESTÁN HABILITADAS POR EL PLC (por eso se requieren estos publish a los gui)
-                    else:
-
-                        #si no se activan estas banderas es porque es R LARGE
-                        if "PDC-R" in i:
-                            if self.model.smallflag == True:
-                                pub_i = "PDC-RSMALL"
-                            if self.model.mediumflag == True:
-                                pub_i = "PDC-RMID"
-                            if self.model.largeflag == True:
-                                pub_i = "PDC-R"
-
-                        command = {f"lbl_box{current_boxx}" : {"text": f"{pub_i}\n{serie}", "color": "purple"}}
-
-                    #SE HACE EL PUBLISH PARA LA GUI CORRESPONDIENTE A ESA CAJA
-                    if i in self.model.boxPos1:
-                        publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-                    if i in self.model.boxPos2:
-                        publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                #print("METODO NUEVO; ",self.model.input_data["database"]["fuses"])
 
 
-                #se reacomoda el orden de las tuercas de la caja MFB-P2
-                if "MFB-P2" in self.model.input_data["database"]["modularity"]:
-                    modularity = self.model.input_data["database"]["modularity"]["MFB-P2"]
-                    orden_tuercas = {"A29": "A29", "A22": "A22", "A27": "A27", "A23": "A23", "A26": "A26", "A21": "A21", "A24": "A24", "A28": "A28"}
+                ########################################################## SE OBTIENE EL CONTENIDO DE FUSIBLES PARA CANDADOS METODO ANTERIOR ############################################### 
+                #for i in modules_v:
+                #    #petición a la base de datos local para ver que fusibles lleva cada modulo
+                #    endpoint = "http://{}/api/get/{}/modulos_fusibles/MODULO/=/{}/_/=/_".format(self.model.server, self.model.dbEvent, i)
+                #    response = requests.get(endpoint).json()
+                #    #si encuentra el módulo en la respuesta (que si existe en la base de datos local)...
+                #    if "MODULO" in response:
+                #        #si la respuesta para ese módulo no es de tipo lista ( esto quiere decir que no hay más de un módulo de este tipo)
+                #        if type(response["MODULO"]) != list:
+                #            current_module = {}
+                #            for i in response:
+                #                #si i tiene "CAJA_" y además no está vacío el objeto
+                #                if "CAJA_" in i and len(response[i]):
+                #                    if "PDC-R" in i:
+                #                        #si la caja determinante es PDC-R en los módulos pueden existir PDC-RS, PDC-RMID y PDC-R
+                #                        if self.model.varianteDominante == "PDC-R":
+                #                            if "PDC-RS" in i:
+                #                                i = i.replace("PDC-RS",self.model.varianteDominante)
+                #                            if "PDC-RMID" in i:
+                #                                i = i.replace("PDC-RMID",self.model.varianteDominante)
+                #                        #si la caja determinante es PDC-RMID en los módulos pueden existir PDC-RS y PDC-RMID
+                #                        if self.model.varianteDominante == "PDC-RMID":
+                #                            if "PDC-RS" in i:
+                #                                i = i.replace("PDC-RS",self.model.varianteDominante)
+                #                        #si la caja determinante es PDC-RS en los módulos solo pueden existir PDC-RS, entonces no se hace nada
 
-                    for tuerca in orden_tuercas:
-                        if tuerca in modularity:
-                            modularity.pop(modularity.index(tuerca))
-                            modularity.append(orden_tuercas[tuerca])
+                #                    #a current_module le añades esa información
+                #                    current_module.update(json.loads(response[i]))
 
+                #            #recorremos las cajas en current_module
+                #            for box in current_module:
+                #                #Solamente se tomarán en cuenta los fusibles pertenecientes a la caja PDC-R para posteriormente en base a ellos determinar cuales CANDADOS revisará el PALPADOR
+                #                if "PDC-R" in box:                                 
+                #                    #recorremos las cavidades de los datos del modulo que tienen esa misma caja
+                #                    for cavity in current_module[box]:
+                #                        #nunca debería de llega una información de la base de datos de los modulos con un vacío, pero si llegara, no entrará al if
+                #                        if current_module[box][cavity] != "vacio":
+                #                            #si la cavidad no se encuentra en esa caja... y no es una cavidad vacía...
+                #                            if not(cavity in self.model.input_data["database"]["fuses"]):
+                #                                self.model.input_data["database"]["fuses"].append(cavity)
+                #        else:
+                #            print(response["MODULO"])
+                #            modulo_redundante_vision = response["MODULO"][0]
+                #            command = {
+                #                    "lbl_result" : {"text": "Módulos de Fusibles redundantes", "color": "red"},
+                #                    "lbl_steps" : {"text": f"{modulo_redundante_vision}, Inténtalo de nuevo", "color": "black"}
+                #                    }
+                #            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                #            publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                #            self.nok.emit()
+                #            return
+                #    else:
+                #        command = {
+                #                "lbl_result" : {"text": "Modulos de visión no encontrados", "color": "red"},
+                #                "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
+                #                }
+                #        publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                #        publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                #        self.nok.emit()
+                #        return
+                #print("METODO ANTERIOR; ",self.model.input_data["database"]["fuses"])
 
-                print("cajas habilitadas CICLO: ",self.model.cajas_habilitadas)
+                ##########################################################################################################################################################################
 
-                ###############################
-                print("*************************************COLECCIÓN TORQUE:*************************************")
-                pprint.pprint(self.model.input_data["database"]["modularity"])
-                print("*******************************************************************************************")
-
-                #print("\t\tCOLECCIÓN FUSIBLES PDC-R:\n", self.model.input_data["database"]["fuses"]) #Descomentar para ver en consola las cavidades que llevan fusibles para la PDC-R
+                ############################################################# SE CALCULAN LOS CANDADOS QUE LLEVA ##################################### 
                 #Se recorre la variable del modelo que indica qué cavidades pertenecen a c/candado; "s" = nombre del candado (Ejemplo: S1,S2...S10)
                 for s in self.model.configCandados:
                     #Después se recorren las cavidades (cav) de cada candado del modelo (self.model.configCandados[s])
@@ -1055,77 +1244,292 @@ class CheckQr (QState):
                             #Si el candado aún no existe en la colección de candados, se agrega (esta condición es para evitar que existan candados repetidos)
                             if not(s in self.model.input_data["database"]["candados"]):
                                 self.model.input_data["database"]["candados"].append(s)
-                print("\t\tCOLECCIÓN CANDADOS PDC-R:\n", self.model.input_data["database"]["candados"])
-                self.model.input_data["database"]["pedido"] = pedido
-                self.model.datetime = datetime.now()
 
-                if self.model.local_data["qr_rework"]:
-                    self.model.local_data["qr_rework"] = False
+                print("\n-------------------------------------TAREAS: CANDADOS -----------------------------------")
+                print(self.model.input_data["database"]["candados"])
+                #######################################################################################################################
 
-                if flag_296 == True or flag_294 == True:
-                    print("dbEvent: ",dbEvent)
-                    event = dbEvent.upper()
-                    evento = event.replace('_',' ')
-                    #Se agrega el nombre del evento a una variable en el modelo, el cual servirá para definir el oracle de las tuercas en caso de pertenecer a PRO1
-                    self.model.evento = evento
-                    command = {
-                        "lbl_result" : {"text": "Datamatrix OK", "color": "green"},
-                        "lbl_steps" : {"text": "Comenzando etapa de torque", "color": "black"},
-                        "statusBar" : pedido["PEDIDO"] +" "+self.model.qr_codes["HM"]+" "+evento,
-                        "cycle_started": True
-                    }
-                else:
-                    command = {
-                        "lbl_result" : {"text": "Datamatrix OK", "color": "green"},
-                        "lbl_steps" : {"text": "Comenzando etapa de torque", "color": "black"},
-                        "statusBar" : pedido["PEDIDO"],
-                        "cycle_started": True
+                command = {
+                    "lbl_result" : {"text": "Arnés Generado Correctamente", "color": "green"},
+                    "lbl_steps" : {"text": "Revisando QR's de Cajas", "color": "black"}
                     }
                 publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                 publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-                command = {
-                    "position" : {"text": "POSICIÓN 1", "color": "black"},
-                    "lbl_boxTITLE" : {"text": "||Cajas a utilizar||", "color": "black"},
-                    "lbl_result" : {"text": "Datamatrix OK", "color": "green"},
-                    "lbl_steps" : {"text": "Comenzando etapa de torque", "color": "black"},
-                    "statusBar" : pedido["PEDIDO"] +" "+self.model.qr_codes["HM"]+" "+evento,
-                    "cycle_started": True
-                }
-                publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-                command = {
-                    "position" : {"text": "POSICIÓN 2", "color": "black"},
-                    "lbl_boxTITLE" : {"text": "||Cajas a utilizar||", "color": "black"}
-                }
-                publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-                Timer(0.1, self.torqueClamp).start()
-                Timer(0.05, self.model.log, args = ("RUNNING",)).start() 
-                self.ok.emit()
-                
-            else:
-                self.model.retrabajo=True
-                print("retrabajo true en checkqr")
-                self.rework.emit()
-                return
-            ####### Original
+                Timer(0.05, self.check_qrs_boxes).start()
 
         except Exception as ex:
-            print("Datamatrix request exception: ", ex) 
-            if flag_variantes == False:
-                print("La Modularidad no contiene módulos que especifiquen su variante en la PDC-R")
-                temp = "La Modularidad no contiene módulos que especifiquen su variante en la PDC-R"
-            else:
-                temp = f"Database Exception: {ex.args}"
-            command = {
-                "lbl_result" : {"text": temp, "color": "red"},
-                "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
-                }
-            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-            publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            self.model.cronometro_ciclo=False
             self.model.input_data["database"]["modularity"].clear()
             self.model.torque_data["tool1"]["queue"].clear()
             self.model.torque_data["tool2"]["queue"].clear()
             self.model.torque_data["tool3"]["queue"].clear()
+            print("build_content exception: ", ex)
+            command = {
+                    "lbl_result" : {"text": "Error de Carga de Arnés", "color": "red", "font": "40pt"},
+                    "lbl_steps" : {"text": "Intentelo de Nuevo", "color": "black", "font": "22pt"}
+                    }
+            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
             self.nok.emit()
+            return
+
+    def check_qrs_boxes (self):
+        try:
+            print("\ncheck_qrs_boxes")
+            ########################################################## REVISIÓN DE QRS DE CAJAS ############################################### 
+            #Si el modo de operación de la máquina es Flexible, Reversa, o Reversa Flexible
+            if self.model.config_data["flexible_mode"] or self.model.config_data["untwist"]:
+                #Si el arnés ya ha pasado por la máquina anteriormente, y se va a retrabajar (debe tener SERIALES en response), hará lo siguiente:
+                if "SERIALES" in response:
+                    print("Response*******: ",response["SERIALES"])
+                    if type(response["SERIALES"]) != list:
+                        print("ES UN SOLO REGISTRO!")
+                        qr_retrabajo = json.loads(response["SERIALES"])
+                        [qr_retrabajo.pop(key, None) for key in ['FET','HM','REF']]
+                        self.model.input_data["database"]["qr_retrabajo"] = qr_retrabajo
+                        if "PDC-P" in self.model.input_data["database"]["qr_retrabajo"]:
+                            self.model.input_data["database"]["qr_retrabajo"]["PDC-P"] = "009"
+                        if "MFB-E" in self.model.input_data["database"]["qr_retrabajo"]:
+                            self.model.input_data["database"]["qr_retrabajo"]["MFB-E"] = "004"
+                        print("Qr_retrabajo modelo: ",self.model.input_data["database"]["qr_retrabajo"])
+                    else:
+                        print("ES UNA LISTA DE REGISTROS!")
+                        qr_retrabajo = json.loads(response["SERIALES"][-1])
+                        [qr_retrabajo.pop(key, None) for key in ['FET','HM','REF']]
+                        self.model.input_data["database"]["qr_retrabajo"] = qr_retrabajo
+                        if "PDC-P" in self.model.input_data["database"]["qr_retrabajo"]:
+                            self.model.input_data["database"]["qr_retrabajo"]["PDC-P"] = "009"
+                        if "MFB-E" in self.model.input_data["database"]["qr_retrabajo"]:
+                            self.model.input_data["database"]["qr_retrabajo"]["MFB-E"] = "004"
+                        print("Qr_retrabajo modelo: ",self.model.input_data["database"]["qr_retrabajo"])
+                # Si el arnés que intentan retrabajar es la primera vez que entra a la máquina indicará un error al usuario
+                else:
+                    self.model.cronometro_ciclo=False
+                    command = {
+                        "lbl_result" : {"text": "ERROR DE RETRABAJO", "color": "red"},
+                        "lbl_steps" : {"text": "No se encontraron registros de este arnés", "color": "black"}
+                        }
+                    publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                    publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                    self.nok.emit()
+                    return
+ 
+            flag_mfbp2_der = False
+            flag_mfbp2_izq = False
+            mfbp2_serie = ""
+            mfbeBox = ""
+            battery2Box = ""
+            flag_294 = False
+            flag_296 = False
+
+            #Revisando Fase de Arnés
+            if "294" in self.model.qr_codes["REF"]:
+                print("\nEvento 294")
+                flag_294 = True
+            if "296" in self.model.qr_codes["REF"]:
+                print("\nEvento 296")
+                flag_296 = True
+
+            #Revisando conducción de Arnés
+            if "IL" in self.model.qr_codes["REF"]:
+                print("Modularidad de MFB-P2 Izquierda")
+                flag_mfbp2_izq = True
+            if "IR" in self.model.qr_codes["REF"]:
+                print("Modularidad de MFB-P2 Derecha")
+                flag_mfbp2_der = True
+
+            print("Flag MFB-P2 DER - ",flag_mfbp2_der," Flag MFB-P2 IZQ - ",flag_mfbp2_izq)
+
+            #lista de modulos de esta referencia(arnes,pedido,DAT)
+            modules = json.loads(self.model.pedido["MODULOS_TORQUE"])
+            modules = modules[list(modules)[0]]
+
+            print("Evento de este Arnés: ",self.model.dbEvent) #puede agregarse un if "aj23_2_pro3" in self.model.dbEvent para limitar a que solamente se cambie en un evento
+            QR_BOXES = json.loads(self.model.pedido["QR_BOXES"])
+            #Se agrega la evaluacion para evaluar si los dats traen los nuevos modulos cambien a la nueva caja
+            self.leer_configuracion()
+            print("self.model.pedido[QR_BOXES]",self.model.pedido["QR_BOXES"])
+            if self.model.parametros["CAJA_VIEJA_SIEMPRE"]=="False":
+                for modulo in modules:
+                    #para caja MFBP2 izquierda
+                    if "A2975407930" in modulo:
+                        print("contiene el modulo A2975407930")
+                        #si se encuentra el módulo dentro del arnés, se cambia el QR de la caja del generado por la api: 12975407316 al 12975407930
+                        pedido["QR_BOXES"] = pedido["QR_BOXES"].replace("12975407316","12975407930")
+                    #para caja MFBP2 derechaA2975407830
+                    if "A2975407830" in modulo:
+                        print("contiene el modulo A2975407830")
+                        #si se encuentra el módulo dentro del arnés, se cambia el QR de la caja del generado por la api: 12975407316 al 12975407930
+                        pedido["QR_BOXES"] = pedido["QR_BOXES"].replace("12975407216","12975407830")
+            #if self.model.parametros["CAJA_VIEJA_SIEMPRE"]=="True":
+            #    for modulo in modules:
+            #        #para caja MFBP2 izquierda
+            #        if "A2975407930" in modulo:
+            #            print("contiene el modulo A2975407930")
+            #            #si se encuentra el módulo dentro del arnés, se cambia el QR de la caja del generado por la api: 12975407316 al 12975407930
+            #            pedido["QR_BOXES"] = "12975407316"
+            #        #para caja MFBP2 derechaA2975407830
+            #        if "A2975407830" in modulo:
+            #            print("contiene el modulo A2975407830")
+            #            #si se encuentra el módulo dentro del arnés, se cambia el QR de la caja del generado por la api: 12975407316 al 12975407930
+            #            pedido["QR_BOXES"] = "12975407216"
+            #self.leer_configuracion() #función para leer archivo de configuracion.txt para caja MFBP2 antigua en evento AJ231PRO3
+            #if self.model.parametros["caja_MFBP2_antigua"]=="True":
+            #    #se recorren todos los módulos del arnés para buscar el que determina la caja nueva
+            #    if "aj2023_1_pro3" in self.model.dbEvent or "aj23_1_pro3" in self.model.dbEvent:                              #cuando se acaben las cajas de stock esto se quitará
+            #        print("Es un caso especial de AJ23 1 PRO3 que debe llevar si o sí la caja VIEJA")   #cuando se acaben las cajas de stock esto se quitará
+            #        self.model.pedido["QR_BOXES"] = self.model.pedido["QR_BOXES"].replace("12975407930","12975407316")
+
+
+            
+            print("\nQRS DE CAJAS: ")
+            pprint.pprint(QR_BOXES)
+
+            #FORMATO DE DONDE SE OBTIENE QR DE CAJA
+            #pedidos["QR_BOXES"] = {
+            #"PDC-R": ["12239061602", true], 
+            #"PDC-RMID": ["", false], 
+            #"PDC-RS": ["", false], 
+            #"PDC-D": ["12239060402", true], 
+            #"PDC-P": ["12239060702", true], 
+            #"MFB-P1": ["12975402001", true], 
+            #"MFB-S": ["12235403215", true], 
+            #"MFB-E": ["12975403015", true], 
+            #"MFB-P2": ["12975407316", true]}
+
+            #VARIABLES PARA MOSTRAR QR's ESPERADOS A ESCANEAR
+
+            if self.model.varianteDominante == "PDC-R":
+                self.model.pdcr_serie = QR_BOXES["PDC-R"][0]
+            if self.model.varianteDominante == "PDC-RMID":
+                self.model.pdcr_serie = QR_BOXES["PDC-RMID"][0]
+            if self.model.varianteDominante == "PDC-RS":
+                self.model.pdcr_serie = QR_BOXES["PDC-RS"][0]
+
+            if flag_mfbp2_der == True and flag_mfbp2_izq == False:
+                self.model.mfbp2_serie = QR_BOXES["MFB-P2"][0]
+            if flag_mfbp2_der == False and flag_mfbp2_izq == True:
+                self.model.mfbp2_serie = QR_BOXES["MFB-P2"][0]
+            if flag_mfbp2_der == False and flag_mfbp2_izq == False:
+                self.model.mfbp2_serie = "Sin especificar"
+
+            ############################################################# PUBLISH DE CAJAS EN LABELS ##################################### 
+
+            print("\ncajas de modularity: ")
+            print(self.model.input_data["database"]["modularity"].keys())
+
+            for caja in self.model.input_data["database"]["modularity"]:
+                print("cajas dentro de modularity: ",caja)
+
+                lbl_current_boxx = caja.replace("-","") #variable con nombre de la caja pero sin - 
+
+                #se llena la variable self.model.cajas_habilitadas[caja] que indica las cajas habilitadas
+                if "PDC-R" in caja:
+                    if self.model.smallflag == True or self.model.mediumflag == True:    
+                        self.model.cajas_habilitadas["PDC-RMID"] = 2
+                    if self.model.largeflag == True:
+                        self.model.cajas_habilitadas["PDC-R"] = 2
+                    lbl_current_boxx = "PDCR"
+                else:
+                    self.model.cajas_habilitadas[caja] = 2
+
+                serie = ""
+                if caja == "MFB-P2":
+                    serie = self.model.mfbp2_serie
+                if "PDC-R" in caja:
+                    serie = self.model.pdcr_serie
+
+                #copia de la caja actual, para utilizar en publish
+                pub_i = caja
+
+                #cajas que no requieren escanearse (se inician en blue)
+                if caja == "BATTERY" or caja == "BATTERY-2":
+                    command = {f"lbl_box{lbl_current_boxx}" : {"text": f"{pub_i}", "color": "blue"}}
+
+                #cajas que requieren escanearse (se inician en purple) #ESTO ES PARA SABER QUE LA LLEVA EL ARNÉS, PERO AÚN NO ESTÁN HABILITADAS POR EL PLC (por eso se requieren estos publish a los gui)
+                else:
+
+                    #si no se activan estas banderas es porque es R LARGE
+                    if "PDC-R" in caja:
+                        if self.model.smallflag == True:
+                            pub_i = "PDC-RSMALL"
+                        if self.model.mediumflag == True:
+                            pub_i = "PDC-RMID"
+                        if self.model.largeflag == True:
+                            pub_i = "PDC-R"
+
+                    command = {f"lbl_box{lbl_current_boxx}" : {"text": f"{pub_i}\n{serie}", "color": "purple"}}
+
+                #SE HACE EL PUBLISH PARA LA GUI CORRESPONDIENTE A ESA CAJA
+                if caja in self.model.boxPos1:
+                    publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                if caja in self.model.boxPos2:
+                    publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+
+            print("Cajas Habilitadas CICLO: ",self.model.cajas_habilitadas)
+
+            #SE ACTUALIZA VARIABLE CON EL PEDIDO
+            self.model.input_data["database"]["pedido"] = self.model.pedido
+            self.model.datetime = datetime.now()
+
+            if self.model.local_data["qr_rework"]:
+                self.model.local_data["qr_rework"] = False
+
+            if flag_296 == True or flag_294 == True:
+                print("self.model.dbEvent: ",self.model.dbEvent)
+                event = self.model.dbEvent.upper()
+                evento = event.replace('_',' ')
+                #Se agrega el nombre del evento a una variable en el modelo, el cual servirá para definir el oracle de las tuercas en caso de pertenecer a PRO1
+                self.model.evento = evento
+                command = {
+                    "lbl_result" : {"text": "Datamatrix OK", "color": "green"},
+                    "lbl_steps" : {"text": "Comenzando etapa de torque", "color": "black"},
+                    "statusBar" : self.model.pedido["PEDIDO"] +" "+self.model.qr_codes["HM"]+" "+evento,
+                    "cycle_started": True
+                }
+            else:
+                command = {
+                    "lbl_result" : {"text": "Datamatrix OK", "color": "green"},
+                    "lbl_steps" : {"text": "Comenzando etapa de torque", "color": "black"},
+                    "statusBar" : self.model.pedido["PEDIDO"],
+                    "cycle_started": True
+                }
+            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            command = {
+                "position" : {"text": "POSICIÓN 1", "color": "black"},
+                "lbl_boxTITLE" : {"text": "||Cajas a utilizar||", "color": "black"},
+                "lbl_result" : {"text": "Datamatrix OK", "color": "green"},
+                "lbl_steps" : {"text": "Comenzando etapa de torque", "color": "black"},
+                "statusBar" : self.model.pedido["PEDIDO"] +" "+self.model.qr_codes["HM"]+" "+evento,
+                "cycle_started": True
+            }
+            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            command = {
+                "position" : {"text": "POSICIÓN 2", "color": "black"},
+                "lbl_boxTITLE" : {"text": "||Cajas a utilizar||", "color": "black"}
+            }
+            publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            Timer(0.1, self.torqueClamp).start()
+            Timer(0.05, self.model.log, args = ("RUNNING",)).start() 
+            self.ok.emit()
+
+        except Exception as ex:
+            self.model.cronometro_ciclo=False
+            print("check_qrs_boxes exception", ex)
+            self.model.input_data["database"]["modularity"].clear()
+            self.model.torque_data["tool1"]["queue"].clear()
+            self.model.torque_data["tool2"]["queue"].clear()
+            self.model.torque_data["tool3"]["queue"].clear()
+            command = {
+                    "lbl_result" : {"text": "Error de asignación de QRs", "color": "red", "font": "40pt"},
+                    "lbl_steps" : {"text": "Intentelo de Nuevo", "color": "black", "font": "22pt"}
+                    }
+            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            self.nok.emit()
+            return
+
 
     def leer_configuracion(self):
         """
