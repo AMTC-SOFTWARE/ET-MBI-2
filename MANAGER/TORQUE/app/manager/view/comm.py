@@ -459,7 +459,7 @@ class MqttClient (QObject):
                         self.pin.emit()
                     else:
                         self.model.pin_pressed = False
-                if "Precencia_PDCP" in payload:
+                if "Precencia_PDCP" in payload and self.model.validacion_conectores_pdcp==True:
                     if payload["Precencia_PDCP"] == True:
                         self.model.caja_puesta=True
                         command = {
@@ -478,7 +478,7 @@ class MqttClient (QObject):
                         self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
                 if "PDCP_Validacion" in payload and self.model.validacion_conectores_pdcp==True:
                     if payload["PDCP_Validacion"] == True:
-                        self.validacion_conectores_pdcp=True
+                        self.validacion_conectores_pdcp=False
                         self.client.publish(self.model.pub_topics["plc"],json.dumps({"PDC-P": True}), qos = 2)
                         command = {
                             "lbl_steps" : {"text": f"Coloca la Caja PDC-P en su lugar", "color": "green"},

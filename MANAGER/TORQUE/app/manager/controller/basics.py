@@ -255,6 +255,7 @@ class StartCycle (QState):
         self.model.key_calidad_caja_repetida=False
         self.model.caja_por_validar=""
         self.model.en_ciclo=False
+        self.model.validacion_conectores_pdcp=False
         #reiniciar variable para dar delay entre cada pin
         self.model.nuevo_pin = False
         #para avisar que se finalizó el modo de revisión de candados
@@ -1787,7 +1788,7 @@ class Finish (QState):
         self.model.caja_por_validar=""
         #para funcionamiento normal de llave
         self.model.reintento_torque = False
-
+        self.model.validacion_conectores_pdcp=False
         self.model.cajas_habilitadas = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
         self.model.raffi = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
         for i in self.model.raffi:
