@@ -1058,7 +1058,16 @@ class CheckQr (QState):
                         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                         self.nok.emit()
                         return
-                    
+
+                #se reacomoda el orden de las tuercas de la caja MFB-P2
+                if "MFB-P2" in self.model.input_data["database"]["modularity"]:
+                    modularity = self.model.input_data["database"]["modularity"]["MFB-P2"]
+                    orden_tuercas = {"A21": "A21", "A22": "A22", "A23": "A23", "A24": "A24", "A26": "A26", "A27": "A27", "A28": "A28", "A29": "A29"}
+
+                    for tuerca in orden_tuercas:
+                        if tuerca in modularity:
+                            modularity.pop(modularity.index(tuerca))
+                            modularity.append(orden_tuercas[tuerca])
                 print("-------------------------------------TAREAS: TUERCAS -----------------------------------")
                 print(self.model.input_data["database"]["modularity"])
 
