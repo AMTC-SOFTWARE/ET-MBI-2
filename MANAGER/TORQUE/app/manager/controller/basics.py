@@ -15,6 +15,7 @@ from toolkit.admin import Admin
 import pandas as pd
 
 class Startup(QState):
+
     ok  = pyqtSignal()
 
     def __init__(self, model = None, parent = None):
@@ -22,6 +23,13 @@ class Startup(QState):
         self.model = model
 
     def onEntry(self, event):
+
+        try:
+            #se oculta la GDI automáticamente:
+            publish.single("GDI",json.dumps({"Esconder" : "Ocultando GDI..."}),hostname='127.0.0.1', qos = 2)
+        except Exception as ex:
+            print("Error al ocultar GDI ", ex)
+
         Timer(0.05, self.model.log, args = ("STARTUP",)).start() 
         if exists("data\config"):
             with open("data\config", "rb") as f:
