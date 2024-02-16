@@ -67,6 +67,22 @@ class NewTool1 (QState):
         self.raffi_key      = RaffiKey(tool = self.tool, model = self.model, parent = self)
         self.raffi_message  = RaffiMessage(tool = self.tool, model = self.model, parent = self)
         self.chk_profile    = CheckProfile(tool = self.tool, model = self.model, parent = self)
+        self.holding_time   = HoldingTime(tool = self.tool, model = self.model, parent = self)
+        self.activar_tool   = ActivarHerramienta(tool = self.tool, model = self.model, parent = self)
+
+        #si se está en zone y la variable de activación de herramienta está en false para esa tool, se va a un estado holding_time para comenzar un timer
+        self.zone.addTransition(self.zone.enable_time, self.holding_time)
+        #si se mueve la herramienta estándo en posición de holding_time se cancela el timer, no se activa la herramienta y se vuelve a self.zone
+        self.holding_time.addTransition(self.model.transitions.zone_tool1, self.zone)
+        #si se cumple el tiempo de holding_time sin sacar la tool de la posición de la zona se manda la señal activar_signal y se va a un estado que habilitará la variable de activación
+        self.holding_time.addTransition(self.holding_time.activar_signal, self.activar_tool)
+        #en este estado la variable de activación de esta herramienta se hace true y se vuelve a self.zone, donde si es true se habilita la herramienta
+        self.activar_tool.addTransition(self.activar_tool.continuar, self.zone)
+        #si ya se había habilitado la herramienta y solo se está esperando la respuesta del torque debe poder ir aunque esté en estos estados nuevamete 
+        #(esto porque la herramienta al momento de estar torqueando puede salir de la zona una vez que ya fue activada por su movimiento de torqueo y a causa de las zonas en el encoder)
+        self.holding_time.addTransition(self.model.transitions.torque1, self.chk_response)
+        self.activar_tool.addTransition(self.model.transitions.torque1, self.chk_response)
+
 
         #presionar un raffi, te lleva a este estado solo si estás en self.zone
         self.zone.addTransition(self.model.transitions.raffi_on, self.raffi_message)
@@ -175,7 +191,16 @@ class NewTool2 (QState):
         self.raffi_key_palpador     = RaffiKey(tool = self.tool, model = self.model, parent = self)
         self.raffi_message_palpador = RaffiMessage(tool = self.tool, model = self.model, parent = self)
         self.chk_profile    = CheckProfile(tool = self.tool, model = self.model, parent = self)
-        
+        self.holding_time   = HoldingTime(tool = self.tool, model = self.model, parent = self)
+        self.activar_tool   = ActivarHerramienta(tool = self.tool, model = self.model, parent = self)
+
+
+        self.zone.addTransition(self.zone.enable_time, self.holding_time)
+        self.holding_time.addTransition(self.model.transitions.zone_tool1, self.zone)
+        self.holding_time.addTransition(self.holding_time.activar_signal, self.activar_tool)
+        self.activar_tool.addTransition(self.activar_tool.continuar, self.zone)
+        self.holding_time.addTransition(self.model.transitions.torque2, self.chk_response)
+        self.activar_tool.addTransition(self.model.transitions.torque2, self.chk_response)
 
         self.zone.addTransition(self.model.transitions.raffi_on, self.raffi_message)
         self.raffi_message.addTransition(self.raffi_message.process_continue, self.zone)
@@ -268,7 +293,16 @@ class NewTool3 (QState):
         self.waiting_pin            = WaitingPin(tool = self.tool, model = self.model, parent = self)
         self.raffi_key_palpador     = RaffiKey(tool = self.tool, model = self.model, parent = self)
         self.raffi_message_palpador = RaffiMessage(tool = self.tool, model = self.model, parent = self)
+        self.holding_time   = HoldingTime(tool = self.tool, model = self.model, parent = self)
+        self.activar_tool   = ActivarHerramienta(tool = self.tool, model = self.model, parent = self)
 
+        #HOLDING TIME PARA ACTIVAR HERRAMIENTA
+        self.zone.addTransition(self.zone.enable_time, self.holding_time)
+        self.holding_time.addTransition(self.model.transitions.zone_tool1, self.zone)
+        self.holding_time.addTransition(self.holding_time.activar_signal, self.activar_tool)
+        self.activar_tool.addTransition(self.activar_tool.continuar, self.zone)
+        self.holding_time.addTransition(self.model.transitions.torque3, self.chk_response)
+        self.activar_tool.addTransition(self.model.transitions.torque3, self.chk_response)
 
         #RAFFI EN ZONE
         self.zone.addTransition(self.model.transitions.raffi_on, self.raffi_message)
@@ -353,6 +387,7 @@ class CheckZone (QState):
     ok              = pyqtSignal()
     nok             = pyqtSignal()
     chk_candados    = pyqtSignal()
+    enable_time     = pyqtSignal()
 
     def __init__(self, tool = "tool1", model = None, parent = None):
         super().__init__(parent)
@@ -622,14 +657,14 @@ class CheckZone (QState):
 
         ##si esta variable contiene elementos
         else:
-            #si lleva la caja PDC-R en esa queue de tareas, se hace true la variable para enviar la señal que te lleva al estado del palpador en lugar de finish
-            if "PDC-R" in current_trq[0]:
-                self.model.contains_PDCR = True            
 
             #se inicia profile como stop
             profile = self.stop
             command = {}
-            #self.model.torque_data[self.tool]["rqst"] = False
+
+            #si lleva la caja PDC-R en esa queue de tareas, se hace true la variable para enviar la señal que te lleva al estado del palpador en lugar de finish
+            if "PDC-R" in current_trq[0]:
+                self.model.contains_PDCR = True            
 
             #print("zone[0] (ACTUAL - CAJA): ",zone[0])
             #print("zone[1] (ACTUAL - ZONA): ",zone[1])
@@ -649,10 +684,7 @@ class CheckZone (QState):
             if self.model.raffi[current_trq[0]] == 0:
 
                 #si la caja actual es igual a la solicitada de las tareas en cola...
-                if zone[0] == current_trq[0]:   
-                   
-                    
-
+                if zone[0] == current_trq[0]:
                   
                     #si la terminal actual es igual a cero... (esto pasa en comm.py cada que llega una zona en "false")
                     if zone[1] == "0":
@@ -667,25 +699,42 @@ class CheckZone (QState):
 
                     #si la terminal actual es igual a la terminal solicitada en la tarea actual en cola
                     elif zone[1] == current_trq[1]:
-                        self.model.torque_data[self.tool]["rqst"] = True
-                        command = {
-                            "lbl_result" : {"text": "Herramienta en " + zone[0] + ": " + zone[1], "color": "green"},
-                            "lbl_steps" : {"text": "Herramienta activada", "color": "black"}
-                            }
-                        #se da a profile el valor del profile en cola solicitado para esa caja y esa terminal !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                        profile = current_trq[2]
-                        print("zone[1] (ACTUAL - ZONA): ",zone[1])
-                        print("HERRAMIENTA ACTIVADA**********: ",self.tool)
+                        
+                        #if (current_trq[1] == "A21" or current_trq[1] == "A22" or current_trq[1] == "A23" or current_trq[1] == "A24" or current_trq[1] == "A20" or current_trq[1] == "A25" or current_trq[1] == "A30") and self.model.activar_tool[self.tool] == False:
+                        if self.model.activar_tool[self.tool] == False: #se debe mantener para todas las cavidades
+                            print("se debe mantener la herramienta un tiempo en la zona para habilitarla")
+                            command = {
+                                "lbl_result" : {"text": "Herramienta en " + zone[0] + ": " + zone[1], "color": "darkorange"},
+                                "lbl_steps" : {"text": "Mantenga en posición para activar...", "color": "navy"}
+                                }
+                            publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                            print("enable_time emit")
+                            self.enable_time.emit()
+                            return
+                        else:
 
-                        #se bloquea el uso de este raffi
-                        self.model.active_lock[current_trq[0]] = True
-                        #se indica que la herramienta actual está bloqueando el raffi porque está activa
-                        self.model.active_lock_tool[self.tool] = True
+                            self.model.activar_tool[self.tool] = False #una vez habilitada, deshabilitar esto en la variable de modelo
+                            print("tool: ",self.tool)
+                            print("self.model.activar_tool[self.tool]: ",self.model.activar_tool[self.tool])
 
+                            self.model.torque_data[self.tool]["rqst"] = True
+                            command = {
+                                "lbl_result" : {"text": "Herramienta en " + zone[0] + ": " + zone[1], "color": "green"},
+                                "lbl_steps" : {"text": "Herramienta activada", "color": "black"}
+                                }
+                            #se da a profile el valor del profile en cola solicitado para esa caja y esa terminal !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                            profile = current_trq[2]
+                            print("zone[1] (ACTUAL - ZONA): ",zone[1])
+                            print("HERRAMIENTA ACTIVADA**********: ",self.tool)
 
-                        if self.model.config_data["untwist"]:
-                            profile = self.model.torque_data[self.tool]["backward_profile"]
-                        self.model.torque_data[self.tool]["current_trq"] = current_trq
+                            #se bloquea el uso de este raffi
+                            self.model.active_lock[current_trq[0]] = True
+                            #se indica que la herramienta actual está bloqueando el raffi porque está activa
+                            self.model.active_lock_tool[self.tool] = True
+
+                            if self.model.config_data["untwist"]:
+                                profile = self.model.torque_data[self.tool]["backward_profile"]
+                            self.model.torque_data[self.tool]["current_trq"] = current_trq
 
                     #si la terminal actual es diferente de cero y de la solicitada...
                     else:
@@ -821,6 +870,50 @@ class CheckZone (QState):
         #
         print("se emite finish de queue de caja")
         Timer(self.delay2, self.ok.emit).start()
+
+        self.model = model
+        self.tool = tool
+
+class HoldingTime (QState):
+
+    activar_signal    = pyqtSignal()
+
+    def __init__(self, tool = "tool1", model = None, parent = None):
+        super().__init__(parent)
+        self.model = model
+        self.tool = tool
+
+    def onEntry(self, event):
+        print("||||Dentro de Estado HoldingTime, tool: ",self.tool)
+
+        #se manda señal para activar herramienta después de cierto tiempo
+        self.model.tiempo[self.tool] = threading.Timer(1.0,self.activar_signal.emit)
+        self.model.tiempo[self.tool].start()
+
+    def onExit(self, event):
+        print("||||||||||||||||||||||Saliendo de HoldingTime")
+        print("tool: ",self.tool)
+        print("self.model.tiempo[self.tool].cancel()")
+        self.model.tiempo[self.tool].cancel()
+
+class ActivarHerramienta (QState):
+
+    continuar    = pyqtSignal()
+
+    def __init__(self, tool = "tool1", model = None, parent = None):
+        super().__init__(parent)
+        self.model = model
+        self.tool = tool
+
+    def onEntry(self, event):
+        print("||||Dentro de Estado ActivarHerramienta, tool: ",self.tool)
+
+        self.model.activar_tool[self.tool] = True #variable para habilitar tool después de estar cierto tiempo en zona
+        print("self.model.activar_tool: ",self.model.activar_tool)
+        self.continuar.emit()
+
+    def onExit(self, event):
+        print("||||||||||||||||||||||Saliendo de ActivarHerramienta")
 
 class CheckResponse (QState):
     ok      = pyqtSignal()
@@ -2023,8 +2116,7 @@ class DelayPin (QState):
             Timer(1.5, self.continuar.emit).start()
         else:
             self.continuar.emit()
-
-        
+       
 class CheckZonePalpador (QState):
 
     end                  = pyqtSignal()

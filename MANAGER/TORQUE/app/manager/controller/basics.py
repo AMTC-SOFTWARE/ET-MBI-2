@@ -215,6 +215,17 @@ class StartCycle (QState):
         minutos=0
         segundos=0
         color="black"
+
+        #se reinician tiempos de activación y variables de activación de tool
+        self.model.tiempo = {
+                         "tool1":"",
+                         "tool2":"",
+                         "tool3":""}
+        self.model.activar_tool = {
+                                "tool1":False,
+                                "tool2":False,
+                                "tool3":False}
+
         try:
             query="SELECT INICIO, FIN FROM et_mbi_2.historial WHERE RESULTADO = 1 order by ID desc LIMIT 1;"
             endpoint = "http://{}/query/get/{}".format(self.model.server, query)
@@ -1059,15 +1070,16 @@ class CheckQr (QState):
                         self.nok.emit()
                         return
 
-                #se reacomoda el orden de las tuercas de la caja MFB-P2
-                if "MFB-P2" in self.model.input_data["database"]["modularity"]:
-                    modularity = self.model.input_data["database"]["modularity"]["MFB-P2"]
-                    orden_tuercas = {"A21": "A21", "A22": "A22", "A23": "A23", "A24": "A24", "A26": "A26", "A27": "A27", "A28": "A28", "A29": "A29"}
+                ##se reacomoda el orden de las tuercas de la caja MFB-P2
+                #if "MFB-P2" in self.model.input_data["database"]["modularity"]:
+                #    modularity = self.model.input_data["database"]["modularity"]["MFB-P2"]
+                #    orden_tuercas = {"A21": "A21", "A22": "A22", "A23": "A23", "A24": "A24", "A26": "A26", "A27": "A27", "A28": "A28", "A29": "A29"}
 
-                    for tuerca in orden_tuercas:
-                        if tuerca in modularity:
-                            modularity.pop(modularity.index(tuerca))
-                            modularity.append(orden_tuercas[tuerca])
+                #    for tuerca in orden_tuercas:
+                #        if tuerca in modularity:
+                #            modularity.pop(modularity.index(tuerca))
+                #            modularity.append(orden_tuercas[tuerca])
+
                 print("-------------------------------------TAREAS: TUERCAS -----------------------------------")
                 print(self.model.input_data["database"]["modularity"])
 
@@ -1983,8 +1995,6 @@ class Finish (QState):
             }
         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-
-
 
 
 class Reset (QState):

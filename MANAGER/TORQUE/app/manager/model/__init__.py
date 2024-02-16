@@ -72,6 +72,19 @@ class Model (object):
         #señal para dejar un delay entre cada candado
         self.nuevo_pin = False
 
+        #variable para contar el tiempo que se debe mantener la herramienta en posición de zona de activación
+        self.tiempo = {
+                         "tool1":"",
+                         "tool2":"",
+                         "tool3":""
+                      }
+        #variable para habilitar herramienta pasado cierto tiempo
+        self.activar_tool = {
+                                "tool1":False,
+                                "tool2":False,
+                                "tool3":False
+                            }
+
         #Variable para indicar que la caja pdcr se escaneó y esta en proceso de torque
         self.pdcr_iniciada=False
 
