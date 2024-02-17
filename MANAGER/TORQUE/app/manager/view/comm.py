@@ -569,16 +569,16 @@ class MqttClient (QObject):
                             caja = self.model.torque_data[current_tool]["current_trq"][0]
                             tuerca = self.model.torque_data[current_tool]["current_trq"][1]
 
-                            #si se trata del encoder de altura
-                            if encoder == "encoder_4":
-                                #si la caja coincide con la del encoder...
-                                #PLC/1/status       {"encoder":4,"name":{"MFB-P2":"ALTURA"},"value":True}
-                                if caja in payload["name"]:
-                                    #se actualiza la variable que determina si está dentro de la zona de altura correcta o fuera para esa caja
-                                    if payload["value"] == True:
-                                        self.model.altura_zone[current_tool] = True
-                                    else:
-                                        self.model.altura_zone[current_tool] = False
+                            ##si se trata del encoder de altura
+                            #if encoder == "encoder_4":
+                            #    #si la caja coincide con la del encoder...
+                            #    #PLC/1/status       {"encoder":4,"name":{"MFB-P2":"ALTURA"},"value":True}
+                            #    if caja in payload["name"]:
+                            #        #se actualiza la variable que determina si está dentro de la zona de altura correcta o fuera para esa caja
+                            #        if payload["value"] == True:
+                            #            self.model.altura_zone[current_tool] = True
+                            #        else:
+                            #            self.model.altura_zone[current_tool] = False
 
                             #ejemplo de señal: {"encoder":1,"name":{"PDC-D":"E1"},"value":True}
                             #ejemplo de caja: "PDC-D"
@@ -612,12 +612,14 @@ class MqttClient (QObject):
                                     self.zone_tool2.emit()
 
                                 if encoder == "encoder_3":
-                                    if self.model.altura_zone[current_tool] == True:
-                                        print("emit zone de tool3")
-                                        self.zone_tool3.emit()
-                                    else:
-                                        print("altura fuera de zona de activación")
-                                        print("self.model.altura_zone[" + current_tool + "]: " + self.model.altura_zone[current_tool])
+                                    print("emit zone de tool3")
+                                    self.zone_tool3.emit()
+                                    #if self.model.altura_zone[current_tool] == True:
+                                    #    print("emit zone de tool3")
+                                    #    self.zone_tool3.emit()
+                                    #else:
+                                    #    print("altura fuera de zona de activación")
+                                    #    print("self.model.altura_zone[" + current_tool + "]: " + str(self.model.altura_zone[current_tool]))
 
                     #si está en revisión de candados
                     else:
@@ -1071,7 +1073,16 @@ class MqttClient (QObject):
                 if "qr_box" in payload:
                     string_qr_box = str(payload["qr_box"])
                     string_qr_box = string_qr_box.replace(" ","") #se eliminan los espacios de los QRs
-                    self.qr_box.emit(string_qr_box)    
+
+                    if self.model.config_data["trazabilidad"] == False:
+                        if string_qr_box == "004":
+                            self.client.publish(self.model.pub_topics["plc"],json.dumps({"PDC-P": True}), qos = 2)
+                        elif string_qr_box == "009":
+                            self.client.publish(self.model.pub_topics["plc"],json.dumps({"MFB-E": True}), qos = 2)
+                        else:
+                            self.qr_box.emit(string_qr_box)
+                    else:
+                        self.qr_box.emit(string_qr_box)  
 
         except Exception as ex:
             print("input exception", ex)

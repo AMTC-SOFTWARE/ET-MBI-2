@@ -111,7 +111,7 @@ class Admin (QDialog):
             self.ui.checkBox_3.setEnabled(True)
             self.ui.checkBox_4.setEnabled(True)
             self.ui.checkBox_5.setEnabled(True)
-            self.ui.checkBox_6.setEnabled(True)    #Descomentar el día que se habilite el envío de info al servidor de P2
+            self.ui.checkBox_6.setEnabled(True)
         elif self.user_type == "CALIDAD":
             self.ui.btn_off.setEnabled(False)
             self.ui.btn_reset.setEnabled(True)
@@ -121,6 +121,7 @@ class Admin (QDialog):
             self.ui.checkBox_3.setEnabled(True)
             self.ui.checkBox_4.setEnabled(True)
             self.ui.checkBox_5.setEnabled(True)
+            self.ui.checkBox_6.setEnabled(True)
         elif self.user_type == "MANTENIMIENTO":
             self.ui.btn_off.setEnabled(True)
             self.ui.btn_reset.setEnabled(True)
