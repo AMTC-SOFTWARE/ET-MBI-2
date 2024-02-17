@@ -1,5 +1,6 @@
 from PyQt5.QtCore import QState, pyqtSignal, QObject, pyqtSlot
 from paho.mqtt import publish
+import threading
 from threading import Timer
 from time import sleep
 from cv2 import imread, imwrite
