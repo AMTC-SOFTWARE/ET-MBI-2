@@ -71,11 +71,16 @@ class Admin (QDialog):
             self.ui.checkBox_5.setChecked(True)
         else:
             self.ui.checkBox_5.setChecked(False)
+
         if self.data.config_data["trazabilidad"]:
             self.ui.checkBox_6.setChecked(True)
         else:
             self.ui.checkBox_6.setChecked(False)
+
         self.ui.btn_off.setEnabled(False)
+
+        self.ui.checkBox_4.setVisible(False)
+        self.ui.checkBox_5.setVisible(False)
 
         #self.ui.btn_torque.clicked.connect(self.qw_torques.show)
         #self.ui.btn_torque.clicked.connect(self.manualTorque)
@@ -268,16 +273,18 @@ class Admin (QDialog):
             endpoint = "http://{}/api/post/login".format(self.data.server)
             resp = requests.post(endpoint, data=json.dumps(data))
     def onClicked_4(self):
-        if self.ui.checkBox_4.isChecked():
-            self.data.config_data["untwist"] = True
-        else:
-            self.data.config_data["untwist"] = False
+        #if self.ui.checkBox_4.isChecked():
+        #    self.data.config_data["untwist"] = True
+        #else:
+        #    self.data.config_data["untwist"] = False
+        pass
 
     def onClicked_5(self):
-        if self.ui.checkBox_5.isChecked():
-            self.data.config_data["flexible_mode"] = True
-        else:
-            self.data.config_data["flexible_mode"] = False
+        #if self.ui.checkBox_5.isChecked():
+        #    self.data.config_data["flexible_mode"] = True
+        #else:
+        #    self.data.config_data["flexible_mode"] = False
+        pass
 
     def onClicked_6(self):     #Descomentar el día que se habilite el envío de info al servidor de P2
         if self.ui.checkBox_6.isChecked():

@@ -877,7 +877,7 @@ class MqttClient (QObject):
 
                         print("USUARIO TIPO:", self.model.local_data["user"]["type"])
                         
-                        if self.model.local_data["user"]["type"] == "CALIDAD" or self.model.local_data["user"]["type"] == "SUPERUSUARIO":
+                        if self.model.local_data["user"]["type"] == "SUPERUSUARIO":
 
                             if self.mostrar_gdi == True:
                                 self.mostrar_gdi = False
