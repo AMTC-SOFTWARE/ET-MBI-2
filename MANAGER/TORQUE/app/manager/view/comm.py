@@ -419,8 +419,8 @@ class MqttClient (QObject):
                 self.raffi_check("PDC-D", "keyboard_F2")
                 self.raffi_check("PDC-P", "keyboard_F1")
 
-
             if message.topic == self.model.sub_topics["plc"]:
+
                 for i in list(payload):
                     if "clamp_" in i:
                         box = i[6:]
@@ -459,6 +459,7 @@ class MqttClient (QObject):
                         self.pin.emit()
                     else:
                         self.model.pin_pressed = False
+                
                 if "Precencia_PDCP" in payload and self.model.validacion_conectores_pdcp==True:
                     if payload["Precencia_PDCP"] == True:
                         self.model.caja_puesta=True
@@ -476,6 +477,7 @@ class MqttClient (QObject):
                             "lbl_boxNEW" : {"text":"", "color": "green"},
                             }
                         self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+
                 if "PDCP_Validacion" in payload and self.model.validacion_conectores_pdcp==True:
                     if payload["PDCP_Validacion"] == True:
                         self.validacion_conectores_pdcp=False
@@ -494,6 +496,7 @@ class MqttClient (QObject):
                             }
                         self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                         Timer(15, self.boxTimeout, args = (self.model.caja_por_validar, self.model.qr_box_actual)).start()
+
                 if "Conector_S1" in payload and self.model.validacion_conectores_pdcp==True:
                     if payload["Conector_S1"] == True:
                         command = {
@@ -510,6 +513,7 @@ class MqttClient (QObject):
                             "lbl_boxNEW" : {"text":"", "color": "green"},
                             }
                         self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+
                 if "Conector_S2" in payload and self.model.validacion_conectores_pdcp==True and self.model.caja_puesta==True:
                     if payload["Conector_S2"] == True:
                         command = {
@@ -527,8 +531,6 @@ class MqttClient (QObject):
                             "lbl_boxNEW" : {"text":"", "color": "green"},
                             }
                         self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
-
-
 
                 if "candados_finish" in payload:
                     if payload["candados_finish"] == True:
@@ -557,13 +559,27 @@ class MqttClient (QObject):
                     if self.model.estado_candados == False:
                         print('Para activar candados mandar{"candados_finish":false}')
 
+
                         #se obtienen los datos del current_trq
                         current_tool = encoder.replace("encoder_","tool")
+                        
                         #si current_trq no está vacío...
                         if self.model.torque_data[current_tool]["current_trq"] != None:
+
                             caja = self.model.torque_data[current_tool]["current_trq"][0]
                             tuerca = self.model.torque_data[current_tool]["current_trq"][1]
-                            
+
+                            #si se trata del encoder de altura
+                            if encoder == "encoder_4":
+                                #si la caja coincide con la del encoder...
+                                #PLC/1/status       {"encoder":4,"name":{"MFB-P2":"ALTURA"},"value":True}
+                                if caja in payload["name"]:
+                                    #se actualiza la variable que determina si está dentro de la zona de altura correcta o fuera para esa caja
+                                    if payload["value"] == True:
+                                        self.model.altura_zone[current_tool] = True
+                                    else:
+                                        self.model.altura_zone[current_tool] = False
+
                             #ejemplo de señal: {"encoder":1,"name":{"PDC-D":"E1"},"value":True}
                             #ejemplo de caja: "PDC-D"
                             #ejemplo de tuerca: "E1"
@@ -596,9 +612,12 @@ class MqttClient (QObject):
                                     self.zone_tool2.emit()
 
                                 if encoder == "encoder_3":
-                                    print("emit zone de tool3")
-                                    self.zone_tool3.emit()   
-
+                                    if self.model.altura_zone[current_tool] == True:
+                                        print("emit zone de tool3")
+                                        self.zone_tool3.emit()
+                                    else:
+                                        print("altura fuera de zona de activación")
+                                        print("self.model.altura_zone[" + current_tool + "]: " + self.model.altura_zone[current_tool])
 
                     #si está en revisión de candados
                     else:
@@ -684,7 +703,6 @@ class MqttClient (QObject):
                                     print("emit zone de tool1")
                                     self.zone_tool1.emit()
 
-
                 if "retry_btn" in payload:
                     self.model.input_data["plc"]["retry_btn"] = bool(payload["retry_btn"])
                     if payload["retry_btn"] == True:
@@ -693,7 +711,6 @@ class MqttClient (QObject):
                 #se habilita la función mensajes_clamp cada que llega un mensaje del PLC
                 for i in self.nido:
                     self.mensajes_clamp(i,payload)
-
 
             if message.topic == self.model.sub_topics["torque_1"]:
 
@@ -808,7 +825,6 @@ class MqttClient (QObject):
                     else:
                         print("torque no emit, saliendo de reversa")
 
-
             if message.topic == self.model.sub_topics["torque_3"]:
 
                 payload_str = json.dumps(payload)
@@ -863,7 +879,6 @@ class MqttClient (QObject):
                     else:
                         print("torque no emit, saliendo de reversa")
                 
-
             if message.topic == self.model.sub_topics["gui"]:
                 if "request" in payload:
                     self.model.input_data["gui"]["request"] = payload["request"]

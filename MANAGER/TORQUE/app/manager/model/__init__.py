@@ -85,6 +85,13 @@ class Model (object):
                                 "tool3":False
                             }
 
+        #variable para verificar la altura de la zona en cada caja para cada herramienta
+        self.altura_zone = {
+                        "tool1":False,
+                        "tool2":False,
+                        "tool3":False
+            }
+
         #Variable para indicar que la caja pdcr se escaneó y esta en proceso de torque
         self.pdcr_iniciada=False
 
