@@ -872,9 +872,6 @@ class CheckZone (QState):
         print("se emite finish de queue de caja")
         Timer(self.delay2, self.ok.emit).start()
 
-        self.model = model
-        self.tool = tool
-
 class HoldingTime (QState):
 
     activar_signal    = pyqtSignal()
