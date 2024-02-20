@@ -540,11 +540,58 @@ class MqttClient (QObject):
                     if payload["candados_finish"] == False:
                         self.model.estado_candados = True
 
+                if "encoder" in payload and "name" in payload and "value" in payload:
+
+                    print("Entró aquí")
+                    #obtener encoder_1, encoder_2, encoder_3, o encoder_4
+                    encoder = "encoder_" + str(payload["encoder"])
+
+                    print("encoder: ",encoder)
+                    #si se trata del encoder de altura
+                    if encoder == "encoder_4":
+
+                        #si no se encuentra activado el modo de revisión de candados (funcionamiento normal)
+                        if self.model.estado_candados == False:
+
+                            #se convierte a tool3 para este caso porque el encoder 4 está en el eje Z sobre la tool3
+                            current_tool = "tool3"
+
+                            print("current_tool: ",current_tool)
+
+                            #si current_trq no está vacío...
+                            if self.model.torque_data[current_tool]["current_trq"] != None:
+                                caja = self.model.torque_data[current_tool]["current_trq"][0]
+                                tuerca = self.model.torque_data[current_tool]["current_trq"][1]
+                            
+                                print("caja: ",caja)
+                                print("tuerca: ",tuerca)
+                                print("payload[name]: ",payload["name"])
+                                #si la caja coincide con la del encoder...
+                                #PLC/1/status       {"encoder":4,"name":{"MFB-P2":"ALTURA"},"value":True}
+                                if caja in payload["name"]:
+
+                                    print("payload[value]: ",payload["value"])
+                                    #se actualiza la variable que determina si está dentro de la zona de altura correcta o fuera para esa caja
+                                    if payload["value"] == True:
+                                        self.model.altura_zone[current_tool] = True
+                                    else:
+                                        self.model.altura_zone[current_tool] = False
+                                    print("self.model.altura_zone[" + current_tool + "]: " + str(self.model.altura_zone[current_tool]))
+                                    print("emit zone de tool3")
+                                    self.zone_tool3.emit()
+                            else:
+                                print("self.model.torque_data[current_tool][current_trq] == None")
+                        else:
+                            print("No entró porque self.model.estado_candados: ",self.model.estado_candados)
+                    else:
+                        print("encoder diferente de encoder_4")
                 #ejemplo de mensaje:
                 #PLC/1/status       {"encoder":1,"name":{"PDC-D":"E1"},"value":True}
                 #DESDE GDI SERÍA:   {"encoder": 2,"name": "{\"PDC-R\":\"E1\"}","value":true}
                 # SI EL MENSAJE MQTT CONTIENE ENCODER, NAME y VALUE...
                 if "encoder" in payload and "name" in payload and "value" in payload:
+
+                    print("payload: ",payload)
 
                     #CAMBIAR {"PDC-R":"E1"} por {"PDC-RMID":"E1"} o {"PDC-RS":"E1"} según corresponda
                     if "PDC-R" in payload["name"] and "PDC-RMID" in self.model.input_data["database"]["modularity"]:
@@ -557,8 +604,6 @@ class MqttClient (QObject):
 
                     #si no se encuentra activado el modo de revisión de candados (funcionamiento normal)
                     if self.model.estado_candados == False:
-                        print('Para activar candados mandar{"candados_finish":false}')
-
 
                         #se obtienen los datos del current_trq
                         current_tool = encoder.replace("encoder_","tool")
@@ -569,21 +614,6 @@ class MqttClient (QObject):
                             caja = self.model.torque_data[current_tool]["current_trq"][0]
                             tuerca = self.model.torque_data[current_tool]["current_trq"][1]
 
-                            ##si se trata del encoder de altura
-                            #if encoder == "encoder_4":
-                            #    #si la caja coincide con la del encoder...
-                            #    #PLC/1/status       {"encoder":4,"name":{"MFB-P2":"ALTURA"},"value":True}
-                            #    if caja in payload["name"]:
-                            #        #se actualiza la variable que determina si está dentro de la zona de altura correcta o fuera para esa caja
-                            #        if payload["value"] == True:
-                            #            self.model.altura_zone[current_tool] = True
-                            #        else:
-                            #            self.model.altura_zone[current_tool] = False
-
-                            #ejemplo de señal: {"encoder":1,"name":{"PDC-D":"E1"},"value":True}
-                            #ejemplo de caja: "PDC-D"
-                            #ejemplo de tuerca: "E1"
-                            #si el encoder leído contiene la caja y la tuerca del torque que está en la tarea actual (current_trq)
                             if caja in payload["name"] and tuerca in payload["name"]:
 
                                 #aquí entra cuando "value = False"...
@@ -614,12 +644,6 @@ class MqttClient (QObject):
                                 if encoder == "encoder_3":
                                     print("emit zone de tool3")
                                     self.zone_tool3.emit()
-                                    #if self.model.altura_zone[current_tool] == True:
-                                    #    print("emit zone de tool3")
-                                    #    self.zone_tool3.emit()
-                                    #else:
-                                    #    print("altura fuera de zona de activación")
-                                    #    print("self.model.altura_zone[" + current_tool + "]: " + str(self.model.altura_zone[current_tool]))
 
                     #si está en revisión de candados
                     else:
@@ -704,6 +728,7 @@ class MqttClient (QObject):
                                     print("self.model.input_data[plc][encoder][zone]", self.model.input_data["plc"][encoder]["zone"])
                                     print("emit zone de tool1")
                                     self.zone_tool1.emit()
+
 
                 if "retry_btn" in payload:
                     self.model.input_data["plc"]["retry_btn"] = bool(payload["retry_btn"])

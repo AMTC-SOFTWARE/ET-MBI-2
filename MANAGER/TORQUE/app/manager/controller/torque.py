@@ -701,41 +701,52 @@ class CheckZone (QState):
                     #si la terminal actual es igual a la terminal solicitada en la tarea actual en cola
                     elif zone[1] == current_trq[1]:
                         
-                        #if (current_trq[1] == "A21" or current_trq[1] == "A22" or current_trq[1] == "A23" or current_trq[1] == "A24" or current_trq[1] == "A20" or current_trq[1] == "A25" or current_trq[1] == "A30") and self.model.activar_tool[self.tool] == False:
-                        if self.model.activar_tool[self.tool] == False: #se debe mantener para todas las cavidades
-                            print("se debe mantener la herramienta un tiempo en la zona para habilitarla")
+                        if (self.model.altura_zone[self.tool] == False) and (self.tool == "tool3"):
                             command = {
-                                "lbl_result" : {"text": "Herramienta en " + zone[0] + ": " + zone[1], "color": "darkorange"},
-                                "lbl_steps" : {"text": "Mantenga en posición para activar...", "color": "navy"}
+                                "lbl_result" : {"text":"Herramienta Altura Incorrecta", "color": "red"},
+                                "lbl_steps" : {"text": "Mueve la herramienta a " + current_trq[0] + ": " + current_trq[1], "color": "red"}
                                 }
-                            publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-                            print("enable_time emit")
-                            self.enable_time.emit()
-                            return
+                            profile = self.stop
+                        
+                            #función para revisar si alguna herramienta que se use para las tareas de esta caja tiene los raffi bloqueados, si no, volver a habilitar el uso del raffi
+                            self.check_lock_raffi_function(current_trq[0])
+
                         else:
+                            #if (current_trq[1] == "A21" or current_trq[1] == "A22" or current_trq[1] == "A23" or current_trq[1] == "A24" or current_trq[1] == "A20" or current_trq[1] == "A25" or current_trq[1] == "A30") and self.model.activar_tool[self.tool] == False:
+                            if self.model.activar_tool[self.tool] == False: #se debe mantener para todas las cavidades
+                                print("se debe mantener la herramienta un tiempo en la zona para habilitarla")
+                                command = {
+                                    "lbl_result" : {"text": "Herramienta en " + zone[0] + ": " + zone[1], "color": "darkorange"},
+                                    "lbl_steps" : {"text": "Mantenga en posición para activar...", "color": "navy"}
+                                    }
+                                publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                                print("enable_time emit")
+                                self.enable_time.emit()
+                                return
+                            else:
 
-                            self.model.activar_tool[self.tool] = False #una vez habilitada, deshabilitar esto en la variable de modelo
-                            print("tool: ",self.tool)
-                            print("self.model.activar_tool[self.tool]: ",self.model.activar_tool[self.tool])
+                                self.model.activar_tool[self.tool] = False #una vez habilitada, deshabilitar esto en la variable de modelo
+                                print("tool: ",self.tool)
+                                print("self.model.activar_tool[self.tool]: ",self.model.activar_tool[self.tool])
 
-                            self.model.torque_data[self.tool]["rqst"] = True
-                            command = {
-                                "lbl_result" : {"text": "Herramienta en " + zone[0] + ": " + zone[1], "color": "green"},
-                                "lbl_steps" : {"text": "Herramienta activada", "color": "black"}
-                                }
-                            #se da a profile el valor del profile en cola solicitado para esa caja y esa terminal !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                            profile = current_trq[2]
-                            print("zone[1] (ACTUAL - ZONA): ",zone[1])
-                            print("HERRAMIENTA ACTIVADA**********: ",self.tool)
+                                self.model.torque_data[self.tool]["rqst"] = True
+                                command = {
+                                    "lbl_result" : {"text": "Herramienta en " + zone[0] + ": " + zone[1], "color": "green"},
+                                    "lbl_steps" : {"text": "Herramienta activada", "color": "black"}
+                                    }
+                                #se da a profile el valor del profile en cola solicitado para esa caja y esa terminal !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                                profile = current_trq[2]
+                                print("zone[1] (ACTUAL - ZONA): ",zone[1])
+                                print("HERRAMIENTA ACTIVADA**********: ",self.tool)
 
-                            #se bloquea el uso de este raffi
-                            self.model.active_lock[current_trq[0]] = True
-                            #se indica que la herramienta actual está bloqueando el raffi porque está activa
-                            self.model.active_lock_tool[self.tool] = True
+                                #se bloquea el uso de este raffi
+                                self.model.active_lock[current_trq[0]] = True
+                                #se indica que la herramienta actual está bloqueando el raffi porque está activa
+                                self.model.active_lock_tool[self.tool] = True
 
-                            if self.model.config_data["untwist"]:
-                                profile = self.model.torque_data[self.tool]["backward_profile"]
-                            self.model.torque_data[self.tool]["current_trq"] = current_trq
+                                if self.model.config_data["untwist"]:
+                                    profile = self.model.torque_data[self.tool]["backward_profile"]
+                                self.model.torque_data[self.tool]["current_trq"] = current_trq
 
                     #si la terminal actual es diferente de cero y de la solicitada...
                     else:
