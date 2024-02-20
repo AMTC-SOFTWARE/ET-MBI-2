@@ -542,13 +542,13 @@ class MqttClient (QObject):
 
                 if "encoder" in payload and "name" in payload and "value" in payload:
 
-                    print("Entró aquí")
                     #obtener encoder_1, encoder_2, encoder_3, o encoder_4
                     encoder = "encoder_" + str(payload["encoder"])
 
-                    print("encoder: ",encoder)
                     #si se trata del encoder de altura
                     if encoder == "encoder_4":
+
+                        print("encoder: ",encoder)
 
                         #si no se encuentra activado el modo de revisión de candados (funcionamiento normal)
                         if self.model.estado_candados == False:
@@ -583,8 +583,7 @@ class MqttClient (QObject):
                                 print("self.model.torque_data[current_tool][current_trq] == None")
                         else:
                             print("No entró porque self.model.estado_candados: ",self.model.estado_candados)
-                    else:
-                        print("encoder diferente de encoder_4")
+
                 #ejemplo de mensaje:
                 #PLC/1/status       {"encoder":1,"name":{"PDC-D":"E1"},"value":True}
                 #DESDE GDI SERÍA:   {"encoder": 2,"name": "{\"PDC-R\":\"E1\"}","value":true}

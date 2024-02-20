@@ -234,6 +234,13 @@ class StartCycle (QState):
                                 "tool2":False,
                                 "tool3":False}
 
+        #se reinician variables de posición OK en zona de altura
+        self.model.altura_zone = {
+                        "tool1":False,
+                        "tool2":False,
+                        "tool3":False
+            }
+
         try:
             query="SELECT INICIO, FIN FROM et_mbi_2.historial WHERE RESULTADO = 1 order by ID desc LIMIT 1;"
             endpoint = "http://{}/query/get/{}".format(self.model.server, query)

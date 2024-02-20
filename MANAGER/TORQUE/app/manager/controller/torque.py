@@ -701,7 +701,8 @@ class CheckZone (QState):
                     #si la terminal actual es igual a la terminal solicitada en la tarea actual en cola
                     elif zone[1] == current_trq[1]:
                         
-                        if (self.model.altura_zone[self.tool] == False) and (self.tool == "tool3"):
+                        #if (self.model.altura_zone[self.tool] == False) and (self.tool == "tool3"):
+                        if (self.model.altura_zone[self.tool] == False) and (self.tool == "tool3") and (current_trq[0] == "MFB-P2"):
                             command = {
                                 "lbl_result" : {"text":"Herramienta Altura Incorrecta", "color": "red"},
                                 "lbl_steps" : {"text": "Mueve la herramienta a " + current_trq[0] + ": " + current_trq[1], "color": "red"}
@@ -1071,6 +1072,9 @@ class CheckResponse (QState):
                             self.remove_task(box, current_trq)
                     else:
                         self.remove_task(box, current_trq)
+
+                    #se reinicia variable de posición OK en zona de altura para esta herramienta, después de un Torque OK
+                    self.model.altura_zone[self.tool] = False
 
                     print("Torque OK!!!!!!!!!!!!")
                     #tiempo para mostrar en pantalla que se torqueó correctamente (se regresa al estado zone y si no hay más tareas para la herramienta se finaliza con un ok.emit() el estado zone)
