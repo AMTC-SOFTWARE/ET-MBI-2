@@ -63,10 +63,13 @@ class Admin (QDialog):
         else:
             self.ui.checkBox_3.setChecked(False)
 
-        if self.data.config_data["untwist"]:
-            self.ui.checkBox_4.setChecked(True)
-        else:
-            self.ui.checkBox_4.setChecked(False)
+        #if self.data.config_data["untwist"]:
+        #    self.ui.checkBox_4.setChecked(True)
+        #else:
+        #    self.ui.checkBox_4.setChecked(False)
+
+
+
         if self.data.config_data["flexible_mode"]:
             self.ui.checkBox_5.setChecked(True)
         else:
@@ -77,9 +80,13 @@ class Admin (QDialog):
         else:
             self.ui.checkBox_6.setChecked(False)
 
+        if self.data.config_data["gdi"]:
+            self.ui.checkBox_7.setChecked(True)
+        else:
+            self.ui.checkBox_7.setChecked(False)
         self.ui.btn_off.setEnabled(False)
 
-        self.ui.checkBox_4.setVisible(False)
+        #self.ui.checkBox_4.setVisible(False)
         self.ui.checkBox_5.setVisible(False)
 
         #self.ui.btn_torque.clicked.connect(self.qw_torques.show)
@@ -90,9 +97,10 @@ class Admin (QDialog):
         self.ui.checkBox_1.stateChanged.connect(self.onClicked_1)
         self.ui.checkBox_2.stateChanged.connect(self.onClicked_2)
         self.ui.checkBox_3.stateChanged.connect(self.onClicked_3)
-        self.ui.checkBox_4.stateChanged.connect(self.onClicked_4)
+        #self.ui.checkBox_4.stateChanged.connect(self.onClicked_4)
         self.ui.checkBox_5.stateChanged.connect(self.onClicked_5)
         self.ui.checkBox_6.stateChanged.connect(self.onClicked_6)  #Descomentar el día que se habilite el envío de info al servidor de P2
+        self.ui.checkBox_7.stateChanged.connect(self.onClicked_7)
         
         self.rcv.connect(self.qw_torques.input)
         self.permissions()
@@ -109,9 +117,10 @@ class Admin (QDialog):
             self.ui.checkBox_1.setEnabled(True)
             self.ui.checkBox_2.setEnabled(True)
             self.ui.checkBox_3.setEnabled(True)
-            self.ui.checkBox_4.setEnabled(True)
+            #self.ui.checkBox_4.setEnabled(True)
             self.ui.checkBox_5.setEnabled(True)
             self.ui.checkBox_6.setEnabled(True)
+            self.ui.checkBox_7.setEnabled(True)
         elif self.user_type == "CALIDAD":
             self.ui.btn_off.setEnabled(False)
             self.ui.btn_reset.setEnabled(True)
@@ -119,9 +128,10 @@ class Admin (QDialog):
             self.ui.checkBox_1.setEnabled(True)
             self.ui.checkBox_2.setEnabled(True)
             self.ui.checkBox_3.setEnabled(True)
-            self.ui.checkBox_4.setEnabled(True)
+            #self.ui.checkBox_4.setEnabled(True)
             self.ui.checkBox_5.setEnabled(True)
             self.ui.checkBox_6.setEnabled(True)
+            self.ui.checkBox_7.setEnabled(True)
         elif self.user_type == "MANTENIMIENTO":
             self.ui.btn_off.setEnabled(True)
             self.ui.btn_reset.setEnabled(True)
@@ -129,7 +139,7 @@ class Admin (QDialog):
             self.ui.checkBox_1.setEnabled(True)
             self.ui.checkBox_2.setEnabled(False)
             self.ui.checkBox_3.setEnabled(False)
-            self.ui.checkBox_4.setEnabled(True)
+            #self.ui.checkBox_4.setEnabled(True)
             self.ui.checkBox_5.setEnabled(True)
         elif self.user_type == "PRODUCCION":
             self.ui.btn_off.setEnabled(False)
@@ -138,7 +148,7 @@ class Admin (QDialog):
             self.ui.checkBox_1.setEnabled(True)
             self.ui.checkBox_2.setEnabled(False)
             self.ui.checkBox_3.setEnabled(False)
-            self.ui.checkBox_4.setEnabled(True)
+            #self.ui.checkBox_4.setEnabled(True)
             self.ui.checkBox_5.setEnabled(False)
         self.show()
 
@@ -244,6 +254,7 @@ class Admin (QDialog):
                 
             endpoint = "http://{}/api/post/login".format(self.data.server)
             resp = requests.post(endpoint, data=json.dumps(data))
+
     def onClicked_3(self):
         if self.ui.checkBox_3.isChecked():
             self.data.config_data["comparacion_cajasDP"] = True
@@ -273,6 +284,7 @@ class Admin (QDialog):
                 
             endpoint = "http://{}/api/post/login".format(self.data.server)
             resp = requests.post(endpoint, data=json.dumps(data))
+            
     def onClicked_4(self):
         #if self.ui.checkBox_4.isChecked():
         #    self.data.config_data["untwist"] = True
@@ -303,6 +315,33 @@ class Admin (QDialog):
             QTimer.singleShot(3000, self.pop_out.button(QMessageBox.Ok).click)
             self.pop_out.exec()
 
+    def onClicked_7(self):     #Descomentar el día que se habilite el envío de info al servidor de P2
+        if self.ui.checkBox_7.isChecked():
+            self.data.config_data["gdi"] = True
+            #if self.mostrar_gdi == True:
+            #    self.mostrar_gdi = False
+            #self.client.publish("GDI",json.dumps({"Esconder":"window"}), qos = 2)
+            self.client.publish("GDI",json.dumps({"Mostrar":"window"}), qos = 2)
+            print("Abriendo GDI")
+            self.pop_out.setText("Abriendo GDI")
+            self.pop_out.setWindowTitle("Acción Realizada")
+            QTimer.singleShot(3000, self.pop_out.button(QMessageBox.Ok).click)
+            self.pop_out.exec()
+        else:
+            #if self.mostrar_gdi == False:
+            #    self.mostrar_gdi = True
+            self.data.config_data["gdi"] = False
+            print("Ocultando GDI")
+            self.client.publish("GDI",json.dumps({"Esconder":"window"}), qos = 2)
+            self.pop_out.setText("Ocultando GDI")
+            self.pop_out.setWindowTitle("Acción Realizada")
+            QTimer.singleShot(3000, self.pop_out.button(QMessageBox.Ok).click)
+            self.pop_out.exec()
+
+
+
+        
+        
     def closeEvent(self, event):
         self.client.publish("config/status", '{"finish": true}')
         with open("data\config", "wb") as f:

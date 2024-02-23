@@ -204,13 +204,13 @@ class Ui_admin(object):
         font.setPointSize(11)
         self.checkBox_3.setFont(font)
         self.checkBox_3.setObjectName("checkBox_3")
-        self.checkBox_4 = QtWidgets.QCheckBox(admin)
-        self.checkBox_4.setEnabled(False)
-        self.checkBox_4.setGeometry(QtCore.QRect(10, 290, 211, 17))
-        font = QtGui.QFont()
-        font.setPointSize(11)
-        self.checkBox_4.setFont(font)
-        self.checkBox_4.setObjectName("checkBox_4")
+        #self.checkBox_4 = QtWidgets.QCheckBox(admin)
+        #self.checkBox_4.setEnabled(False)
+        #self.checkBox_4.setGeometry(QtCore.QRect(10, 290, 211, 17))
+        #font = QtGui.QFont()
+        #font.setPointSize(11)
+        #self.checkBox_4.setFont(font)
+        #self.checkBox_4.setObjectName("checkBox_4")
         #self.label = QtWidgets.QLabel(admin)
         #self.label.setGeometry(QtCore.QRect(230, 20, 91, 91))
         #self.label.setText("")
@@ -227,6 +227,7 @@ class Ui_admin(object):
         font.setPointSize(11)
         self.checkBox_5.setFont(font)
         self.checkBox_5.setObjectName("checkBox_5")
+        
         self.checkBox_6 = QtWidgets.QCheckBox(admin)
         self.checkBox_6.setEnabled(False)
         self.checkBox_6.setGeometry(QtCore.QRect(10, 320, 211, 31))
@@ -235,6 +236,15 @@ class Ui_admin(object):
         self.checkBox_6.setFont(font)
         self.checkBox_6.setChecked(True)
         self.checkBox_6.setObjectName("checkBox_6")
+
+        self.checkBox_7 = QtWidgets.QCheckBox(admin)
+        self.checkBox_7.setEnabled(False)
+        self.checkBox_7.setGeometry(QtCore.QRect(10, 290, 211, 17))
+        font = QtGui.QFont()
+        font.setPointSize(11)
+        self.checkBox_7.setFont(font)
+        self.checkBox_7.setChecked(True)
+        self.checkBox_7.setObjectName("checkBox_7")
 
         self.retranslateUi(admin)
         QtCore.QMetaObject.connectSlotsByName(admin)
@@ -247,11 +257,12 @@ class Ui_admin(object):
         #self.btn_torque.setText(_translate("admin", "Torque manual"))
         self.btn_reset.setText(_translate("admin", "Reiniciar"))
         self.checkBox_3.setText(_translate("admin", "Comp. PDC-D y P con FET"))
-        self.checkBox_4.setText(_translate("admin", "Modo desapriete"))
+        #self.checkBox_4.setText(_translate("admin", "Modo desapriete"))
         self.btn_off.setText(_translate("admin", "Apagar"))
-        self.checkBox_5.setText(_translate("admin", "Modo puntual"))
-        self.checkBox_6.setText(_translate("admin", "Sistema de\n"
-"Trazabilidad"))
+        #self.checkBox_5.setText(_translate("admin", "Modo puntual"))
+        self.checkBox_6.setText(_translate("admin", "Sistema de\n Trazabilidad"))
+        self.checkBox_7.setText(_translate("admin", "Abrir/Ocultar GDI"))
+
 
 
 if __name__ == "__main__":

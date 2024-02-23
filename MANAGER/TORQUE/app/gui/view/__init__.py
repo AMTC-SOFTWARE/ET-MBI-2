@@ -105,7 +105,7 @@ class MainWindow (QMainWindow):
         menu.addAction(actionLogout)
         menu.addAction(actionConfig)
         menu.addAction(actionWEB)
-        menu.addAction(actionGDI)
+        #menu.addAction(actionGDI)
         menu.triggered[QAction].connect(self.menuProcess)
         
 

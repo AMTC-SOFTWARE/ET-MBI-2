@@ -447,7 +447,8 @@ class Model (object):
             "comparacion_cajasDP":True,
             "untwist": False,
             "flexible_mode": False,
-            "trazabilidad": True
+            "trazabilidad": True,
+            "gdi": True
         }
 
         self.local_data = {
