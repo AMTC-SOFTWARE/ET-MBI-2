@@ -539,6 +539,52 @@ class MqttClient (QObject):
                         self.model.pdcr_iniciada=False
                     if payload["candados_finish"] == False:
                         self.model.estado_candados = True
+                
+                if "TOOL1_ALTURA" in payload:
+                    #si no se encuentra activado el modo de revisión de candados (funcionamiento normal)
+                    if self.model.estado_candados == False:
+
+                        caja = self.model.torque_data["tool1"]["current_trq"][0]
+                        tuerca = self.model.torque_data["tool1"]["current_trq"][1]
+                            
+                        print("caja: ",caja)
+                        print("tuerca: ",tuerca)
+
+                        if caja == "PDC-P" or caja == "PDC-D":
+                            pass
+                        else:
+                            if payload["TOOL1_ALTURA"] == True:
+                                self.model.altura_zone["tool1"] = True
+                            else:
+                                self.model.altura_zone["tool1"] = False
+                            print("emit zone de tool1 por altura")
+                            self.zone_tool1.emit()
+
+                    else:
+                        print("No entró porque self.model.estado_candados: ",self.model.estado_candados)
+
+                if "TOOL2_ALTURA" in payload:
+                    #si no se encuentra activado el modo de revisión de candados (funcionamiento normal)
+                    if self.model.estado_candados == False:
+
+                        caja = self.model.torque_data["tool2"]["current_trq"][0]
+                        tuerca = self.model.torque_data["tool2"]["current_trq"][1]
+                            
+                        print("caja: ",caja)
+                        print("tuerca: ",tuerca)
+
+                        if caja == "BATTERY" or caja == "BATTERY-2":
+                            pass
+                        else:
+                            if payload["TOOL2_ALTURA"] == True:
+                                self.model.altura_zone["tool2"] = True
+                            else:
+                                self.model.altura_zone["tool2"] = False
+                            print("emit zone de tool2 por altura")
+                            self.zone_tool2.emit()
+
+                    else:
+                        print("No entró porque self.model.estado_candados: ",self.model.estado_candados)
 
                 if "encoder" in payload and "name" in payload and "value" in payload:
 

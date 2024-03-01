@@ -701,8 +701,23 @@ class CheckZone (QState):
                     #si la terminal actual es igual a la terminal solicitada en la tarea actual en cola
                     elif zone[1] == current_trq[1]:
                         
+                        #if caja == "PDC-P" or caja == "PDC-D":
+                        #if caja == "BATTERY" or caja == "BATTERY-2":
+                        #if (self.model.altura_zone[self.tool] == False) and (self.tool == "tool3") and (current_trq[0] == "MFB-P2"):
                         #if (self.model.altura_zone[self.tool] == False) and (self.tool == "tool3"):
-                        if (self.model.altura_zone[self.tool] == False) and (self.tool == "tool3") and (current_trq[0] == "MFB-P2"):
+
+                        condicion_tool1 = False
+                        condicion_tool2 = False
+                        condicion_tool3 = False
+
+                        if (self.tool == "tool1") and (self.model.altura_zone[self.tool] == False) and (current_trq[0] != "PDC-P") and (current_trq[0] != "PDC-D"):
+                            condicion_tool1 = True
+                        if (self.tool == "tool2") and (self.model.altura_zone[self.tool] == False) and (current_trq[0] != "BATTERY") and (current_trq[0] != "BATTERY-2"):
+                            condicion_tool2 = True
+                        if (self.tool == "tool3") and (self.model.altura_zone[self.tool] == False) and (current_trq[0] != "PDC-R") and (current_trq[0] != "PDC-RMID") and (current_trq[0] != "PDC-RS"):
+                            condicion_tool3 = True
+
+                        if (condicion_tool1 or condicion_tool2 or condicion_tool3):
                             command = {
                                 "lbl_result" : {"text":"Herramienta Altura Incorrecta", "color": "red"},
                                 "lbl_steps" : {"text": "Mueve la herramienta a " + current_trq[0] + ": " + current_trq[1], "color": "red"}
@@ -713,7 +728,7 @@ class CheckZone (QState):
                             self.check_lock_raffi_function(current_trq[0])
 
                         else:
-                            #if (current_trq[1] == "A21" or current_trq[1] == "A22" or current_trq[1] == "A23" or current_trq[1] == "A24" or current_trq[1] == "A20" or current_trq[1] == "A25" or current_trq[1] == "A30") and self.model.activar_tool[self.tool] == False:
+
                             if self.model.activar_tool[self.tool] == False: #se debe mantener para todas las cavidades
                                 print("se debe mantener la herramienta un tiempo en la zona para habilitarla")
                                 command = {

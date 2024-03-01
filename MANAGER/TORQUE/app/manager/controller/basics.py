@@ -23,6 +23,35 @@ class Startup(QState):
         self.model = model
 
     def onEntry(self, event):
+        
+
+        ###########CONSULTA PARA OBTENER HM'S DESDE SEGHM (los arneses que han pasado por cada estación según la trazabilidad)
+        ##Para agilizar consulta en api se pone: query = "SELECT HM,ENTTORQUE,SALTORQUE FROM para que solamente consulte esas partes
+        #self.model.serial = "ET-MBI-3"
+        #print("||||||||||||Flag2...")
+        #print("||||||||||||Flag3...")
+        #endpoint = "http://{}/seghm/get/seghm/NAMETORQUE/=/{}/_/_/_".format(self.model.server,self.model.serial)
+        #famx2response = requests.get(endpoint).json()
+        #print("||||||||||||Flag4...")
+        ## Abre un archivo de texto en modo escritura
+        #with open("resultadosHM.txt", "w") as archivo:
+        #    # Itera sobre los elementos de famx2response["HM"]
+        #    for HM in famx2response["HM"]:
+        #        # Escribe cada elemento en el archivo seguido de un salto de línea
+        #        archivo.write(str(HM) + "\n")
+        ## Abre un archivo de texto en modo escritura
+        #with open("resultadosENTTORQUE.txt", "w") as archivo:
+        #    # Itera sobre los elementos de famx2response["HM"]
+        #    for HM in famx2response["ENTTORQUE"]:
+        #        # Escribe cada elemento en el archivo seguido de un salto de línea
+        #        archivo.write(str(HM) + "\n")
+        ## Abre un archivo de texto en modo escritura
+        #with open("resultadosSALTORQUE.txt", "w") as archivo:
+        #    # Itera sobre los elementos de famx2response["HM"]
+        #    for HM in famx2response["SALTORQUE"]:
+        #        # Escribe cada elemento en el archivo seguido de un salto de línea
+        #        archivo.write(str(HM) + "\n")
+        #print("||||||||||||Flag5...")
 
         try:
             #se oculta la GDI automáticamente:
