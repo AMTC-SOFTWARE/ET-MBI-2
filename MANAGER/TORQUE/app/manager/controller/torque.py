@@ -581,18 +581,15 @@ class CheckZone (QState):
                 #print("Self.Nut: ",self.nut)
                 print("Self.Tool: ",self.tool)
 
-
                 if self.nut == "8mm Nut":
                     self.oracle = "Oracle: 1013224"
                 if self.nut == "6mm Nut":
-                    self.oracle = "Oracle: 1013225"
+                    #self.oracle = "Oracle: 1013225"
+                    self.oracle = "Oracle: 1033978"
                 if self.nut == "Battery Nut":
                     print("Evento Actual: ",self.model.evento)
-                    # Modificación temporal; Si el arnés pertenece al evento PRO1, el oracle de las tuercas para las battery's cambiará. Próximamente se implementará el método automático de selección de oracle, basado en la información de la matriz Excel.
-                    if "PRO1" in self.model.evento or "BBL3" in self.model.evento:
-                        self.oracle = "Oracle: 1021441"
-                    else:
-                        self.oracle = "Oracle: 1013226"
+                    #self.oracle = "Oracle: 1013226"
+                    self.oracle = "Oracle: 1021441"
 
                 #Para mostrar en pantalla el nombre de la herramienta que está en este estado CheckZone
                 if self.tool == "tool1":
