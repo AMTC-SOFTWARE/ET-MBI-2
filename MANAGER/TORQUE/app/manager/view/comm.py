@@ -480,7 +480,7 @@ class MqttClient (QObject):
 
                 if "PDCP_Validacion" in payload and self.model.validacion_conectores_pdcp==True:
                     if payload["PDCP_Validacion"] == True:
-                        self.validacion_conectores_pdcp=False
+                        self.model.validacion_conectores_pdcp=False
                         self.client.publish(self.model.pub_topics["plc"],json.dumps({"PDC-P": True}), qos = 2)
                         command = {
                             "lbl_steps" : {"text": f"Coloca la Caja PDC-P en su lugar", "color": "green"},

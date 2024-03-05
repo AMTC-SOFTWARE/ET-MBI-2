@@ -197,7 +197,7 @@ class NewTool2 (QState):
 
 
         self.zone.addTransition(self.zone.enable_time, self.holding_time)
-        self.holding_time.addTransition(self.model.transitions.zone_tool1, self.zone)
+        self.holding_time.addTransition(self.model.transitions.zone_tool2, self.zone)
         self.holding_time.addTransition(self.holding_time.activar_signal, self.activar_tool)
         self.activar_tool.addTransition(self.activar_tool.continuar, self.zone)
         self.holding_time.addTransition(self.model.transitions.torque2, self.chk_response)
@@ -299,7 +299,7 @@ class NewTool3 (QState):
 
         #HOLDING TIME PARA ACTIVAR HERRAMIENTA
         self.zone.addTransition(self.zone.enable_time, self.holding_time)
-        self.holding_time.addTransition(self.model.transitions.zone_tool1, self.zone)
+        self.holding_time.addTransition(self.model.transitions.zone_tool3, self.zone)
         self.holding_time.addTransition(self.holding_time.activar_signal, self.activar_tool)
         self.activar_tool.addTransition(self.activar_tool.continuar, self.zone)
         self.holding_time.addTransition(self.model.transitions.torque3, self.chk_response)
