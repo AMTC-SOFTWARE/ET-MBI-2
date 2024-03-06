@@ -270,6 +270,11 @@ class StartCycle (QState):
                         "tool3":False
             }
 
+        #variable para regresar a reversa cuando se sale por clampeo de otra caja
+        self.model.estado_actual["tool1"] = ""
+        self.model.estado_actual["tool2"] = ""
+        self.model.estado_actual["tool3"] = ""
+
         try:
             query="SELECT INICIO, FIN FROM et_mbi_2.historial WHERE RESULTADO = 1 order by ID desc LIMIT 1;"
             endpoint = "http://{}/query/get/{}".format(self.model.server, query)

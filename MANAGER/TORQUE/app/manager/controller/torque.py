@@ -71,6 +71,15 @@ class NewTool1 (QState):
         self.holding_time   = HoldingTime(tool = self.tool, model = self.model, parent = self)
         self.activar_tool   = ActivarHerramienta(tool = self.tool, model = self.model, parent = self)
 
+        #si se está en zone y la variable self.model.estado_actual[self.tool] vale "ERRORNOK" se va directamente a ese estado en el que se había quedado
+        self.zone.addTransition(self.zone.ERRORNOK, self.NOK)
+        #si se está en zone y la variable self.model.estado_actual[self.tool] vale "BACKWARD" se va directamente a ese estado en el que se había quedado
+        self.zone.addTransition(self.zone.BACKWARD, self.backward)
+        #si se está en zone y la variable self.model.estado_actual[self.tool] vale "QINTERVENTION" se va directamente a ese estado en el que se había quedado
+        self.zone.addTransition(self.zone.QINTERVENTION, self.qintervention)
+        #si se está en zone y la variable self.model.estado_actual[self.tool] vale "CHECKPROFILE" se va directamente a ese estado en el que se había quedado
+        self.zone.addTransition(self.zone.CHECKPROFILE, self.chk_profile)
+
         #si se está en zone y la variable de activación de herramienta está en false para esa tool, se va a un estado holding_time para comenzar un timer
         self.zone.addTransition(self.zone.enable_time, self.holding_time)
         #si se mueve la herramienta estándo en posición de holding_time se cancela el timer, no se activa la herramienta y se vuelve a self.zone
@@ -195,6 +204,10 @@ class NewTool2 (QState):
         self.holding_time   = HoldingTime(tool = self.tool, model = self.model, parent = self)
         self.activar_tool   = ActivarHerramienta(tool = self.tool, model = self.model, parent = self)
 
+        self.zone.addTransition(self.zone.ERRORNOK, self.NOK)
+        self.zone.addTransition(self.zone.BACKWARD, self.backward)
+        self.zone.addTransition(self.zone.QINTERVENTION, self.qintervention)
+        self.zone.addTransition(self.zone.CHECKPROFILE, self.chk_profile)
 
         self.zone.addTransition(self.zone.enable_time, self.holding_time)
         self.holding_time.addTransition(self.model.transitions.zone_tool2, self.zone)
@@ -297,6 +310,12 @@ class NewTool3 (QState):
         self.holding_time   = HoldingTime(tool = self.tool, model = self.model, parent = self)
         self.activar_tool   = ActivarHerramienta(tool = self.tool, model = self.model, parent = self)
 
+        #SEÑALES PARA REGRESAR A REVERSA DESPUES DE UN CLAMPEO DE OTRA CAJA
+        self.zone.addTransition(self.zone.ERRORNOK, self.NOK)
+        self.zone.addTransition(self.zone.BACKWARD, self.backward)
+        self.zone.addTransition(self.zone.QINTERVENTION, self.qintervention)
+        self.zone.addTransition(self.zone.CHECKPROFILE, self.chk_profile)
+
         #HOLDING TIME PARA ACTIVAR HERRAMIENTA
         self.zone.addTransition(self.zone.enable_time, self.holding_time)
         self.holding_time.addTransition(self.model.transitions.zone_tool3, self.zone)
@@ -390,6 +409,11 @@ class CheckZone (QState):
     chk_candados    = pyqtSignal()
     enable_time     = pyqtSignal()
 
+    ERRORNOK        = pyqtSignal()
+    BACKWARD        = pyqtSignal()
+    QINTERVENTION   = pyqtSignal()
+    CHECKPROFILE    = pyqtSignal()
+
     def __init__(self, tool = "tool1", model = None, parent = None):
         super().__init__(parent)
         self.model = model
@@ -414,6 +438,20 @@ class CheckZone (QState):
         print("entrozone$%%$$$$$$$$$$%%%%%%%%%%%%%%%%%%%%%%%%%%$$$$$$$")
         #zone se inicializa con "0"
         zone = "0"
+
+        #si algún clampeo de otra caja o terminar algún otro torque te lleva a ToolsManager y te quita tu actual reversa, se regresa a ese estado
+        if self.model.estado_actual[self.tool] == "ERRORNOK":
+            self.ERRORNOK.emit()
+            return
+        elif self.model.estado_actual[self.tool] == "BACKWARD":
+            self.BACKWARD.emit()
+            return
+        elif self.model.estado_actual[self.tool] == "QINTERVENTION":
+            self.QINTERVENTION.emit()
+            return
+        elif self.model.estado_actual[self.tool] == "CHECKPROFILE":
+            self.CHECKPROFILE.emit()
+            return
 
         #se revisa si hay alguna herramienta en reversa, o si está el raffi de la caja actual habilitado
         self.check_key_process_function()
@@ -1226,6 +1264,8 @@ class Error (QState):
         print("ESTADO ACTUAL ERROR NOK")
         print("herramienta que entró a error: ",self.tool)
 
+        self.model.estado_actual[self.tool] = "ERRORNOK" #se guarda el estado actual de esta tool
+
         current_trq = self.model.torque_data[self.tool]["current_trq"]
         box = current_trq[0]
 
@@ -1269,8 +1309,27 @@ class Error (QState):
                 "lbl_steps" : {"text": "Gira la llave para reintentar", "color": "black"}
                 }
             publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            command = {
+                "lineEditKey_focus":True #line edit de "QR Key"
+                }
+            #solo existe en gui, no en gui_2
+            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
             #se espera la señal de la llave
             return
+
+    def onExit(self, event):
+        print("Saliendo de Estado: NOK")
+
+        command = {
+            "show":{"img_popOut": "close"}
+            }
+        publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+        publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+
+        command = {
+            "lineEdit_focus":True #line edit de "Fuse boxes QR"
+            }
+        publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2) #solo existe en gui, no en gui_2
 
 class QualityIntervention (QState):
     ok      = pyqtSignal()
@@ -1284,6 +1343,9 @@ class QualityIntervention (QState):
     def onEntry(self, event):
         #la variable contiene todas las cajas que se han clampeado hasta ese momento
         print("||||| En estado de QualityIntervention")
+
+        self.model.estado_actual[self.tool] = "QINTERVENTION" #se guarda el estado actual de esta tool
+
         clamps = self.model.input_data["plc"]["clamps"]
         print("Clamps hasta el momento: ",clamps)
 
@@ -1413,6 +1475,8 @@ class Backward (QState):
 
         print("ESTADO ACTUAL: REVERSA")
 
+        self.model.estado_actual[self.tool] = "BACKWARD" #se guarda el estado actual de esta tool
+
         current_trq = self.model.torque_data[self.tool]["current_trq"] # ["PDC-P", "E1", 3, "tuerca_x"]
         try:
             zone = "0"
@@ -1431,14 +1495,6 @@ class Backward (QState):
                 }
             #publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
             return
-       
-        command = {
-            "show":{"img_popOut": "close"},
-            "lineEdit_focus":True
-            }
-        publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-        publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-        publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
     #if self.model.config_data["encoder_feedback"]["tool1"] == True:
         profile = self.stop
@@ -1499,6 +1555,8 @@ class ToolsManager (QState):
         self.temporal3 = ""
     
     def onEntry(self, event):
+
+        print("ESTADO: ToolsManager")
 
         command = {
                 "lineEdit" : True,
@@ -2008,6 +2066,9 @@ class CheckProfile (QState):
         print("current_profile: ",self.model.torque_bin[self.tool]["current_profile"])
 
         print("CHECKPROFILE-----------------------")
+
+        self.model.estado_actual[self.tool] = "CHECKPROFILE"
+
         self.send_profile()
         #variable se hace true para dejar de recibir mensajes de torque falso proveniente de la reversa
         self.model.lock_backward[self.tool] = True
@@ -2026,6 +2087,7 @@ class CheckProfile (QState):
             print("current profile = stop profile")
             self.send_profile()
             print("ok.emit() en 1 seg")
+            self.model.estado_actual[self.tool] = "" #aquí ya terminó exitosamente la reversa de esa tuerca
             Timer(1.0, self.ok.emit).start()
 
     def send_profile(self):

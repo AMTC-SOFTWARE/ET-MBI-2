@@ -92,6 +92,14 @@ class Model (object):
                         "tool3":False
             }
 
+        #variable para detectar en qué estado se encontraba la tool antes de que llegara un clampeo o terminara una caja y Entrara a ToolsManger
+        #con esto se puede regresar a ERRORNOK, BACKWARD, QINTERVENTION o CHECKPROFILE
+        self.estado_actual = {
+            "tool1":"",
+            "tool2":"",
+            "tool3":""
+            }
+
         #Variable para indicar que la caja pdcr se escaneó y esta en proceso de torque
         self.pdcr_iniciada=False
 
