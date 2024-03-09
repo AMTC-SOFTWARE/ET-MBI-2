@@ -14,6 +14,28 @@ class Model (object):
         self.imgs_path = "data/imgs/"
         self.datetime = None
         self.imgs = {}
+        self.config_data = {
+            "encoder_feedback": {
+                "tool1": True,
+                "tool2": True,
+                "tool3": True
+            },
+            "retry_btn_mode": {
+                "tool1": False,
+                "tool2": False,
+                "tool3": False  
+            },
+            "constraints": {
+                "tools": [["tool1", "tool3"]]
+            },
+            "cajas_repetidas":True,
+            "comparacion_cajasDP":True,
+            "untwist": False,
+            "flexible_mode": False,
+            "hora_servidor":True,
+            "gdi": False,
+            "trazabilidad": True
+        }
         self.server = "127.0.0.1:5000"
         self.serial = "ET-MBI-2"
         #Ruta de archivos estandarizada
@@ -437,27 +459,7 @@ class Model (object):
                         "config": "config/set"
                         }
 
-        self.config_data = {
-            "encoder_feedback": {
-                "tool1": True,
-                "tool2": True,
-                "tool3": True
-            },
-            "retry_btn_mode": {
-                "tool1": False,
-                "tool2": False,
-                "tool3": False  
-            },
-            "constraints": {
-                "tools": [["tool1", "tool3"]]
-            },
-            "cajas_repetidas":True,
-            "comparacion_cajasDP":True,
-            "untwist": False,
-            "flexible_mode": False,
-            "trazabilidad": True,
-            "gdi": True
-        }
+        
 
         self.local_data = {
                             "user": {"type":"", "pass":"", "name":""},
@@ -637,7 +639,7 @@ class Model (object):
             data = {
                 "PEDIDO":self.qr_codes["HM"],
                 "ESTADO": state,
-                "DATETIME": strftime("%Y/%m/%d %H:%M:%S"),
+                "DATETIME": self.get_currentTime().strftime("%Y/%m/%d %H:%M:%S"),
                 }
             endpoint = "http://{}/api/post/log".format(self.server)
             resp = requests.post(endpoint, data=json.dumps(data))
@@ -645,23 +647,28 @@ class Model (object):
             print("Log request Exception: ", ex)
 
     def get_currentTime(self):
-
-        fecha_actuaal = None
-        try:
-            endpoint = "http://{}/server_famx/hora_servidor".format(self.server) #self.model.server
-            respuesta_hora = requests.get(endpoint).json()
-            if "exception" in respuesta_hora:
-                fecha_actuaal = datetime.now() #se toma la hora local de la PC
+        if self.config_data["hora_servidor"]==True:
+            fecha_actuaal = None
+            try:
+                endpoint = "http://{}/server_famx/hora_servidor".format(self.server) #self.model.server
+                respuesta_hora = requests.get(endpoint).json()
+                if "exception" in respuesta_hora:
+                    fecha_actuaal = datetime.now() #se toma la hora local de la PC
+                    print("////////// fecha_local")
+                else:
+                    fecha_actuaal = datetime.strptime(respuesta_hora["HORA_ACTUAL"], "%Y-%m-%d %H:%M:%S") #se toma la hora del servidor en el formato deseado
+                    print("////////// fecha_servidor")
+            except Exception as ex:
+                print("exception hora_servidor: ",ex)
+                fecha_actuaal = datetime.now()
                 print("////////// fecha_local")
-            else:
-                fecha_actuaal = datetime.strptime(respuesta_hora["HORA_ACTUAL"], "%Y-%m-%d %H:%M:%S") #se toma la hora del servidor en el formato deseado
-                print("////////// fecha_servidor")
-        except Exception as ex:
-            print("exception hora_servidor: ",ex)
-            fecha_actuaal = datetime.now()
+            print("//////// Actualizando Fecha: ",fecha_actuaal)
+            return fecha_actuaal
+        else:
+            fecha_actuaal = None
             print("////////// fecha_local")
-        print("//////// Actualizando Fecha: ",fecha_actuaal)
-        return fecha_actuaal
+            fecha_actuaal = datetime.now()
+            return fecha_actuaal
 
     def update_fecha_actual(self,fechaLocalActual,fechaActual):
 

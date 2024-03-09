@@ -154,7 +154,7 @@ class Startup(QState):
                 "GAFET": user["pass"],
                 "TYPE": user["type"],
                 "LOG": "LOGOUT",
-                "DATETIME": strftime("%Y/%m/%d %H:%M:%S"),
+                "DATETIME": self.model.get_currentTime().strftime("%Y/%m/%d %H:%M:%S"),
                 }
             endpoint = "http://{}/api/post/login".format(self.model.server)
             resp = requests.post(endpoint, data=json.dumps(data))
@@ -206,7 +206,7 @@ class CheckLogin (QState):
                     "GAFET":  self.model.local_data["user"]["pass"],
                     "TYPE": self.model.local_data["user"]["type"],
                     "LOG": "LOGIN",
-                    "DATETIME": strftime("%Y/%m/%d %H:%M:%S"),
+                    "DATETIME": self.model.get_currentTime().strftime("%Y/%m/%d %H:%M:%S"),
                     }
                 endpoint = "http://{}/api/post/login".format(self.model.server)
                 resp = requests.post(endpoint, data=json.dumps(data))
@@ -543,7 +543,7 @@ class StartCycle (QState):
                 "GAFET": user["pass"],
                 "TYPE": user["type"],
                 "LOG": "LOGOUT",
-                "DATETIME": strftime("%Y/%m/%d %H:%M:%S"),
+                "DATETIME": self.model.get_currentTime().strftime("%Y/%m/%d %H:%M:%S"),
                 }
             endpoint = "http://{}/api/post/login".format(self.model.server)
             resp = requests.post(endpoint, data=json.dumps(data))
@@ -783,7 +783,7 @@ class CheckQr (QState):
                     else:
                         #Se guarda el id del arnés de FAMX2 en el modelo para realizar updates en el servidor de FAMX2.
                         self.model.id_HM = famx2response["id"]
-                        self.model.datetime = datetime.now()
+                        self.model.datetime = self.model.get_currentTime()
                         #### Trazabilidad FAMX2 Update de Información
                         print("||Realizando el Update de ENTRADA a Trazabilidad en FAMX2")
                         print("ID a la que se realizará el Update para Trazabilidad",self.model.id_HM)
@@ -1630,7 +1630,7 @@ class CheckQr (QState):
 
             #SE ACTUALIZA VARIABLE CON EL PEDIDO
             self.model.input_data["database"]["pedido"] = self.model.pedido
-            self.model.datetime = datetime.now()
+            self.model.datetime = self.model.get_currentTime()
 
             if self.model.local_data["qr_rework"]:
                 self.model.local_data["qr_rework"] = False
@@ -1898,7 +1898,7 @@ class Finish (QState):
             "INTENTOS_T": self.model.tries,
             "SERIALES": self.model.qr_codes,
             "INICIO": self.model.datetime.isoformat(),
-            "FIN": strftime("%Y/%m/%d %H:%M:%S"),
+            "FIN": self.model.get_currentTime().strftime("%Y/%m/%d %H:%M:%S"),
             "USUARIO": self.model.local_data["user"]["type"] + ": " + self.model.local_data["user"]["name"],
             "NOTAS": {"TORQUE": ["OK"]},
             "SCRAP": self.model.local_data["nuts_scrap"]
@@ -2144,7 +2144,7 @@ class Reset (QState):
                 "INTENTOS_T": self.model.tries,
                 "SERIALES": self.model.qr_codes,
                 "INICIO": self.model.datetime.isoformat(),
-                "FIN": strftime("%Y/%m/%d %H:%M:%S"),
+                "FIN": self.model.get_currentTime().strftime("%Y/%m/%d %H:%M:%S"),
                 "USUARIO": self.model.local_data["user"]["type"] + ": " + self.model.local_data["user"]["name"],
                 "NOTAS": {"TORQUE": ["RESET"]},
                 "SCRAP": self.model.local_data["nuts_scrap"]

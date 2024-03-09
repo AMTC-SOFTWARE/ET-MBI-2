@@ -63,31 +63,33 @@ class Admin (QDialog):
         else:
             self.ui.checkBox_3.setChecked(False)
 
-        #if self.data.config_data["untwist"]:
-        #    self.ui.checkBox_4.setChecked(True)
-        #else:
-        #    self.ui.checkBox_4.setChecked(False)
-
-
-
+        if self.data.config_data["untwist"]:
+            self.ui.checkBox_4.setChecked(True)
+        else:
+            self.ui.checkBox_4.setChecked(False)
         if self.data.config_data["flexible_mode"]:
             self.ui.checkBox_5.setChecked(True)
         else:
             self.ui.checkBox_5.setChecked(False)
-
-        if self.data.config_data["trazabilidad"]:
+        if self.data.config_data["hora_servidor"]:
             self.ui.checkBox_6.setChecked(True)
         else:
             self.ui.checkBox_6.setChecked(False)
+        self.ui.btn_off.setEnabled(False)
 
-        if self.data.config_data["gdi"]:
+
+        if self.data.config_data["trazabilidad"]:
             self.ui.checkBox_7.setChecked(True)
         else:
             self.ui.checkBox_7.setChecked(False)
         self.ui.btn_off.setEnabled(False)
 
-        #self.ui.checkBox_4.setVisible(False)
-        self.ui.checkBox_5.setVisible(False)
+        if self.data.config_data["trazabilidad"]:
+            self.ui.checkBox_8.setChecked(True)
+        else:
+            self.ui.checkBox_8.setChecked(False)
+        self.ui.btn_off.setEnabled(False)
+
 
         #self.ui.btn_torque.clicked.connect(self.qw_torques.show)
         #self.ui.btn_torque.clicked.connect(self.manualTorque)
@@ -97,11 +99,11 @@ class Admin (QDialog):
         self.ui.checkBox_1.stateChanged.connect(self.onClicked_1)
         self.ui.checkBox_2.stateChanged.connect(self.onClicked_2)
         self.ui.checkBox_3.stateChanged.connect(self.onClicked_3)
-        #self.ui.checkBox_4.stateChanged.connect(self.onClicked_4)
+        self.ui.checkBox_4.stateChanged.connect(self.onClicked_4)
         self.ui.checkBox_5.stateChanged.connect(self.onClicked_5)
         self.ui.checkBox_6.stateChanged.connect(self.onClicked_6)  #Descomentar el día que se habilite el envío de info al servidor de P2
         self.ui.checkBox_7.stateChanged.connect(self.onClicked_7)
-        
+        self.ui.checkBox_8.stateChanged.connect(self.onClicked_8)
         self.rcv.connect(self.qw_torques.input)
         self.permissions()
 
@@ -117,10 +119,11 @@ class Admin (QDialog):
             self.ui.checkBox_1.setEnabled(True)
             self.ui.checkBox_2.setEnabled(True)
             self.ui.checkBox_3.setEnabled(True)
-            #self.ui.checkBox_4.setEnabled(True)
+            self.ui.checkBox_4.setEnabled(True)
             self.ui.checkBox_5.setEnabled(True)
-            self.ui.checkBox_6.setEnabled(True)
+            self.ui.checkBox_6.setEnabled(True)    #Descomentar el día que se habilite el envío de info al servidor de P2
             self.ui.checkBox_7.setEnabled(True)
+            self.ui.checkBox_8.setEnabled(True)
         elif self.user_type == "CALIDAD":
             self.ui.btn_off.setEnabled(False)
             self.ui.btn_reset.setEnabled(True)
@@ -128,10 +131,11 @@ class Admin (QDialog):
             self.ui.checkBox_1.setEnabled(True)
             self.ui.checkBox_2.setEnabled(True)
             self.ui.checkBox_3.setEnabled(True)
-            #self.ui.checkBox_4.setEnabled(True)
+            self.ui.checkBox_4.setEnabled(True)
             self.ui.checkBox_5.setEnabled(True)
             self.ui.checkBox_6.setEnabled(True)
             self.ui.checkBox_7.setEnabled(True)
+            self.ui.checkBox_8.setEnabled(True)
         elif self.user_type == "MANTENIMIENTO":
             self.ui.btn_off.setEnabled(True)
             self.ui.btn_reset.setEnabled(True)
@@ -139,8 +143,11 @@ class Admin (QDialog):
             self.ui.checkBox_1.setEnabled(True)
             self.ui.checkBox_2.setEnabled(False)
             self.ui.checkBox_3.setEnabled(False)
-            #self.ui.checkBox_4.setEnabled(True)
+            self.ui.checkBox_4.setEnabled(True)
             self.ui.checkBox_5.setEnabled(True)
+            self.ui.checkBox_6.setEnabled(False)
+            self.ui.checkBox_7.setEnabled(True)
+            self.ui.checkBox_8.setEnabled(False)
         elif self.user_type == "PRODUCCION":
             self.ui.btn_off.setEnabled(False)
             self.ui.btn_reset.setEnabled(True)
@@ -148,8 +155,11 @@ class Admin (QDialog):
             self.ui.checkBox_1.setEnabled(True)
             self.ui.checkBox_2.setEnabled(False)
             self.ui.checkBox_3.setEnabled(False)
-            #self.ui.checkBox_4.setEnabled(True)
+            self.ui.checkBox_4.setEnabled(True)
             self.ui.checkBox_5.setEnabled(False)
+            self.ui.checkBox_6.setEnabled(True)
+            self.ui.checkBox_7.setEnabled(False)
+            self.ui.checkBox_8.setEnabled(False)
         self.show()
 
     #def show_rework (self):
@@ -254,7 +264,6 @@ class Admin (QDialog):
                 
             endpoint = "http://{}/api/post/login".format(self.data.server)
             resp = requests.post(endpoint, data=json.dumps(data))
-
     def onClicked_3(self):
         if self.ui.checkBox_3.isChecked():
             self.data.config_data["comparacion_cajasDP"] = True
@@ -284,37 +293,29 @@ class Admin (QDialog):
                 
             endpoint = "http://{}/api/post/login".format(self.data.server)
             resp = requests.post(endpoint, data=json.dumps(data))
-            
     def onClicked_4(self):
-        #if self.ui.checkBox_4.isChecked():
-        #    self.data.config_data["untwist"] = True
-        #else:
-        #    self.data.config_data["untwist"] = False
-        pass
+        if self.ui.checkBox_4.isChecked():
+            self.data.config_data["untwist"] = True
+        else:
+            self.data.config_data["untwist"] = False
 
     def onClicked_5(self):
-        #if self.ui.checkBox_5.isChecked():
-        #    self.data.config_data["flexible_mode"] = True
-        #else:
-        #    self.data.config_data["flexible_mode"] = False
-        pass
+        if self.ui.checkBox_5.isChecked():
+            self.data.config_data["flexible_mode"] = True
+        else:
+            self.data.config_data["flexible_mode"] = False
 
     def onClicked_6(self):     #Descomentar el día que se habilite el envío de info al servidor de P2
-        if self.ui.checkBox_6.isChecked():
-            self.data.config_data["trazabilidad"] = True
-            print("Sistema de Trazabilidad Habilitado")
-            self.pop_out.setText("El Sistema de Trazabilidad ha sido Habilitado")
-            self.pop_out.setWindowTitle("Acción Realizada")
-            QTimer.singleShot(3000, self.pop_out.button(QMessageBox.Ok).click)
-            self.pop_out.exec()
-        else:
-            self.data.config_data["trazabilidad"] = False
-            print("Sistema de Trazabilidad Deshabilitado")
-            self.pop_out.setText("El Sistema de Trazabilidad ha sido Deshabilitado")
-            self.pop_out.setWindowTitle("Acción Realizada")
-            QTimer.singleShot(3000, self.pop_out.button(QMessageBox.Ok).click)
-            self.pop_out.exec()
 
+        if self.ui.checkBox_6.isChecked():
+            """
+            La hora del servidor define cuando los registros se hacen con la hora extraida del servidor
+            """
+            self.data.config_data["hora_servidor"] = True
+            
+        else:
+            self.data.config_data["hora_servidor"] = False
+           
     def onClicked_7(self):     #Descomentar el día que se habilite el envío de info al servidor de P2
         if self.ui.checkBox_7.isChecked():
             self.data.config_data["gdi"] = True
@@ -339,9 +340,23 @@ class Admin (QDialog):
             self.pop_out.exec()
 
 
+    #trazabilidad
+    def onClicked_8(self):     #Descomentar el día que se habilite el envío de info al servidor de P2
+        if self.ui.checkBox_8.isChecked():
+            self.data.config_data["trazabilidad"] = True
+            print("Sistema de Trazabilidad Habilitado")
+            self.pop_out.setText("El Sistema de Trazabilidad ha sido Habilitado")
+            self.pop_out.setWindowTitle("Acción Realizada")
+            QTimer.singleShot(3000, self.pop_out.button(QMessageBox.Ok).click)
+            self.pop_out.exec()
+        else:
+            self.data.config_data["trazabilidad"] = False
+            print("Sistema de Trazabilidad Deshabilitado")
+            self.pop_out.setText("El Sistema de Trazabilidad ha sido Deshabilitado")
+            self.pop_out.setWindowTitle("Acción Realizada")
+            QTimer.singleShot(3000, self.pop_out.button(QMessageBox.Ok).click)
+            self.pop_out.exec()
 
-        
-        
     def closeEvent(self, event):
         self.client.publish("config/status", '{"finish": true}')
         with open("data\config", "wb") as f:

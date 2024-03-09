@@ -824,12 +824,11 @@ class MqttClient (QObject):
                         self.model.input_data["torque"][tool] = copy(payload)
                         print("torque1 emit()")
                         ################################################
-                        fecha_actual = datetime.now()
                         try:
                             data = {
                                 "HERRAMIENTA": tool,
                                 "REGISTRO": payload,
-                                "FECHA": fecha_actual.strftime("%Y/%m/%d %H:%M:%S"),
+                                "FECHA": self.model.get_currentTime().strftime("%Y/%m/%d %H:%M:%S"),
                                 }
                             endpoint = "http://{}/api/post/torque_info".format(self.model.server)
                             resp = requests.post(endpoint, data=json.dumps(data))
@@ -881,12 +880,12 @@ class MqttClient (QObject):
                         self.model.input_data["torque"][tool] = copy(payload)
                         print("torque2 emit()")
                         ################################################
-                        fecha_actual = datetime.now()
+                        
                         try:
                             data = {
                                 "HERRAMIENTA": tool,
                                 "REGISTRO": payload,
-                                "FECHA": fecha_actual.strftime("%Y/%m/%d %H:%M:%S"),
+                                "FECHA": self.model.get_currentTime().strftime("%Y/%m/%d %H:%M:%S"),
                                 }
                             endpoint = "http://{}/api/post/torque_info".format(self.model.server)
                             resp = requests.post(endpoint, data=json.dumps(data))
@@ -935,12 +934,12 @@ class MqttClient (QObject):
                         self.model.input_data["torque"][tool] = copy(payload)
                         print("torque3 emit()")
                         ################################################
-                        fecha_actual = datetime.now()
+                        
                         try:
                             data = {
                                 "HERRAMIENTA": tool,
                                 "REGISTRO": payload,
-                                "FECHA": fecha_actual.strftime("%Y/%m/%d %H:%M:%S"),
+                                "FECHA": self.model.get_currentTime().strftime("%Y/%m/%d %H:%M:%S"),
                                 }
                             endpoint = "http://{}/api/post/torque_info".format(self.model.server)
                             resp = requests.post(endpoint, data=json.dumps(data))
@@ -990,13 +989,13 @@ class MqttClient (QObject):
                                         
                                         if "TYPE" in response:
                                             if response["TYPE"] == "SUPERUSUARIO" or response["TYPE"] == "AMTC" or response["TYPE"] == "CALIDAD":
-                                                fecha_actual = datetime.now()
+                                                
                                                 data = {
                                                     "NAME": response["NAME"],
                                                     "GAFET":  usuario,
                                                     "TYPE": response["TYPE"],
                                                     "LOG": "torque_KEY",
-                                                    "DATETIME": fecha_actual.strftime("%Y/%m/%d %H:%M:%S"),
+                                                    "DATETIME": self.model.get_currentTime().strftime("%Y/%m/%d %H:%M:%S"),
                                                     }
                                         
                                         print("porque está mal")
