@@ -1,12 +1,12 @@
 from PyQt5.QtCore import QState, pyqtSignal, QObject, pyqtSlot
 from paho.mqtt import publish
-import threading
 from threading import Timer
 from time import sleep
 from cv2 import imread, imwrite
 from copy import copy
 import json
 import requests
+import threading
 
 class Torquing (QState):
     finish  = pyqtSignal()
@@ -71,6 +71,7 @@ class NewTool1 (QState):
         self.holding_time   = HoldingTime(tool = self.tool, model = self.model, parent = self)
         self.activar_tool   = ActivarHerramienta(tool = self.tool, model = self.model, parent = self)
 
+
         #si se está en zone y la variable self.model.estado_actual[self.tool] vale "ERRORNOK" se va directamente a ese estado en el que se había quedado
         self.zone.addTransition(self.zone.ERRORNOK, self.NOK)
         #si se está en zone y la variable self.model.estado_actual[self.tool] vale "BACKWARD" se va directamente a ese estado en el que se había quedado
@@ -92,7 +93,6 @@ class NewTool1 (QState):
         #(esto porque la herramienta al momento de estar torqueando puede salir de la zona una vez que ya fue activada por su movimiento de torqueo y a causa de las zonas en el encoder)
         self.holding_time.addTransition(self.model.transitions.torque1, self.chk_response)
         self.activar_tool.addTransition(self.model.transitions.torque1, self.chk_response)
-
 
         #presionar un raffi, te lleva a este estado solo si estás en self.zone
         self.zone.addTransition(self.model.transitions.raffi_on, self.raffi_message)
@@ -136,7 +136,7 @@ class NewTool1 (QState):
 
 
         #si estás en backward llave te lleva a mensaje de backward
-        self.backward.addTransition(self.model.transitions.key_process, self.backward)
+        #self.backward.addTransition(self.model.transitions.key_process, self.backward)
 
         #para que al enviarse una señal de zona de la misma herramienta no te saque de el estado backward, sino que vuelvas a este mismo
         self.backward.addTransition(self.model.transitions.zone_tool1, self.backward)
@@ -154,26 +154,13 @@ class NewTool1 (QState):
         #se va a la función finished de Newtool al enviarse una señal ok proveniente del estado zone (se conecta la señal ok de zone para entrara a este método "def finished(self)" de Newtool)
         self.zone.ok.connect(self.finished)
 
-        #self.NOK.entered.connect(self.error)
-        #self.NOK.exited.connect(self.retry)
-
         self.setInitialState(self.standby)
-
-    #def error(self):
-    #    self.model.torque_data[self.tool]["error"] = True
-
-    #def retry(self):
-    #    Timer(0.1, self.retry_delay).start()
-    
-    #def retry_delay(self):
-    #    self.model.torque_data[self.tool]["error"] = False
     
     # cuando a la clase Torquing le llaman a su método clean para cada objeto (cada herramienta en Newtool) se llama a esta función que limpia estas variables
     def clean(self):
         self.zone.img_name = ""
         self.zone.flex_BB_drawed = False
 
-    #
     def finished(self):
         self.clean()
         self.finish.emit()
@@ -204,6 +191,7 @@ class NewTool2 (QState):
         self.holding_time   = HoldingTime(tool = self.tool, model = self.model, parent = self)
         self.activar_tool   = ActivarHerramienta(tool = self.tool, model = self.model, parent = self)
 
+
         self.zone.addTransition(self.zone.ERRORNOK, self.NOK)
         self.zone.addTransition(self.zone.BACKWARD, self.backward)
         self.zone.addTransition(self.zone.QINTERVENTION, self.qintervention)
@@ -215,6 +203,7 @@ class NewTool2 (QState):
         self.activar_tool.addTransition(self.activar_tool.continuar, self.zone)
         self.holding_time.addTransition(self.model.transitions.torque2, self.chk_response)
         self.activar_tool.addTransition(self.model.transitions.torque2, self.chk_response)
+        
 
         self.zone.addTransition(self.model.transitions.raffi_on, self.raffi_message)
         self.raffi_message.addTransition(self.raffi_message.process_continue, self.zone)
@@ -228,9 +217,7 @@ class NewTool2 (QState):
         self.zone.addTransition(self.model.transitions.zone_tool2, self.zone)
         self.zone.addTransition(self.model.transitions.torque2, self.chk_response)
 
-       
 
-       
         self.chk_response.addTransition(self.chk_response.ok, self.zone)
         #al recibir un torque con result NOK vas al estado de error
         self.chk_response.addTransition(self.chk_response.nok, self.NOK)
@@ -245,7 +232,7 @@ class NewTool2 (QState):
         self.qgafet.addTransition(self.qgafet.ok, self.backward)
         self.qgafet.addTransition(self.qgafet.nok, self.qintervention)
 
-        self.backward.addTransition(self.model.transitions.key_process, self.backward)
+        #self.backward.addTransition(self.model.transitions.key_process, self.backward)
         self.backward.addTransition(self.model.transitions.zone_tool2, self.backward)
         #self.backward.addTransition(self.model.transitions.torque2, self.zone)
         self.backward.addTransition(self.model.transitions.torque2, self.chk_profile)
@@ -256,20 +243,8 @@ class NewTool2 (QState):
         self.addTransition(self.finish, self.standby)
 
         self.zone.ok.connect(self.finished)
-        
-        #self.NOK.entered.connect(self.error)
-        #self.NOK.exited.connect(self.retry)
 
         self.setInitialState(self.standby)
-
-    #def error(self):
-    #    self.model.torque_data[self.tool]["error"] = True
-
-    #def retry(self):
-    #    Timer(0.1, self.retry_delay).start()
-    
-    #def retry_delay(self):
-    #    self.model.torque_data[self.tool]["error"] = False
 
     def clean(self):
         self.zone.img_name = ""
@@ -307,6 +282,7 @@ class NewTool3 (QState):
         self.waiting_pin            = WaitingPin(tool = self.tool, model = self.model, parent = self)
         self.raffi_key_palpador     = RaffiKey(tool = self.tool, model = self.model, parent = self)
         self.raffi_message_palpador = RaffiMessage(tool = self.tool, model = self.model, parent = self)
+
         self.holding_time   = HoldingTime(tool = self.tool, model = self.model, parent = self)
         self.activar_tool   = ActivarHerramienta(tool = self.tool, model = self.model, parent = self)
 
@@ -371,7 +347,7 @@ class NewTool3 (QState):
         self.qgafet.addTransition(self.qgafet.nok, self.qintervention)
 
         #REVERSA DE HERRAMIENTA
-        self.backward.addTransition(self.model.transitions.key_process, self.backward)
+        #self.backward.addTransition(self.model.transitions.key_process, self.backward)
         self.backward.addTransition(self.model.transitions.zone_tool3, self.backward)
         
         #SALIDA DE LA REVERSA
@@ -380,8 +356,6 @@ class NewTool3 (QState):
         self.chk_profile.addTransition(self.chk_profile.ok, self.zone)
         self.chk_profile.addTransition(self.chk_profile.retry, self.chk_profile)
         self.chk_profile.addTransition(self.model.transitions.key_process, self.zone)
-
-        
 
         #CONNECT DE SEÑALES DE FINISH
         self.addTransition(self.finish, self.standby)
@@ -720,8 +694,8 @@ class CheckZone (QState):
             if self.model.raffi[current_trq[0]] == 0:
 
                 #si la caja actual es igual a la solicitada de las tareas en cola...
-                if zone[0] == current_trq[0]:
-                  
+                if zone[0] == current_trq[0]:   
+                   
                     #si la terminal actual es igual a cero... (esto pasa en comm.py cada que llega una zona en "false")
                     if zone[1] == "0":
                         command = {
@@ -735,7 +709,8 @@ class CheckZone (QState):
 
                     #si la terminal actual es igual a la terminal solicitada en la tarea actual en cola
                     elif zone[1] == current_trq[1]:
-                        
+
+
                         #if caja == "PDC-P" or caja == "PDC-D":
                         #if caja == "BATTERY" or caja == "BATTERY-2":
                         #if (self.model.altura_zone[self.tool] == False) and (self.tool == "tool3") and (current_trq[0] == "MFB-P2"):
@@ -764,6 +739,7 @@ class CheckZone (QState):
 
                         else:
 
+                            #if (current_trq[1] == "A21" or current_trq[1] == "A22" or current_trq[1] == "A23" or current_trq[1] == "A24" or current_trq[1] == "A20" or current_trq[1] == "A25" or current_trq[1] == "A30") and self.model.activar_tool[self.tool] == False:
                             if self.model.activar_tool[self.tool] == False: #se debe mantener para todas las cavidades
                                 print("se debe mantener la herramienta un tiempo en la zona para habilitarla")
                                 command = {
@@ -2203,7 +2179,7 @@ class DelayPin (QState):
             Timer(1.5, self.continuar.emit).start()
         else:
             self.continuar.emit()
-       
+     
 class CheckZonePalpador (QState):
 
     end                  = pyqtSignal()

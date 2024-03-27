@@ -22,5 +22,3 @@ class Model (object):
                 "pop_out": False
                 }
             }
-        #variable para mostrar/esconder GDI
-        self.visible = True

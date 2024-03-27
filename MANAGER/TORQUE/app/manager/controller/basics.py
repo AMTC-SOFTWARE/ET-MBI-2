@@ -15,7 +15,6 @@ from toolkit.admin import Admin
 import pandas as pd
 
 class Startup(QState):
-
     ok  = pyqtSignal()
 
     def __init__(self, model = None, parent = None):
@@ -24,35 +23,6 @@ class Startup(QState):
 
     def onEntry(self, event):
         
-
-        ###########CONSULTA PARA OBTENER HM'S DESDE SEGHM (los arneses que han pasado por cada estación según la trazabilidad)
-        ##Para agilizar consulta en api se pone: query = "SELECT HM,ENTTORQUE,SALTORQUE FROM para que solamente consulte esas partes
-        #self.model.serial = "ET-MBI-3"
-        #print("||||||||||||Flag2...")
-        #print("||||||||||||Flag3...")
-        #endpoint = "http://{}/seghm/get/seghm/NAMETORQUE/=/{}/_/_/_".format(self.model.server,self.model.serial)
-        #famx2response = requests.get(endpoint).json()
-        #print("||||||||||||Flag4...")
-        ## Abre un archivo de texto en modo escritura
-        #with open("resultadosHM.txt", "w") as archivo:
-        #    # Itera sobre los elementos de famx2response["HM"]
-        #    for HM in famx2response["HM"]:
-        #        # Escribe cada elemento en el archivo seguido de un salto de línea
-        #        archivo.write(str(HM) + "\n")
-        ## Abre un archivo de texto en modo escritura
-        #with open("resultadosENTTORQUE.txt", "w") as archivo:
-        #    # Itera sobre los elementos de famx2response["HM"]
-        #    for HM in famx2response["ENTTORQUE"]:
-        #        # Escribe cada elemento en el archivo seguido de un salto de línea
-        #        archivo.write(str(HM) + "\n")
-        ## Abre un archivo de texto en modo escritura
-        #with open("resultadosSALTORQUE.txt", "w") as archivo:
-        #    # Itera sobre los elementos de famx2response["HM"]
-        #    for HM in famx2response["SALTORQUE"]:
-        #        # Escribe cada elemento en el archivo seguido de un salto de línea
-        #        archivo.write(str(HM) + "\n")
-        #print("||||||||||||Flag5...")
-
         try:
             #se oculta la GDI automáticamente:
             publish.single("GDI",json.dumps({"Esconder" : "Ocultando GDI..."}),hostname='127.0.0.1', qos = 2)
@@ -148,6 +118,7 @@ class Startup(QState):
 
     def logout(self, user):
         try:
+
             Timer(0.05, self.model.log, args = ("LOGOUT",)).start() 
             data = {
                 "NAME": user["name"],
@@ -242,7 +213,10 @@ class CheckLogin (QState):
 
 
 class StartCycle (QState):
-    ok = pyqtSignal()
+
+    ok          = pyqtSignal()
+    autologout  = pyqtSignal()
+
     def __init__(self, model = None, parent = None):
         super().__init__(parent)
         self.model = model
@@ -252,29 +226,6 @@ class StartCycle (QState):
         minutos=0
         segundos=0
         color="black"
-
-        #se reinician tiempos de activación y variables de activación de tool
-        self.model.tiempo = {
-                         "tool1":"",
-                         "tool2":"",
-                         "tool3":""}
-        self.model.activar_tool = {
-                                "tool1":False,
-                                "tool2":False,
-                                "tool3":False}
-
-        #se reinician variables de posición OK en zona de altura
-        self.model.altura_zone = {
-                        "tool1":False,
-                        "tool2":False,
-                        "tool3":False
-            }
-
-        #variable para regresar a reversa cuando se sale por clampeo de otra caja
-        self.model.estado_actual["tool1"] = ""
-        self.model.estado_actual["tool2"] = ""
-        self.model.estado_actual["tool3"] = ""
-
         try:
             query="SELECT INICIO, FIN FROM et_mbi_2.historial WHERE RESULTADO = 1 order by ID desc LIMIT 1;"
             endpoint = "http://{}/query/get/{}".format(self.model.server, query)
@@ -308,7 +259,6 @@ class StartCycle (QState):
                 }
         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         print("lineEdit desactivado")
-        self.model.pdcr_iniciada=False
         self.model.qr_box_actual=""
         self.model.caja_repetida_hm_asociado=""
         self.model.qr_validado=[]
@@ -316,6 +266,29 @@ class StartCycle (QState):
         self.model.caja_por_validar=""
         self.model.en_ciclo=False
         self.model.validacion_conectores_pdcp=False
+
+        #variable para regresar a reversa cuando se sale por clampeo de otra caja
+        self.model.estado_actual["tool1"] = ""
+        self.model.estado_actual["tool2"] = ""
+        self.model.estado_actual["tool3"] = ""
+
+        #se reinician tiempos de activación y variables de activación de tool
+        self.model.tiempo = {
+                         "tool1":"",
+                         "tool2":"",
+                         "tool3":""}
+        self.model.activar_tool = {
+                                "tool1":False,
+                                "tool2":False,
+                                "tool3":False}
+        
+        #se reinician variables de posición OK en zona de altura
+        self.model.altura_zone = {
+                        "tool1":False,
+                        "tool2":False,
+                        "tool3":False
+            }
+
         #reiniciar variable para dar delay entre cada pin
         self.model.nuevo_pin = False
         #para avisar que se finalizó el modo de revisión de candados
@@ -625,6 +598,7 @@ class CheckQr (QState):
             }
         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+
 
         Timer(0.05, self.check_etiqueta).start()
 
@@ -1119,15 +1093,15 @@ class CheckQr (QState):
                         self.nok.emit()
                         return
 
-                ##se reacomoda el orden de las tuercas de la caja MFB-P2
-                #if "MFB-P2" in self.model.input_data["database"]["modularity"]:
-                #    modularity = self.model.input_data["database"]["modularity"]["MFB-P2"]
-                #    orden_tuercas = {"A21": "A21", "A22": "A22", "A23": "A23", "A24": "A24", "A26": "A26", "A27": "A27", "A28": "A28", "A29": "A29"}
+                ###se reacomoda el orden de las tuercas de la caja MFB-P2
+                ##if "MFB-P2" in self.model.input_data["database"]["modularity"]:
+                ##    modularity = self.model.input_data["database"]["modularity"]["MFB-P2"]
+                ##    orden_tuercas = {"A21": "A21", "A22": "A22", "A23": "A23", "A24": "A24", "A26": "A26", "A27": "A27", "A28": "A28", "A29": "A29"}
 
-                #    for tuerca in orden_tuercas:
-                #        if tuerca in modularity:
-                #            modularity.pop(modularity.index(tuerca))
-                #            modularity.append(orden_tuercas[tuerca])
+                ##    for tuerca in orden_tuercas:
+                ##        if tuerca in modularity:
+                ##            modularity.pop(modularity.index(tuerca))
+                ##            modularity.append(orden_tuercas[tuerca])
 
                 print("-------------------------------------TAREAS: TUERCAS -----------------------------------")
                 print(self.model.input_data["database"]["modularity"])
@@ -1850,7 +1824,6 @@ class Finish (QState):
                 if self.model.tries[i][j] <= 0:
                     self.model.tries[i][j] = 0
         print("||||||| RE-intentos en Modelo FINAL: ",self.model.tries)
-        self.model.pdcr_iniciada=False
         self.model.qr_box_actual=""
         self.model.caja_repetida_hm_asociado=""
         self.model.qr_validado=[]
@@ -1858,7 +1831,7 @@ class Finish (QState):
         self.model.caja_por_validar=""
         #para funcionamiento normal de llave
         self.model.reintento_torque = False
-        self.model.validacion_conectores_pdcp=False
+
         self.model.cajas_habilitadas = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
         self.model.raffi = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
         for i in self.model.raffi:

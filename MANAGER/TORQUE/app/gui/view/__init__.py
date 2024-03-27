@@ -100,12 +100,12 @@ class MainWindow (QMainWindow):
         actionLogout = QAction("Logout",self)
         actionConfig = QAction("Config",self)
         actionWEB = QAction("WEB",self)
-        actionGDI = QAction("GDI",self)
+        #actionGDI = QAction("GDI",self) #se elimina la acción para mostrar/esconder GDI desde aquí
         menu.addAction(actionLogin)
         menu.addAction(actionLogout)
         menu.addAction(actionConfig)
         menu.addAction(actionWEB)
-        #menu.addAction(actionGDI)
+        #menu.addAction(actionGDI) #ya no se llama desde el menu
         menu.triggered[QAction].connect(self.menuProcess)
         
 
@@ -353,8 +353,8 @@ class MainWindow (QMainWindow):
                     self.pop_out.setWindowTitle("Warning")
                     QTimer.singleShot(2000, self.pop_out.button(QMessageBox.Ok).click)
                     self.pop_out.exec()
-            elif case == "GDI":
-                self.output.emit({"request":"gdi"})
+            #elif case == "GDI": #ya no se manda llamar desde el menu, tienes que entrar a config
+            #    self.output.emit({"request":"gdi"})
             elif case == "Config":
                 if self.cycle_started == False:
                     self.output.emit({"request":"config"})
@@ -927,7 +927,8 @@ class PopOut (QMessageBox):
         self.button(QMessageBox.Ok).setVisible(False)
 
     def closeEvent(self, event):
-        event.ignore() 
+        print("se cierra dialogo desde 'X'")
+        #event.ignore() 
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:

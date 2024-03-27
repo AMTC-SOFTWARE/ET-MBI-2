@@ -32,8 +32,8 @@ class Model (object):
             "comparacion_cajasDP":True,
             "untwist": False,
             "flexible_mode": False,
-            "hora_servidor":True,
-            "gdi": False,
+            "hora_servidor": True,
+            "conectoresPDCP":True,
             "trazabilidad": True
         }
         self.server = "127.0.0.1:5000"
@@ -44,6 +44,7 @@ class Model (object):
         self.fechaAnterior = self.get_currentTime() #se inicializa con la fecha del servidor
         self.fechaLocalAnterior = datetime.now() #se inicializa con la fecha local actual
         self.cronometro_ciclo=False
+        self.validacion_conectores_pdcp=False
 
         self.id_HM = None
         self.tareas_actuales = {}
@@ -90,9 +91,30 @@ class Model (object):
         self.arnes_misma_caja=False
         self.qr_coincide_FET=False
         self.qr_error=""
-        self.validacion_conectores_pdcp=False
-        #señal para dejar un delay entre cada candado
-        self.nuevo_pin = False
+        self.info_torque={"AngularTreshold":0,
+                          "CurrentMonitor":0,
+                          "CycleSelected":0,
+                          "FinalSpeed":0,
+                          "PostSeatingRealTorque":0,
+                          "PostSeatingTorque":0,
+                          "RundownSpeed":0,
+                          "SeatingTorque":0,
+                          "SetErrorcode":0,
+                          "ToolCount":0,
+                          "TorqueCorrection":1,
+                          "angle":0,
+                          "angle_max":0,
+                          "angle_min":0,
+                          "angle_target":0,
+                          "angle_trend":"",
+                          "fase":0,
+                          "result":0,
+                          "torque":0,
+                          "torque_max":0,
+                          "torque_min":0,
+                          "torque_target":0,
+                          "torque_trend":"",
+            }
 
         #variable para contar el tiempo que se debe mantener la herramienta en posición de zona de activación
         self.tiempo = {
@@ -121,6 +143,9 @@ class Model (object):
             "tool2":"",
             "tool3":""
             }
+
+        #señal para dejar un delay entre cada candado
+        self.nuevo_pin = False
 
         #Variable para indicar que la caja pdcr se escaneó y esta en proceso de torque
         self.pdcr_iniciada=False
@@ -648,7 +673,6 @@ class Model (object):
 
     def get_currentTime(self):
         if self.config_data["hora_servidor"]==True:
-            fecha_actuaal = None
             try:
                 endpoint = "http://{}/server_famx/hora_servidor".format(self.server) #self.model.server
                 respuesta_hora = requests.get(endpoint).json()
@@ -665,11 +689,9 @@ class Model (object):
             print("//////// Actualizando Fecha: ",fecha_actuaal)
             return fecha_actuaal
         else:
-            fecha_actuaal = None
             print("////////// fecha_local")
             fecha_actuaal = datetime.now()
             return fecha_actuaal
-
     def update_fecha_actual(self,fechaLocalActual,fechaActual):
 
         #print("fechaActual: ",fechaActual)

@@ -300,7 +300,7 @@ class MqttClient (QObject):
     def on_message(self, client, userdata, message):
         try:
             payload = json.loads(message.payload)
-            
+            print(payload)
             string_payload = str(payload)
             ignorar = False
             if "encoder" in string_payload:
@@ -419,8 +419,8 @@ class MqttClient (QObject):
                 self.raffi_check("PDC-D", "keyboard_F2")
                 self.raffi_check("PDC-P", "keyboard_F1")
 
-            if message.topic == self.model.sub_topics["plc"]:
 
+            if message.topic == self.model.sub_topics["plc"]:
                 for i in list(payload):
                     if "clamp_" in i:
                         box = i[6:]
@@ -459,7 +459,6 @@ class MqttClient (QObject):
                         self.pin.emit()
                     else:
                         self.model.pin_pressed = False
-                
                 if "Precencia_PDCP" in payload and self.model.validacion_conectores_pdcp==True:
                     if payload["Precencia_PDCP"] == True:
                         self.model.caja_puesta=True
@@ -477,7 +476,6 @@ class MqttClient (QObject):
                             "lbl_boxNEW" : {"text":"", "color": "green"},
                             }
                         self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
-
                 if "PDCP_Validacion" in payload and self.model.validacion_conectores_pdcp==True:
                     if payload["PDCP_Validacion"] == True:
                         self.model.validacion_conectores_pdcp=False
@@ -496,7 +494,6 @@ class MqttClient (QObject):
                             }
                         self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                         Timer(15, self.boxTimeout, args = (self.model.caja_por_validar, self.model.qr_box_actual)).start()
-
                 if "Conector_S1" in payload and self.model.validacion_conectores_pdcp==True:
                     if payload["Conector_S1"] == True:
                         command = {
@@ -513,7 +510,6 @@ class MqttClient (QObject):
                             "lbl_boxNEW" : {"text":"", "color": "green"},
                             }
                         self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
-
                 if "Conector_S2" in payload and self.model.validacion_conectores_pdcp==True and self.model.caja_puesta==True:
                     if payload["Conector_S2"] == True:
                         command = {
@@ -532,6 +528,8 @@ class MqttClient (QObject):
                             }
                         self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
 
+
+
                 if "candados_finish" in payload:
                     if payload["candados_finish"] == True:
                         self.model.estado_candados = False
@@ -539,7 +537,7 @@ class MqttClient (QObject):
                         self.model.pdcr_iniciada=False
                     if payload["candados_finish"] == False:
                         self.model.estado_candados = True
-                
+
                 if "TOOL1_ALTURA" in payload:
                     #si no se encuentra activado el modo de revisión de candados (funcionamiento normal)
                     if self.model.estado_candados == False:
@@ -652,13 +650,15 @@ class MqttClient (QObject):
 
                         #se obtienen los datos del current_trq
                         current_tool = encoder.replace("encoder_","tool")
-                        
                         #si current_trq no está vacío...
                         if self.model.torque_data[current_tool]["current_trq"] != None:
-
                             caja = self.model.torque_data[current_tool]["current_trq"][0]
                             tuerca = self.model.torque_data[current_tool]["current_trq"][1]
 
+                            #ejemplo de señal: {"encoder":1,"name":{"PDC-D":"E1"},"value":True}
+                            #ejemplo de caja: "PDC-D"
+                            #ejemplo de tuerca: "E1"
+                            #si el encoder leído contiene la caja y la tuerca del torque que está en la tarea actual (current_trq)
                             if caja in payload["name"] and tuerca in payload["name"]:
 
                                 #aquí entra cuando "value = False"...
@@ -689,6 +689,7 @@ class MqttClient (QObject):
                                 if encoder == "encoder_3":
                                     print("emit zone de tool3")
                                     self.zone_tool3.emit()
+
 
                     #si está en revisión de candados
                     else:
@@ -774,7 +775,6 @@ class MqttClient (QObject):
                                     print("emit zone de tool1")
                                     self.zone_tool1.emit()
 
-
                 if "retry_btn" in payload:
                     self.model.input_data["plc"]["retry_btn"] = bool(payload["retry_btn"])
                     if payload["retry_btn"] == True:
@@ -783,6 +783,7 @@ class MqttClient (QObject):
                 #se habilita la función mensajes_clamp cada que llega un mensaje del PLC
                 for i in self.nido:
                     self.mensajes_clamp(i,payload)
+
 
             if message.topic == self.model.sub_topics["torque_1"]:
 
@@ -814,9 +815,11 @@ class MqttClient (QObject):
 
                 if "result" in payload: 
                     #se convierten los valores leídos de string a float
-                    for item in payload:
-                        payload[item] = float(payload[item])
-
+                    
+                    #converted_values = [self.convert_to_float_or_str(val) for val in payload]
+                    for valor_torque in payload:
+                        payload[valor_torque]=self.convert_to_float_or_str(payload[valor_torque])
+                        self.model.info_torque[valor_torque]=payload[valor_torque]
                     #si no está bloqueada la señal (por estar transicionando al salir de backward)
                     if self.model.lock_backward[tool] == False:
 
@@ -824,14 +827,32 @@ class MqttClient (QObject):
                         self.model.input_data["torque"][tool] = copy(payload)
                         print("torque1 emit()")
                         ################################################
+                        fecha_actual = self.model.get_currentTime()
                         try:
                             data = {
                                 "HERRAMIENTA": tool,
                                 "REGISTRO": payload,
-                                "FECHA": self.model.get_currentTime().strftime("%Y/%m/%d %H:%M:%S"),
+                                "FECHA": fecha_actual.strftime("%Y/%m/%d %H:%M:%S"),
+                                "CICLO_manager":str(self.model.torque_data[tool]["current_trq"]),
+                                "estado_actual":self.model.estado_actual[tool],
+                                "perfil_driver":self.model.info_torque["CycleSelected"],
+                                "fase_driver":  self.model.info_torque["fase"],
+                                "HM":           self.model.qr_codes["HM"],
+                                "angulo_final": self.model.info_torque["angle"],
+                                "torque_final": self.model.info_torque["torque"],
+                                "torque_minimo": self.model.info_torque["torque_min"],
+                                "torque_maximo": self.model.info_torque["torque_max"],
+                                "angulo_minimo": self.model.info_torque["angle_min"],
+                                "angulo_maximo": self.model.info_torque["angle_max"],
+                                "angle_trend":   self.model.info_torque["angle_trend"],
+                                "torque_trend":  self.model.info_torque["torque_trend"],
+                                "angle_target":  self.model.info_torque["angle_target"],
+                                "torque_target": self.model.info_torque["torque_target"],
                                 }
+                            print("data to post torqueinfo",data)
                             endpoint = "http://{}/api/post/torque_info".format(self.model.server)
                             resp = requests.post(endpoint, data=json.dumps(data))
+                            self.default_info_torque()
                         except Exception as ex:
                             print("post torque exception: ", ex)
                         #se emite la señal de que se hizo un torque con esta herramienta
@@ -870,8 +891,9 @@ class MqttClient (QObject):
 
                 if "result" in payload: 
                     #se convierten los valores leídos de string a float
-                    for item in payload:
-                        payload[item] = float(payload[item])
+                    for valor_torque in payload:
+                        payload[valor_torque]=self.convert_to_float_or_str(payload[valor_torque])
+                        self.model.info_torque[valor_torque]=payload[valor_torque]
 
                     #si no está bloqueada la señal (por estar transicionando al salir de backward)
                     if self.model.lock_backward[tool] == False:
@@ -880,15 +902,32 @@ class MqttClient (QObject):
                         self.model.input_data["torque"][tool] = copy(payload)
                         print("torque2 emit()")
                         ################################################
-                        
+                        fecha_actual = self.model.get_currentTime()
                         try:
                             data = {
                                 "HERRAMIENTA": tool,
                                 "REGISTRO": payload,
-                                "FECHA": self.model.get_currentTime().strftime("%Y/%m/%d %H:%M:%S"),
+                                "FECHA": fecha_actual.strftime("%Y/%m/%d %H:%M:%S"),
+                                "CICLO_manager":self.model.torque_data[tool]["current_trq"],
+                                "estado_actual":self.model.estado_actual[tool],
+                                "perfil_driver":self.model.info_torque["CycleSelected"],
+                                "fase_driver":  self.model.info_torque["fase"],
+                                "HM":           self.model.qr_codes["HM"],
+                                "angulo_final": self.model.info_torque["angle"],
+                                "torque_final": self.model.info_torque["torque"],
+                                "torque_minimo": self.model.info_torque["torque_min"],
+                                "torque_maximo": self.model.info_torque["torque_max"],
+                                "angulo_minimo": self.model.info_torque["angle_min"],
+                                "angulo_maximo": self.model.info_torque["angle_max"],
+                                "angle_trend":   self.model.info_torque["angle_trend"],
+                                "torque_trend":  self.model.info_torque["torque_trend"],
+                                "angle_target":  self.model.info_torque["angle_target"],
+                                "torque_target": self.model.info_torque["torque_target"],
                                 }
+                            print("data to post torqueinfo",data)
                             endpoint = "http://{}/api/post/torque_info".format(self.model.server)
                             resp = requests.post(endpoint, data=json.dumps(data))
+                            self.default_info_torque()
                         except Exception as ex:
                             print("post torque exception: ", ex)
                         #se emite la señal de que se hizo un torque con esta herramienta
@@ -925,8 +964,9 @@ class MqttClient (QObject):
 
                 if "result" in payload: 
                     #se convierten los valores leídos de string a float
-                    for item in payload:
-                        payload[item] = float(payload[item])
+                    for valor_torque in payload:
+                        payload[valor_torque]=self.convert_to_float_or_str(payload[valor_torque])
+                        self.model.info_torque[valor_torque]=payload[valor_torque]
 
                     #si no está bloqueada la señal (por estar transicionando al salir de backward)
                     if self.model.lock_backward[tool] == False:
@@ -934,15 +974,32 @@ class MqttClient (QObject):
                         self.model.input_data["torque"][tool] = copy(payload)
                         print("torque3 emit()")
                         ################################################
-                        
+                        fecha_actual = self.model.get_currentTime()
                         try:
                             data = {
                                 "HERRAMIENTA": tool,
                                 "REGISTRO": payload,
-                                "FECHA": self.model.get_currentTime().strftime("%Y/%m/%d %H:%M:%S"),
+                                "FECHA": fecha_actual.strftime("%Y/%m/%d %H:%M:%S"),
+                                "CICLO_manager":self.model.torque_data[tool]["current_trq"],
+                                "estado_actual":self.model.estado_actual[tool],
+                                "perfil_driver":self.model.info_torque["CycleSelected"],
+                                "fase_driver":  self.model.info_torque["fase"],
+                                "HM":           self.model.qr_codes["HM"],
+                                "angulo_final": self.model.info_torque["angle"],
+                                "torque_final": self.model.info_torque["torque"],
+                                "torque_minimo": self.model.info_torque["torque_min"],
+                                "torque_maximo": self.model.info_torque["torque_max"],
+                                "angulo_minimo": self.model.info_torque["angle_min"],
+                                "angulo_maximo": self.model.info_torque["angle_max"],
+                                "angle_trend":   self.model.info_torque["angle_trend"],
+                                "torque_trend":  self.model.info_torque["torque_trend"],
+                                "angle_target":  self.model.info_torque["angle_target"],
+                                "torque_target": self.model.info_torque["torque_target"],
                                 }
+                            print("data to post torqueinfo",data)
                             endpoint = "http://{}/api/post/torque_info".format(self.model.server)
                             resp = requests.post(endpoint, data=json.dumps(data))
+                            self.default_info_torque()
                         except Exception as ex:
                             print("post torque exception: ", ex)
                         #se emite la señal de que se hizo un torque con esta herramienta
@@ -963,16 +1020,17 @@ class MqttClient (QObject):
 
                         print("USUARIO TIPO:", self.model.local_data["user"]["type"])
                         
-                        if self.model.local_data["user"]["type"] == "SUPERUSUARIO":
+                        #ya no se oculta desde aquí la GDI
+                        #if self.model.local_data["user"]["type"] == "CALIDAD" or self.model.local_data["user"]["type"] == "SUPERUSUARIO":
 
-                            if self.mostrar_gdi == True:
-                                self.mostrar_gdi = False
-                                self.client.publish("GDI",json.dumps({"Esconder":"window"}), qos = 2)
-                                print("Escondiendo GDI")
-                            elif self.mostrar_gdi == False:
-                                self.mostrar_gdi = True
-                                self.client.publish("GDI",json.dumps({"Mostrar":"window"}), qos = 2)
-                                print("Mostrando GDI")
+                        #    if self.mostrar_gdi == True:
+                        #        self.mostrar_gdi = False
+                        #        self.client.publish("GDI",json.dumps({"Esconder":"window"}), qos = 2)
+                        #        print("Escondiendo GDI")
+                        #    elif self.mostrar_gdi == False:
+                        #        self.mostrar_gdi = True
+                        #        self.client.publish("GDI",json.dumps({"Mostrar":"window"}), qos = 2)
+                        #        print("Mostrando GDI")
 
                 if "codeQR" in payload:
                     
@@ -989,13 +1047,13 @@ class MqttClient (QObject):
                                         
                                         if "TYPE" in response:
                                             if response["TYPE"] == "SUPERUSUARIO" or response["TYPE"] == "AMTC" or response["TYPE"] == "CALIDAD":
-                                                
+                                                fecha_actual = self.model.get_currentTime()
                                                 data = {
                                                     "NAME": response["NAME"],
                                                     "GAFET":  usuario,
                                                     "TYPE": response["TYPE"],
                                                     "LOG": "torque_KEY",
-                                                    "DATETIME": self.model.get_currentTime().strftime("%Y/%m/%d %H:%M:%S"),
+                                                    "DATETIME": fecha_actual.strftime("%Y/%m/%d %H:%M:%S"),
                                                     }
                                         
                                         print("porque está mal")
@@ -1107,8 +1165,23 @@ class MqttClient (QObject):
 
                     if "CENTERKEY" in str(payload):
 
-                        print("es una llave del AMTC")
-
+                        
+                        for tool in self.model.estado_actual:
+                            if self.model.estado_actual[tool]=="BACKWARD":
+                                
+                                command = {
+                                    "lbl_steps" : {"text": "Completa reversa para finalizar ciclo", "color": "black"},
+                                    "lbl_result" : {"text": "Llave detectada", "color": "red"},
+                                    "lbl_boxNEW" : {"text":"", "color": "green"},
+                                    }
+                                self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                command = {
+                                    "lbl_steps" : {"text": "Completa reversa para finalizar ciclo", "color": "black"},
+                                    "lbl_result" : {"text": "Llave detectada", "color": "red"},
+                                    "lbl_boxNEW" : {"text":"", "color": "green"},
+                                    }
+                                self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                #self.client.publish(self.model.torque_data[tool]["gui"],json.dumps(command), qos = 2)
                         # si la variable es True, quiere decir que hubo un mal torqueo y se requiere llave para habilitar la reversa
                         if self.model.reintento_torque == True:
                             #esta llave solo es para proceso
@@ -1151,11 +1224,42 @@ class MqttClient (QObject):
                         else:
                             self.qr_box.emit(string_qr_box)
                     else:
-                        self.qr_box.emit(string_qr_box)  
+                        self.qr_box.emit(string_qr_box)
 
         except Exception as ex:
             print("input exception", ex)
+    def convert_to_float_or_str(self,value):
+        try:
+            return float(value)
+        except ValueError:
+            return str(value)
 
+
+    def default_info_torque(self):
+        self.model.info_torque={"AngularTreshold":0,
+                          "CurrentMonitor":0,
+                          "CycleSelected":0,
+                          "FinalSpeed":0,
+                          "PostSeatingRealTorque":0,
+                          "PostSeatingTorque":0,
+                          "RundownSpeed":0,
+                          "SeatingTorque":0,
+                          "SetErrorcode":0,
+                          "ToolCount":0,
+                          "TorqueCorrection":0,
+                          "angle":0,
+                          "angle_max":0,
+                          "angle_min":0,
+                          "angle_target":0,
+                          "angle_trend":"",
+                          "fase":0,
+                          "result":0,
+                          "torque":0,
+                          "torque_max":0,
+                          "torque_min":0,
+                          "torque_target":0,
+                          "torque_trend":"",
+            }
     def closePopout (self):
         command = {
             "popOut":"close"
