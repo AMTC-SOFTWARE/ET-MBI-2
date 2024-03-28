@@ -848,6 +848,7 @@ class MqttClient (QObject):
                                 "torque_trend":  self.model.info_torque["torque_trend"],
                                 "angle_target":  self.model.info_torque["angle_target"],
                                 "torque_target": self.model.info_torque["torque_target"],
+                                "result":        self.model.info_torque["result"]
                                 }
                             print("data to post torqueinfo",data)
                             endpoint = "http://{}/api/post/torque_info".format(self.model.server)
@@ -908,7 +909,7 @@ class MqttClient (QObject):
                                 "HERRAMIENTA": tool,
                                 "REGISTRO": payload,
                                 "FECHA": fecha_actual.strftime("%Y/%m/%d %H:%M:%S"),
-                                "CICLO_manager":self.model.torque_data[tool]["current_trq"],
+                                "CICLO_manager":str(self.model.torque_data[tool]["current_trq"]),
                                 "estado_actual":self.model.estado_actual[tool],
                                 "perfil_driver":self.model.info_torque["CycleSelected"],
                                 "fase_driver":  self.model.info_torque["fase"],
@@ -923,6 +924,7 @@ class MqttClient (QObject):
                                 "torque_trend":  self.model.info_torque["torque_trend"],
                                 "angle_target":  self.model.info_torque["angle_target"],
                                 "torque_target": self.model.info_torque["torque_target"],
+                                "result":        self.model.info_torque["result"]
                                 }
                             print("data to post torqueinfo",data)
                             endpoint = "http://{}/api/post/torque_info".format(self.model.server)
@@ -980,7 +982,7 @@ class MqttClient (QObject):
                                 "HERRAMIENTA": tool,
                                 "REGISTRO": payload,
                                 "FECHA": fecha_actual.strftime("%Y/%m/%d %H:%M:%S"),
-                                "CICLO_manager":self.model.torque_data[tool]["current_trq"],
+                                "CICLO_manager":str(self.model.torque_data[tool]["current_trq"]),
                                 "estado_actual":self.model.estado_actual[tool],
                                 "perfil_driver":self.model.info_torque["CycleSelected"],
                                 "fase_driver":  self.model.info_torque["fase"],
@@ -995,6 +997,7 @@ class MqttClient (QObject):
                                 "torque_trend":  self.model.info_torque["torque_trend"],
                                 "angle_target":  self.model.info_torque["angle_target"],
                                 "torque_target": self.model.info_torque["torque_target"],
+                                "result":        self.model.info_torque["result"]
                                 }
                             print("data to post torqueinfo",data)
                             endpoint = "http://{}/api/post/torque_info".format(self.model.server)
