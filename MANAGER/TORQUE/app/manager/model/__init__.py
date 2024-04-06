@@ -34,8 +34,38 @@ class Model (object):
             "flexible_mode": False,
             "hora_servidor": True,
             "conectoresPDCP":True,
+            "checkAlarma": True,
             "trazabilidad": True
         }
+
+        self.alarma_activada=False
+        self.alarma_caja_tuerca=""
+        #Variables definidas por el drive para determinar Fase1
+        self.angulo_min_torq_down= 2000 
+        self.angulo_min_torq_up= 3000 
+
+        self.angulo_max_torq_down= 2000 
+        self.angulo_max_torq_up= 3000 
+
+        #Variables que definen el torque mínimo para considerarse un torque alto
+
+        #Cuando se da reversa:sin tuerca o que no se torqueo da 6.54
+        # con tuerca bien puesta: van de 7.1 al 8.8N
+        self.reversa_torque_tool1=6.7
+
+        #Cuando se da reversa:sin tuerca o que no se torqueo da 6.3 a 6.5
+        # con tuerca bien puesta: van de 8.2 al 8.3N
+        self.reversa_torque_tool2=6.7
+
+        #Cuando se da reversa:sin tuerca o que no se torqueo da 10.4 a 10.8N
+        # con tuerca bien puesta: van de 17.3 al 17.7N o 20N(son gatillazos de reversa)
+        self.reversa_torque_tool3=13
+
+        self.fase_torque_tool1=6
+        self.fase_torque_tool2=6
+        self.fase_torque_tool3=6
+        self.fase_torque=0
+
         self.server = "127.0.0.1:5000"
         self.serial = "ET-MBI-2"
         #Ruta de archivos estandarizada

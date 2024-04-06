@@ -1773,6 +1773,8 @@ class Finish (QState):
         minutos=0
         segundos=0
         color="black"
+        self.model.alarma_activada=False
+        self.model.alarma_caja_tuerca=""
         try:
             query="SELECT INICIO, FIN FROM et_mbi_2.historial WHERE RESULTADO = 1 order by ID desc LIMIT 1;"
             endpoint = "http://{}/query/get/{}".format(self.model.server, query)
@@ -2027,7 +2029,8 @@ class Reset (QState):
         self.model = model
 
     def onEntry(self, event):
-
+        self.model.alarma_activada=False
+        self.model.alarma_caja_tuerca=""
         self.model.en_ciclo=False
         self.model.retrabajo=False
         if "HM000000011936" in self.model.qr_codes["HM"]:

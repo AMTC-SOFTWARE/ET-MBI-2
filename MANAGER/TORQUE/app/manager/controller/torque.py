@@ -70,7 +70,7 @@ class NewTool1 (QState):
         self.chk_profile    = CheckProfile(tool = self.tool, model = self.model, parent = self)
         self.holding_time   = HoldingTime(tool = self.tool, model = self.model, parent = self)
         self.activar_tool   = ActivarHerramienta(tool = self.tool, model = self.model, parent = self)
-
+        self.chk_ALARMA     = Check_data_alarm(tool = self.tool, model = self.model, parent = self)
 
         #si se está en zone y la variable self.model.estado_actual[self.tool] vale "ERRORNOK" se va directamente a ese estado en el que se había quedado
         self.zone.addTransition(self.zone.ERRORNOK, self.NOK)
@@ -143,7 +143,14 @@ class NewTool1 (QState):
 
         #un torque te saca de la reversa, y regresas a zone
         #self.backward.addTransition(self.model.transitions.torque1, self.zone)
-        self.backward.addTransition(self.model.transitions.torque1, self.chk_profile)
+        #self.backward.addTransition(self.model.transitions.torque1, self.chk_profile)
+        
+        self.backward.addTransition(self.model.transitions.torque1, self.chk_ALARMA)
+        self.chk_ALARMA.addTransition(self.chk_ALARMA.ok, self.chk_profile)
+        self.chk_ALARMA.addTransition(self.chk_ALARMA.nok, self.qintervention)
+        self.qgafet.addTransition(self.qgafet.ok_alarma, self.chk_profile)
+
+
         self.chk_profile.addTransition(self.chk_profile.ok, self.zone)
         self.chk_profile.addTransition(self.chk_profile.retry, self.chk_profile)
         self.chk_profile.addTransition(self.model.transitions.key_process, self.zone)
@@ -190,7 +197,7 @@ class NewTool2 (QState):
         self.chk_profile    = CheckProfile(tool = self.tool, model = self.model, parent = self)
         self.holding_time   = HoldingTime(tool = self.tool, model = self.model, parent = self)
         self.activar_tool   = ActivarHerramienta(tool = self.tool, model = self.model, parent = self)
-
+        self.chk_ALARMA     = Check_data_alarm(tool = self.tool, model = self.model, parent = self)
 
         self.zone.addTransition(self.zone.ERRORNOK, self.NOK)
         self.zone.addTransition(self.zone.BACKWARD, self.backward)
@@ -235,7 +242,14 @@ class NewTool2 (QState):
         #self.backward.addTransition(self.model.transitions.key_process, self.backward)
         self.backward.addTransition(self.model.transitions.zone_tool2, self.backward)
         #self.backward.addTransition(self.model.transitions.torque2, self.zone)
-        self.backward.addTransition(self.model.transitions.torque2, self.chk_profile)
+        #self.backward.addTransition(self.model.transitions.torque2, self.chk_profile)
+
+        self.backward.addTransition(self.model.transitions.torque2, self.chk_ALARMA)
+        self.chk_ALARMA.addTransition(self.chk_ALARMA.ok, self.chk_profile)
+        self.chk_ALARMA.addTransition(self.chk_ALARMA.nok, self.qintervention)
+        self.qgafet.addTransition(self.qgafet.ok_alarma, self.chk_profile)
+
+
         self.chk_profile.addTransition(self.chk_profile.ok, self.zone)
         self.chk_profile.addTransition(self.chk_profile.retry, self.chk_profile)
         self.chk_profile.addTransition(self.model.transitions.key_process, self.zone)
@@ -285,7 +299,7 @@ class NewTool3 (QState):
 
         self.holding_time   = HoldingTime(tool = self.tool, model = self.model, parent = self)
         self.activar_tool   = ActivarHerramienta(tool = self.tool, model = self.model, parent = self)
-
+        self.chk_ALARMA     = Check_data_alarm(tool = self.tool, model = self.model, parent = self)
         #SEÑALES PARA REGRESAR A REVERSA DESPUES DE UN CLAMPEO DE OTRA CAJA
         self.zone.addTransition(self.zone.ERRORNOK, self.NOK)
         self.zone.addTransition(self.zone.BACKWARD, self.backward)
@@ -352,7 +366,14 @@ class NewTool3 (QState):
         
         #SALIDA DE LA REVERSA
         #self.backward.addTransition(self.model.transitions.torque3, self.zone)
-        self.backward.addTransition(self.model.transitions.torque3, self.chk_profile)
+        #self.backward.addTransition(self.model.transitions.torque3, self.chk_profile)
+
+        self.backward.addTransition(self.model.transitions.torque3, self.chk_ALARMA)
+        self.chk_ALARMA.addTransition(self.chk_ALARMA.ok, self.chk_profile)
+        self.chk_ALARMA.addTransition(self.chk_ALARMA.nok, self.qintervention)
+        self.qgafet.addTransition(self.qgafet.ok_alarma, self.chk_profile)
+
+
         self.chk_profile.addTransition(self.chk_profile.ok, self.zone)
         self.chk_profile.addTransition(self.chk_profile.retry, self.chk_profile)
         self.chk_profile.addTransition(self.model.transitions.key_process, self.zone)
@@ -1225,7 +1246,117 @@ class CheckResponse (QState):
         #se avisa a la variable de cajas_habilitadas que ya se terminó esa caja
         self.model.cajas_habilitadas[copy_box] = 3
         print("|||||self.model.cajas_habilitadas: ",self.model.cajas_habilitadas)
-        
+
+class Check_data_alarm (QState):
+
+    ok = pyqtSignal()
+    nok=pyqtSignal()
+
+    def __init__(self, tool = "tool1", model = None, parent = None):
+        super().__init__(parent)
+        self.model = model
+        self.tool = tool
+
+    def onEntry(self, event):
+        print("ESTADO ACTUAL Check_data_alarm")
+        print("herramienta que entró a Check_data_alarm: ",self.tool)
+        if self.model.config_data["checkAlarma"]==True:
+            activar_alarma=self.consulta_eval_datos(self.tool)
+            if activar_alarma:
+                self.model.alarma_caja_tuerca=str(self.model.torque_data[self.tool]["current_trq"][0])+", "#+str(self.model.torque_data[self.tool]["current_trq"][1])
+                self.model.alarma_activada=True
+                self.nok.emit()
+            else:
+                self.ok.emit()
+        else:
+            self.ok.emit()
+
+    def onExit(self, event):
+        print("Saliendo de Estado: Check_data_alarm")
+
+    def consulta_eval_datos(self,tool):
+        activar_alarma=False
+        Fase1=False
+        torque_alto=False
+        torque_alto_reversa=False
+        torque_alto_fase=False
+        try:
+            query="SELECT * FROM et_mbi_2.torque_info where HERRAMIENTA='"+tool+"' order by ID desc LIMIT 2;"""
+            #query="SELECT INICIO, FIN FROM et_mbi_3.historial WHERE RESULTADO = 1 order by ID desc LIMIT 1;"
+            endpoint = "http://{}/query/get/{}".format(self.model.server, query)
+            resp_ultimos_torques = requests.get(endpoint).json()
+            print("resp_ultimos_torques",resp_ultimos_torques)
+            print("tool ",tool)
+            if tool=="tool1":
+                self.model.fase_torque=self.model.fase_torque_tool1
+                self.model.reversa_torque=self.model.reversa_torque_tool1
+            elif tool=="tool2":
+                self.model.fase_torque=self.model.fase_torque_tool2
+                self.model.reversa_torque=self.model.reversa_torque_tool2
+            elif tool=="tool3":
+                self.model.fase_torque=self.model.fase_torque_tool3
+                self.model.reversa_torque=self.model.reversa_torque_tool3
+            #Recopilar info de la reversa
+            torque_final_reversa=resp_ultimos_torques["torque_final"][0]
+            angulo_final_reveresa=resp_ultimos_torques["angulo_final"][0]
+
+            #recopilar info de el torque anterior a la reversa
+            angulo_minimo_torque=resp_ultimos_torques["angulo_minimo"][1]
+            angulo_maximo_torque=resp_ultimos_torques["angulo_maximo"][1]
+            torque_final_fase=resp_ultimos_torques["torque_final"][1]
+            angulo_final_fase=resp_ultimos_torques["angulo_final"][1]
+            
+            HM_reversa=resp_ultimos_torques["HM"][0]
+            HM_Fase=resp_ultimos_torques["HM"][1]
+            #si los HM de los registros pertenecen al HM actual va a hacer la evaluacion, si no, la alarma no va a saltar
+            if HM_reversa == HM_Fase and HM_Fase==self.model.qr_codes["HM"]:
+                
+                print("vamos a evaluar")
+                if angulo_minimo_torque >= self.model.angulo_min_torq_down and angulo_minimo_torque <= self.model.angulo_min_torq_up: 
+                    print("angulo minimo ok")
+                    if angulo_maximo_torque >= self.model.angulo_max_torq_down and angulo_maximo_torque <= self.model.angulo_max_torq_up:
+                        Fase1=True
+                    else:
+                        Fase1=False
+                        
+                else:
+                    Fase1=False
+                #Solo si es fase 1 va a evaluar
+                if Fase1==True:
+                    if torque_final_fase >= self.model.fase_torque:
+                        torque_alto_fase=True
+
+
+                    if torque_final_reversa >= self.model.reversa_torque:
+                        torque_alto_reversa=True
+
+                    #Si hay un torque alto en la reversa y el anterior fue fase1, entonces enciende la alarma
+                    if torque_alto_reversa==True: #and torque_alto_fase==False:
+                        activar_alarma=True
+                    else:
+                        activar_alarma=False
+                        print("no hubo torque alto en la reversa o si hubo torque alto en la fase1")
+                else:
+                    activar_alarma=False
+                    print("No es FASE1")
+                print("resp_ultimo_arnés",resp_ultimos_torques)
+                print("angulo minimo",resp_ultimos_torques["angulo_minimo"][1])
+                print("angulo maximo",resp_ultimos_torques["angulo_maximo"][1])
+                print("angle1",resp_ultimos_torques["angulo_final"][0])
+                print("angngle2",resp_ultimos_torques["angulo_final"][1])
+                print("torque1",resp_ultimos_torques["torque_final"][0])
+                print("torque2",resp_ultimos_torques["torque_final"][1])
+                print("fecha1",resp_ultimos_torques["FECHA"][0])
+                print("fecha2",resp_ultimos_torques["FECHA"][1])
+            
+            else:
+                activar_alarma=False
+                
+                print("HM no son los mismos")
+        except Exception as ex:
+            print("consulta datos torque info request exception: ", ex)
+        return activar_alarma
+    
 class Error (QState):
 
     quality = pyqtSignal()
@@ -1326,11 +1457,20 @@ class QualityIntervention (QState):
         print("Clamps hasta el momento: ",clamps)
 
         #################################
-        command = {
-            "lbl_result" : {"text": "Demasiados reintentos en la misma posición", "color": "red"},
-            "lbl_steps" : {"text": "Se requiere intervención de Calidad\nGire llave para cancelar ciclo o introduzca su gafete para continuar", "color": "black", "font": "22pt"}
-            }
-        publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+        if self.model.alarma_activada==True:
+            command = {
+                "lbl_result" : {"text": f"Alarma de Tuerca faltante en la caja "+self.model.alarma_caja_tuerca, "color": "red"},
+                "lbl_steps" : {"text": "Se requiere intervención de Calidad\nGire llave para cancelar ciclo o introduzca su gafete para continuar", "color": "black", "font": "22pt"}
+                }
+
+            publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+        else:
+            command = {
+                "lbl_result" : {"text": "Demasiados reintentos en la misma posición", "color": "red"},
+                "lbl_steps" : {"text": "Se requiere intervención de Calidad\nGire llave para cancelar ciclo o introduzca su gafete para continuar", "color": "black", "font": "22pt"}
+                }
+
+            publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         command = {
             "show":{"login": True},
             "allow_close": False,
@@ -1358,7 +1498,7 @@ class gafetQuality (QState):
 
     ok      = pyqtSignal()
     nok     = pyqtSignal()
-
+    ok_alarma= pyqtSignal()
     def __init__(self, tool = "tool1", model = None, parent = None):
         super().__init__(parent)
         self.model = model
@@ -1386,7 +1526,39 @@ class gafetQuality (QState):
             if "TYPE" in response:
                 print("El usuario si existe en la DB")
                 if response["TYPE"] == "CALIDAD" or response["NAME"] == "AMTC":
-                    self.ok.emit()
+                    ################################################
+                    print("se guarda registro de calidad y se emite un ok")
+                    fecha_actual = self.model.get_currentTime()
+                    try:
+                        if self.model.alarma_activada==True:
+                            Info_msg = "ALARMA DE CALIDAD"
+                            
+                        else:
+                            Info_msg = "INTERVENCIÓN DE CALIDAD"
+
+                        data = {
+                            "NOMBRE": response["NAME"],
+                            "TIPO": response["TYPE"],
+                            "INFO": Info_msg,
+                            "FECHA": fecha_actual.strftime("%Y/%m/%d %H:%M:%S"),
+                            }
+                        endpoint = "http://{}/api/post/quality_info".format(self.model.server)
+                        resp = requests.post(endpoint, data=json.dumps(data))
+                    except Exception as ex:
+                        print("post quality exception: ", ex)
+
+                    print("ocultando login: show:{login: False}")
+                    command = {
+                        "show":{"login": False}
+                        }
+                    publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                    ################################################
+                    if self.model.alarma_activada:
+                        self.model.alarma_activada=False
+                        self.model.alarma_caja_tuerca=""
+                        self.ok_alarma.emit()
+                    else:
+                        self.ok.emit()
                 else:
                     print("El usuario NO pertenece a CALIDAD")
                     command = {
