@@ -117,6 +117,9 @@ class NewTool1 (QState):
         #cuando estas en zone y llega el resultado del torque se va a chk_response
         self.zone.addTransition(self.model.transitions.torque1, self.chk_response)
 
+        #cuando se había peridido un torque que llegó y tal vez por ToolManager no se revisó, se manda a chk_response
+        self.zone.addTransition(self.zone.chck_response, self.chk_response)
+
         #al recibir un torque con result OK regresas al estado de zone
         self.chk_response.addTransition(self.chk_response.ok, self.zone)
 
@@ -141,11 +144,14 @@ class NewTool1 (QState):
         #para que al enviarse una señal de zona de la misma herramienta no te saque de el estado backward, sino que vuelvas a este mismo
         self.backward.addTransition(self.model.transitions.zone_tool1, self.backward)
 
+        #si la señal que llega es torque pero no es torque1_reversa, significa que fue un torque aún con el profile de la tuerca, falta poner en reversa la herramienta
+        self.backward.addTransition(self.model.transitions.torque1, self.backward)
+
         #un torque te saca de la reversa, y regresas a zone
         #self.backward.addTransition(self.model.transitions.torque1, self.zone)
         #self.backward.addTransition(self.model.transitions.torque1, self.chk_profile)
         
-        self.backward.addTransition(self.model.transitions.torque1, self.chk_ALARMA)
+        self.backward.addTransition(self.model.transitions.torque1_reversa, self.chk_ALARMA)
         self.chk_ALARMA.addTransition(self.chk_ALARMA.ok, self.chk_profile)
         self.chk_ALARMA.addTransition(self.chk_ALARMA.nok, self.qintervention)
         self.qgafet.addTransition(self.qgafet.ok_alarma, self.chk_profile)
@@ -223,7 +229,7 @@ class NewTool2 (QState):
         self.zone.addTransition(self.zone.nok, self.standby)
         self.zone.addTransition(self.model.transitions.zone_tool2, self.zone)
         self.zone.addTransition(self.model.transitions.torque2, self.chk_response)
-
+        self.zone.addTransition(self.zone.chck_response, self.chk_response)
 
         self.chk_response.addTransition(self.chk_response.ok, self.zone)
         #al recibir un torque con result NOK vas al estado de error
@@ -241,10 +247,11 @@ class NewTool2 (QState):
 
         #self.backward.addTransition(self.model.transitions.key_process, self.backward)
         self.backward.addTransition(self.model.transitions.zone_tool2, self.backward)
+        self.backward.addTransition(self.model.transitions.torque2, self.backward)
         #self.backward.addTransition(self.model.transitions.torque2, self.zone)
         #self.backward.addTransition(self.model.transitions.torque2, self.chk_profile)
 
-        self.backward.addTransition(self.model.transitions.torque2, self.chk_ALARMA)
+        self.backward.addTransition(self.model.transitions.torque2_reversa, self.chk_ALARMA)
         self.chk_ALARMA.addTransition(self.chk_ALARMA.ok, self.chk_profile)
         self.chk_ALARMA.addTransition(self.chk_ALARMA.nok, self.qintervention)
         self.qgafet.addTransition(self.qgafet.ok_alarma, self.chk_profile)
@@ -326,6 +333,7 @@ class NewTool3 (QState):
         self.zone.addTransition(self.zone.nok, self.standby)
         self.zone.addTransition(self.model.transitions.zone_tool3, self.zone)
         self.zone.addTransition(self.model.transitions.torque3, self.chk_response)
+        self.zone.addTransition(self.zone.chck_response, self.chk_response)
         self.chk_response.addTransition(self.chk_response.ok, self.zone)
         self.chk_response.addTransition(self.chk_response.nok, self.NOK)
         
@@ -363,12 +371,13 @@ class NewTool3 (QState):
         #REVERSA DE HERRAMIENTA
         #self.backward.addTransition(self.model.transitions.key_process, self.backward)
         self.backward.addTransition(self.model.transitions.zone_tool3, self.backward)
+        self.backward.addTransition(self.model.transitions.torque3, self.backward)
         
         #SALIDA DE LA REVERSA
         #self.backward.addTransition(self.model.transitions.torque3, self.zone)
         #self.backward.addTransition(self.model.transitions.torque3, self.chk_profile)
 
-        self.backward.addTransition(self.model.transitions.torque3, self.chk_ALARMA)
+        self.backward.addTransition(self.model.transitions.torque3_reversa, self.chk_ALARMA)
         self.chk_ALARMA.addTransition(self.chk_ALARMA.ok, self.chk_profile)
         self.chk_ALARMA.addTransition(self.chk_ALARMA.nok, self.qintervention)
         self.qgafet.addTransition(self.qgafet.ok_alarma, self.chk_profile)
@@ -404,6 +413,8 @@ class CheckZone (QState):
     chk_candados    = pyqtSignal()
     enable_time     = pyqtSignal()
 
+    chck_response   = pyqtSignal()
+
     ERRORNOK        = pyqtSignal()
     BACKWARD        = pyqtSignal()
     QINTERVENTION   = pyqtSignal()
@@ -433,6 +444,11 @@ class CheckZone (QState):
         print("entrozone$%%$$$$$$$$$$%%%%%%%%%%%%%%%%%%%%%%%%%%$$$$$$$")
         #zone se inicializa con "0"
         zone = "0"
+
+        if self.model.asegurar_lectura[self.tool] == True:
+            print("señal se había perdido...")
+            self.chck_response.emit()
+            return
 
         #si algún clampeo de otra caja o terminar algún otro torque te lleva a ToolsManager y te quita tu actual reversa, se regresa a ese estado
         if self.model.estado_actual[self.tool] == "ERRORNOK":
@@ -615,7 +631,7 @@ class CheckZone (QState):
                 print("Self.Tool: ",self.tool)
 
                 if self.nut == "8mm Nut":
-                    self.oracle = "Oracle: 1013224"
+                    self.oracle = "Oracle: 1033977"
                 if self.nut == "6mm Nut":
                     #self.oracle = "Oracle: 1013225"
                     self.oracle = "Oracle: 1033978"
@@ -990,7 +1006,14 @@ class CheckResponse (QState):
     def onEntry(self, event):
         print("chkresponse°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°")
         try:
+
+            #variable para asegurar que se tomó en cuenta la respuesta de la herramienta
+            if self.model.asegurar_lectura[self.tool] == True:
+                print("se regresa asegurar_lectura a False: ",self.tool)
+                self.model.asegurar_lectura[self.tool] = False
+
             if self.model.torque_data[self.tool]["rqst"] == False or self.model.input_data["torque"][self.tool] == {}:
+                print("NO SE REVISA EL TORQUE PORQUE self.model.input_data[torque][self.tool] == {} o porque self.model.torque_data[self.tool][rqst] == False")
                 self.ok.emit()
                 return
             else:
@@ -1260,16 +1283,36 @@ class Check_data_alarm (QState):
     def onEntry(self, event):
         print("ESTADO ACTUAL Check_data_alarm")
         print("herramienta que entró a Check_data_alarm: ",self.tool)
+
+        #si la inspección de alarma está habilitada desde la configuración...
         if self.model.config_data["checkAlarma"]==True:
             activar_alarma=self.consulta_eval_datos(self.tool)
             if activar_alarma:
-                self.model.alarma_caja_tuerca=str(self.model.torque_data[self.tool]["current_trq"][0])+", "#+str(self.model.torque_data[self.tool]["current_trq"][1])
-                self.model.alarma_activada=True
-                self.nok.emit()
+                caja = self.model.torque_data[self.tool]["current_trq"][0]
+                tuerca = self.model.torque_data[self.tool]["current_trq"][1]
+                if caja == "MFB-P1" or caja == "MFB-P2" or caja == "MFB-S" or caja == "MFB-E":
+
+                    #Primeras tuercas de cada caja
+                    #MFB-S:  A51 8mm, A53 6mm
+                    #MFB-P1: A41 8mm, A42 6mm,
+                    #MFB-P2: A20 8mm, A29 6mm,
+                    if tuerca != "A20" and tuerca != "A29" and tuerca != "A41" and tuerca != "A42" and tuerca != "A51" and tuerca != "A53":
+                        self.model.alarma_caja_tuerca=str(caja)+", "+str(tuerca)
+                        self.model.alarma_activada=True
+                        print("ALARMA: activada!!")
+                        self.nok.emit()
+                    else:
+                        print("ALARMA: se trata de una primer tuerca de caja")
+                        self.ok.emit() #se trata de una primer tuerca de caja
+                else:
+                    print("ALARMA: se trata de una caja con tuerca única")
+                    self.ok.emit() #se trata de una caja con tuerca única
             else:
-                self.ok.emit()
+                print("ALARMA: no se cumplieron las condiciones de la alarma")
+                self.ok.emit() #no se cumplieron las condiciones de la alarma
         else:
-            self.ok.emit()
+            print("ALARMA: no está activada la alarma")
+            self.ok.emit() #no está activada la alarma
 
     def onExit(self, event):
         print("Saliendo de Estado: Check_data_alarm")
@@ -1315,10 +1358,13 @@ class Check_data_alarm (QState):
                 if angulo_minimo_torque >= self.model.angulo_min_torq_down and angulo_minimo_torque <= self.model.angulo_min_torq_up: 
                     print("angulo minimo ok")
                     if angulo_maximo_torque >= self.model.angulo_max_torq_down and angulo_maximo_torque <= self.model.angulo_max_torq_up:
-                        Fase1=True
+                        if resp_ultimos_torques["estado_actual"][1] != "BACKWARD":
+                            Fase1=True
+                        else:
+                            print("doble registro en reversa, uno con profile aún activado")
+                            Fase1=False
                     else:
                         Fase1=False
-                        
                 else:
                     Fase1=False
                 #Solo si es fase 1 va a evaluar
@@ -1459,7 +1505,7 @@ class QualityIntervention (QState):
         #################################
         if self.model.alarma_activada==True:
             command = {
-                "lbl_result" : {"text": f"Alarma de Tuerca faltante en la caja "+self.model.alarma_caja_tuerca, "color": "red"},
+                "lbl_result" : {"text": f"Alarma Tuerca faltante en: "+self.model.alarma_caja_tuerca, "color": "red"},
                 "lbl_steps" : {"text": "Se requiere intervención de Calidad\nGire llave para cancelar ciclo o introduzca su gafete para continuar", "color": "black", "font": "22pt"}
                 }
 
@@ -2235,6 +2281,9 @@ class CheckProfile (QState):
             print("current profile = stop profile")
             self.send_profile()
             print("ok.emit() en 1 seg")
+            if self.model.asegurar_lectura[self.tool] == True:
+                print("se regresa asegurar_lectura a False: ",self.tool)
+                self.model.asegurar_lectura[self.tool] = False #se leyó exitosamente el valor
             self.model.estado_actual[self.tool] = "" #aquí ya terminó exitosamente la reversa de esa tuerca
             Timer(1.0, self.ok.emit).start()
 

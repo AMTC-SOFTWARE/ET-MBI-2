@@ -21,6 +21,10 @@ class Ui_login(object):
         login.setSizePolicy(sizePolicy)
         login.setMinimumSize(QtCore.QSize(490, 160))
         login.setMaximumSize(QtCore.QSize(490, 160))
+
+        # Mover la ventana a la posición (770, 150)
+        login.move(770, 150)
+
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
         brush.setStyle(QtCore.Qt.SolidPattern)

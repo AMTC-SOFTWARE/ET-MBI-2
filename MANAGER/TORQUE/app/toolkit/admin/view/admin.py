@@ -277,7 +277,7 @@ class Ui_admin(object):
         self.checkBox_6.setText(_translate("admin", "Usar hora del servidor"))
         self.checkBox_7.setText(_translate("admin", "ConectoresPDCP"))
         self.checkBox_8.setText(_translate("admin", "Alarma tuerca faltante"))
-        self.checkBox_9.setText(_translate("admin", "Sistema de\nTrazabilidad"))
+        self.checkBox_9.setText(_translate("admin", "Sistema de Trazabilidad"))
 
 if __name__ == "__main__":
     import sys

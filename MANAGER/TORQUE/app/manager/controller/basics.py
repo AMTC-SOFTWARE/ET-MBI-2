@@ -1028,8 +1028,8 @@ class CheckQr (QState):
                             modulos_de_evento[modulo][caja] = response[caja][indice_modulo]
 
                 #los modulos vacíos deben ir en el resultado final para saber cuando un módulo que lleve la modularidad no significa torque o fusible
-                print("modulos_de_evento")
-                pprint.pprint(modulos_de_evento)
+                #print("modulos_de_evento")
+                #pprint.pprint(modulos_de_evento)
 
                 for modulo in modules:
                     if modulo in modulos_de_evento:
@@ -1250,8 +1250,8 @@ class CheckQr (QState):
                             modulos_de_evento[modulo][caja] = response[caja][indice_modulo]
 
                 #los modulos vacíos deben ir en el resultado final para saber cuando un módulo que lleve la modularidad no significa torque o fusible
-                print("modulos_de_evento")
-                pprint.pprint(modulos_de_evento)
+                #print("modulos_de_evento")
+                #pprint.pprint(modulos_de_evento)
 
                 for modulo in modules_v:
                     if modulo in modulos_de_evento:
@@ -1646,6 +1646,11 @@ class CheckQr (QState):
             publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
             Timer(0.1, self.torqueClamp).start()
             Timer(0.05, self.model.log, args = ("RUNNING",)).start() 
+
+            self.model.asegurar_lectura["tool1"] = False
+            self.model.asegurar_lectura["tool2"] = False
+            self.model.asegurar_lectura["tool3"] = False
+
             self.ok.emit()
 
         except Exception as ex:

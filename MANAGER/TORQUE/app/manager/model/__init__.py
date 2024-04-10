@@ -174,6 +174,13 @@ class Model (object):
             "tool3":""
             }
 
+        #variable para asegurar la lectura de una señal enviada por un torque de una herramienta
+        self.asegurar_lectura = {
+                                    "tool1":False,
+                                    "tool2":False,
+                                    "tool3":False
+                                }
+
         #señal para dejar un delay entre cada candado
         self.nuevo_pin = False
 

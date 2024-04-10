@@ -28,6 +28,11 @@ class MqttClient (QObject):
     torque1         =   pyqtSignal()
     torque2         =   pyqtSignal()
     torque3         =   pyqtSignal()
+
+    torque1_reversa =   pyqtSignal()
+    torque2_reversa =   pyqtSignal()
+    torque3_reversa =   pyqtSignal()
+
     #señal para indicar que el palpador ha sido presionado por un candado gg
     pin             =   pyqtSignal()
 
@@ -825,8 +830,8 @@ class MqttClient (QObject):
 
                         #se copia la información del arreglo recibido del torque por esta herramienta
                         self.model.input_data["torque"][tool] = copy(payload)
-                        print("torque1 emit()")
                         ################################################
+                        copy_CycleSelected_tool1 = ""
                         fecha_actual = self.model.get_currentTime()
                         try:
                             data = {
@@ -851,13 +856,26 @@ class MqttClient (QObject):
                                 "result":        self.model.info_torque["result"]
                                 }
                             print("data to post torqueinfo",data)
+                            copy_CycleSelected_tool1 = copy(self.model.info_torque["CycleSelected"])
                             endpoint = "http://{}/api/post/torque_info".format(self.model.server)
                             resp = requests.post(endpoint, data=json.dumps(data))
-                            self.default_info_torque()
+                            self.default_info_torque() #se reinicia el valor de las variables, pero se guarda el último CycleSelected
                         except Exception as ex:
                             print("post torque exception: ", ex)
                         #se emite la señal de que se hizo un torque con esta herramienta
-                        self.torque1.emit()
+                        self.model.asegurar_lectura[tool] = True
+                        revversa = self.model.torque_data[tool]["backward_profile"]
+
+                        print("revversa: ",revversa)
+                        print("self.model.info_torque[CycleSelected]: ",copy_CycleSelected_tool1)
+                        print("self.model.estado_actual[tool]: ",self.model.estado_actual[tool])
+
+                        if copy_CycleSelected_tool1 == revversa and self.model.estado_actual[tool] == "BACKWARD":
+                            print("torque1_reversa emit()")
+                            self.torque1_reversa.emit()
+                        else:
+                            print("torque1 emit()")
+                            self.torque1.emit()
                     else:
                         print("torque no emit, saliendo de reversa")
 
@@ -901,8 +919,8 @@ class MqttClient (QObject):
 
                         #se copia la información del arreglo recibido del torque por esta herramienta
                         self.model.input_data["torque"][tool] = copy(payload)
-                        print("torque2 emit()")
                         ################################################
+                        copy_CycleSelected_tool2 = ""
                         fecha_actual = self.model.get_currentTime()
                         try:
                             data = {
@@ -926,6 +944,7 @@ class MqttClient (QObject):
                                 "torque_target": self.model.info_torque["torque_target"],
                                 "result":        self.model.info_torque["result"]
                                 }
+                            copy_CycleSelected_tool2 = copy(self.model.info_torque["CycleSelected"])
                             print("data to post torqueinfo",data)
                             endpoint = "http://{}/api/post/torque_info".format(self.model.server)
                             resp = requests.post(endpoint, data=json.dumps(data))
@@ -933,7 +952,19 @@ class MqttClient (QObject):
                         except Exception as ex:
                             print("post torque exception: ", ex)
                         #se emite la señal de que se hizo un torque con esta herramienta
-                        self.torque2.emit()
+                        self.model.asegurar_lectura[tool] = True
+                        revversa = self.model.torque_data[tool]["backward_profile"]
+
+                        print("revversa: ",revversa)
+                        print("self.model.info_torque[CycleSelected]: ",copy_CycleSelected_tool2)
+                        print("self.model.estado_actual[tool]: ",self.model.estado_actual[tool])
+
+                        if copy_CycleSelected_tool2 == revversa and self.model.estado_actual[tool] == "BACKWARD":
+                            print("torque2_reversa emit()")
+                            self.torque2_reversa.emit()
+                        else:
+                            print("torque2 emit()")
+                            self.torque2.emit()
                     else:
                         print("torque no emit, saliendo de reversa")
 
@@ -974,8 +1005,8 @@ class MqttClient (QObject):
                     if self.model.lock_backward[tool] == False:
                         #se copia la información del arreglo recibido del torque por esta herramienta
                         self.model.input_data["torque"][tool] = copy(payload)
-                        print("torque3 emit()")
                         ################################################
+                        copy_CycleSelected_tool3 = ""
                         fecha_actual = self.model.get_currentTime()
                         try:
                             data = {
@@ -1000,13 +1031,26 @@ class MqttClient (QObject):
                                 "result":        self.model.info_torque["result"]
                                 }
                             print("data to post torqueinfo",data)
+                            copy_CycleSelected_tool3 = copy(self.model.info_torque["CycleSelected"])
                             endpoint = "http://{}/api/post/torque_info".format(self.model.server)
                             resp = requests.post(endpoint, data=json.dumps(data))
                             self.default_info_torque()
                         except Exception as ex:
                             print("post torque exception: ", ex)
                         #se emite la señal de que se hizo un torque con esta herramienta
-                        self.torque3.emit()
+                        self.model.asegurar_lectura[tool] = True
+                        revversa = self.model.torque_data[tool]["backward_profile"]
+
+                        print("revversa: ",revversa)
+                        print("self.model.info_torque[CycleSelected]: ",copy_CycleSelected_tool3)
+                        print("self.model.estado_actual[tool]: ",self.model.estado_actual[tool])
+
+                        if copy_CycleSelected_tool3 == revversa and self.model.estado_actual[tool] == "BACKWARD":
+                            print("torque3_reversa emit()")
+                            self.torque3_reversa.emit()
+                        else:
+                            print("torque3 emit()")
+                            self.torque3.emit()
                     else:
                         print("torque no emit, saliendo de reversa")
                 
