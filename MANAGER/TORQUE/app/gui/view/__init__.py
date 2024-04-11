@@ -757,7 +757,11 @@ class MainWindow (QMainWindow):
             if "img_nuts" in message:
                 if message["img_nuts"] != "":
                     if exists(self.model.imgsPath + message["img_nuts"]):
-                        self.ui.img_nuts.setPixmap(QPixmap(self.model.imgsPath + message["img_nuts"]).scaled(110, 110, Qt.KeepAspectRatio))
+                        #self.ui.img_nuts.setPixmap(QPixmap(self.model.imgsPath + message["img_nuts"]).scaled(110, 110, Qt.KeepAspectRatio))
+
+                        pix = QPixmap(self.model.imgsPath + message["img_nuts"])
+                        self.ui.img_nuts.setPixmap(pix)
+
                         if message["img_nuts"] != "blanco.jpg":
                             self.ui.img_nuts.setFrameShape(QFrame.Box)
                             self.ui.img_nuts.setLineWidth(4)
@@ -768,7 +772,11 @@ class MainWindow (QMainWindow):
             if "img_toolCurrent" in message:
                 if message["img_toolCurrent"] != "":
                     if exists(self.model.imgsPath + message["img_toolCurrent"]):
-                        self.ui.img_toolCurrent.setPixmap(QPixmap(self.model.imgsPath + message["img_toolCurrent"]).scaled(110, 110, Qt.KeepAspectRatio))
+                        #self.ui.img_toolCurrent.setPixmap(QPixmap(self.model.imgsPath + message["img_toolCurrent"]).scaled(110, 110, Qt.KeepAspectRatio))
+
+                        pix = QPixmap(self.model.imgsPath + message["img_toolCurrent"])
+                        self.ui.img_toolCurrent.setPixmap(pix)
+
                         if message["img_toolCurrent"] != "blanco.jpg":
                             self.ui.img_toolCurrent.setFrameShape(QFrame.Box)
                             self.ui.img_toolCurrent.setLineWidth(4)

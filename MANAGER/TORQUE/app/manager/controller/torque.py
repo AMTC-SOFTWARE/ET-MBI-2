@@ -633,11 +633,8 @@ class CheckZone (QState):
                 if self.nut == "8mm Nut":
                     self.oracle = "Oracle: 1033977"
                 if self.nut == "6mm Nut":
-                    #self.oracle = "Oracle: 1013225"
                     self.oracle = "Oracle: 1033978"
                 if self.nut == "Battery Nut":
-                    print("Evento Actual: ",self.model.evento)
-                    #self.oracle = "Oracle: 1013226"
                     self.oracle = "Oracle: 1021441"
 
                 #Para mostrar en pantalla el nombre de la herramienta que está en este estado CheckZone
@@ -647,12 +644,19 @@ class CheckZone (QState):
                     self.currentTool = "HERRAMIENTA 2"
                 if self.tool == "tool2":
                     self.currentTool = "HERRAMIENTA 3"
+
+
                 if current_trq[0] == "MFB-P1" or current_trq[0] == "MFB-S":
                     #print("Mostrar imagen de 2 herramientas para MFB-P1 y S")
                     self.currentTool = "HERRAMIENTAS 2,3"
+                    self.nut    = "8mm Grande - 6mm Chica"
+                    self.oracle = "1033977       - 1033978   "
+
                 if current_trq[0] == "MFB-P2":
                     #print("Mostrar imagen de 2 herramientas para MFB-P2")
                     self.currentTool = "HERRAMIENTAS 1,2"
+                    self.nut    = "6mm Chica - 8mm Grande"
+                    self.oracle = "1033978  - 1033977   "
 
                 #se imprime la herramienta actual activa
                 #print("Current Tool: ",self.currentTool)
@@ -2415,7 +2419,6 @@ class CheckZonePalpador (QState):
         self.delay1 = 0.1
         self.delay2 = 2
         self.delay3 = 0.3
-        self.nut= ""
         self.oracle= ""
         self.currentTool= ""
         self.BB = self.model.BB
