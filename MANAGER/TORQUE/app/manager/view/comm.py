@@ -862,8 +862,7 @@ class MqttClient (QObject):
                             self.default_info_torque() #se reinicia el valor de las variables, pero se guarda el último CycleSelected
                         except Exception as ex:
                             print("post torque exception: ", ex)
-                        #se emite la señal de que se hizo un torque con esta herramienta
-                        self.model.asegurar_lectura[tool] = True
+                        
                         revversa = self.model.torque_data[tool]["backward_profile"]
 
                         print("revversa: ",revversa)
@@ -874,6 +873,8 @@ class MqttClient (QObject):
                             print("torque1_reversa emit()")
                             self.torque1_reversa.emit()
                         else:
+                            #se emite la señal de que se hizo un torque con esta herramienta
+                            self.model.asegurar_lectura[tool] = True
                             print("torque1 emit()")
                             self.torque1.emit()
                     else:
@@ -951,8 +952,7 @@ class MqttClient (QObject):
                             self.default_info_torque()
                         except Exception as ex:
                             print("post torque exception: ", ex)
-                        #se emite la señal de que se hizo un torque con esta herramienta
-                        self.model.asegurar_lectura[tool] = True
+                        
                         revversa = self.model.torque_data[tool]["backward_profile"]
 
                         print("revversa: ",revversa)
@@ -963,6 +963,8 @@ class MqttClient (QObject):
                             print("torque2_reversa emit()")
                             self.torque2_reversa.emit()
                         else:
+                            #se emite la señal de que se hizo un torque con esta herramienta
+                            self.model.asegurar_lectura[tool] = True
                             print("torque2 emit()")
                             self.torque2.emit()
                     else:
@@ -1037,8 +1039,7 @@ class MqttClient (QObject):
                             self.default_info_torque()
                         except Exception as ex:
                             print("post torque exception: ", ex)
-                        #se emite la señal de que se hizo un torque con esta herramienta
-                        self.model.asegurar_lectura[tool] = True
+                        
                         revversa = self.model.torque_data[tool]["backward_profile"]
 
                         print("revversa: ",revversa)
@@ -1049,6 +1050,8 @@ class MqttClient (QObject):
                             print("torque3_reversa emit()")
                             self.torque3_reversa.emit()
                         else:
+                            #se emite la señal de que se hizo un torque con esta herramienta
+                            self.model.asegurar_lectura[tool] = True
                             print("torque3 emit()")
                             self.torque3.emit()
                     else:

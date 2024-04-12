@@ -445,11 +445,6 @@ class CheckZone (QState):
         #zone se inicializa con "0"
         zone = "0"
 
-        if self.model.asegurar_lectura[self.tool] == True:
-            print("señal se había perdido...")
-            self.chck_response.emit()
-            return
-
         #si algún clampeo de otra caja o terminar algún otro torque te lleva a ToolsManager y te quita tu actual reversa, se regresa a ese estado
         if self.model.estado_actual[self.tool] == "ERRORNOK":
             self.ERRORNOK.emit()
@@ -462,6 +457,11 @@ class CheckZone (QState):
             return
         elif self.model.estado_actual[self.tool] == "CHECKPROFILE":
             self.CHECKPROFILE.emit()
+            return
+
+        if self.model.asegurar_lectura[self.tool] == True: #si la señal perdida era de reversa se regresará con estado_actual BACKWARD, por eso se mueve este if después para no ir a checkResponse cuando realmente es una reversa 
+            print("señal se había perdido...")
+            self.chck_response.emit()
             return
 
         #se revisa si hay alguna herramienta en reversa, o si está el raffi de la caja actual habilitado
@@ -2285,9 +2285,6 @@ class CheckProfile (QState):
             print("current profile = stop profile")
             self.send_profile()
             print("ok.emit() en 1 seg")
-            if self.model.asegurar_lectura[self.tool] == True:
-                print("se regresa asegurar_lectura a False: ",self.tool)
-                self.model.asegurar_lectura[self.tool] = False #se leyó exitosamente el valor
             self.model.estado_actual[self.tool] = "" #aquí ya terminó exitosamente la reversa de esa tuerca
             Timer(1.0, self.ok.emit).start()
 
