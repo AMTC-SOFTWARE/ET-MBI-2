@@ -250,7 +250,7 @@ class Ui_admin(object):
         font = QtGui.QFont()
         font.setPointSize(11)
         self.checkBox_8.setFont(font)
-        self.checkBox_8.setObjectName("checkBox_7")
+        self.checkBox_8.setObjectName("checkBox_8")
 
         self.checkBox_9 = QtWidgets.QCheckBox(admin)
         self.checkBox_9.setEnabled(False)
@@ -259,6 +259,14 @@ class Ui_admin(object):
         font.setPointSize(11)
         self.checkBox_9.setFont(font)
         self.checkBox_9.setObjectName("checkBox_9")
+
+        self.checkBox_10 = QtWidgets.QCheckBox(admin)
+        self.checkBox_10.setEnabled(False)
+        self.checkBox_10.setGeometry(QtCore.QRect(10, 240, 211, 31))
+        font = QtGui.QFont()
+        font.setPointSize(11)
+        self.checkBox_10.setFont(font)
+        self.checkBox_10.setObjectName("checkBox_10")
 
         self.retranslateUi(admin)
         QtCore.QMetaObject.connectSlotsByName(admin)
@@ -277,7 +285,8 @@ class Ui_admin(object):
         self.checkBox_6.setText(_translate("admin", "Usar hora del servidor"))
         self.checkBox_7.setText(_translate("admin", "ConectoresPDCP"))
         self.checkBox_8.setText(_translate("admin", "Alarma tuerca faltante"))
-        self.checkBox_9.setText(_translate("admin", "Sistema de Trazabilidad"))
+        self.checkBox_9.setText(_translate("admin", "SIN TUERCA PDCR"))
+        self.checkBox_10.setText(_translate("admin", "Sistema de Trazabilidad"))
 
 if __name__ == "__main__":
     import sys

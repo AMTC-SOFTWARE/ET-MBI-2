@@ -88,10 +88,16 @@ class Admin (QDialog):
             self.ui.checkBox_8.setChecked(False)
         self.ui.btn_off.setEnabled(False)
 
-        if self.data.config_data["trazabilidad"]:
+        if self.data.config_data["sinTorquePDCR"]:
             self.ui.checkBox_9.setChecked(True)
         else:
             self.ui.checkBox_9.setChecked(False)
+        self.ui.btn_off.setEnabled(False)
+
+        if self.data.config_data["trazabilidad"]:
+            self.ui.checkBox_10.setChecked(True)
+        else:
+            self.ui.checkBox_10.setChecked(False)
         self.ui.btn_off.setEnabled(False)
 
 
@@ -111,6 +117,7 @@ class Admin (QDialog):
         self.ui.checkBox_7.stateChanged.connect(self.onClicked_7)
         self.ui.checkBox_8.stateChanged.connect(self.onClicked_8)
         self.ui.checkBox_9.stateChanged.connect(self.onClicked_9)
+        self.ui.checkBox_10.stateChanged.connect(self.onClicked_10)
         self.rcv.connect(self.qw_torques.input)
         self.permissions()
 
@@ -132,6 +139,7 @@ class Admin (QDialog):
             self.ui.checkBox_7.setEnabled(True)
             self.ui.checkBox_8.setEnabled(True)
             self.ui.checkBox_9.setEnabled(True)
+            self.ui.checkBox_10.setEnabled(True)
         elif self.user_type == "CALIDAD":
             #self.ui.btn_off.setEnabled(False)
             self.ui.btn_reset.setEnabled(True)
@@ -145,6 +153,7 @@ class Admin (QDialog):
             self.ui.checkBox_7.setEnabled(True)
             self.ui.checkBox_8.setEnabled(True)
             self.ui.checkBox_9.setEnabled(True)
+            self.ui.checkBox_10.setEnabled(False)
         elif self.user_type == "MANTENIMIENTO":
             #self.ui.btn_off.setEnabled(True)
             self.ui.btn_reset.setEnabled(True)
@@ -158,6 +167,7 @@ class Admin (QDialog):
             self.ui.checkBox_7.setEnabled(False)
             self.ui.checkBox_8.setEnabled(False)
             self.ui.checkBox_9.setEnabled(False)
+            self.ui.checkBox_10.setEnabled(False)
         elif self.user_type == "PRODUCCION":
             #self.ui.btn_off.setEnabled(False)
             #self.ui.btn_reset.setEnabled(True)
@@ -171,6 +181,7 @@ class Admin (QDialog):
             self.ui.checkBox_7.setEnabled(False)
             self.ui.checkBox_8.setEnabled(False)
             self.ui.checkBox_9.setEnabled(False)
+            self.ui.checkBox_10.setEnabled(False)
         self.show()
 
     #def show_rework (self):
@@ -362,7 +373,6 @@ class Admin (QDialog):
             self.data.config_data["conectoresPDCP"] = False
 
 
-    #trazabilidad
     def onClicked_8(self):     
         if self.ui.checkBox_8.isChecked():
             """
@@ -372,11 +382,22 @@ class Admin (QDialog):
             
         else:
             self.data.config_data["checkAlarma"] = False
+
+    def onClicked_9(self):     
+        if self.ui.checkBox_9.isChecked():
+            """
+            bypass pdcr
+            """
+            self.data.config_data["sinTorquePDCR"] = True
+            
+        else:
+            self.data.config_data["sinTorquePDCR"] = False
+            
             
 
     #trazabilidad
-    def onClicked_9(self):     #Descomentar el día que se habilite el envío de info al servidor de P2
-        if self.ui.checkBox_9.isChecked():
+    def onClicked_10(self):     #Descomentar el día que se habilite el envío de info al servidor de P2
+        if self.ui.checkBox_10.isChecked():
             self.data.config_data["trazabilidad"] = True
             print("Sistema de Trazabilidad Habilitado")
             self.pop_out.setText("El Sistema de Trazabilidad ha sido Habilitado")

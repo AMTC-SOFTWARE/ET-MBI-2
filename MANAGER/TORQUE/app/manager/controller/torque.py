@@ -1,5 +1,6 @@
 from PyQt5.QtCore import QState, pyqtSignal, QObject, pyqtSlot
 from paho.mqtt import publish
+from datetime import datetime
 from threading import Timer
 from time import sleep
 from cv2 import imread, imwrite
@@ -80,6 +81,9 @@ class NewTool1 (QState):
         self.zone.addTransition(self.zone.QINTERVENTION, self.qintervention)
         #si se está en zone y la variable self.model.estado_actual[self.tool] vale "CHECKPROFILE" se va directamente a ese estado en el que se había quedado
         self.zone.addTransition(self.zone.CHECKPROFILE, self.chk_profile)
+
+        #variable para regresar a zone estando en zone, se usa para bypass solamente
+        self.zone.addTransition(self.zone.retry_zone, self.zone)
 
         #si se está en zone y la variable de activación de herramienta está en false para esa tool, se va a un estado holding_time para comenzar un timer
         self.zone.addTransition(self.zone.enable_time, self.holding_time)
@@ -209,6 +213,7 @@ class NewTool2 (QState):
         self.zone.addTransition(self.zone.BACKWARD, self.backward)
         self.zone.addTransition(self.zone.QINTERVENTION, self.qintervention)
         self.zone.addTransition(self.zone.CHECKPROFILE, self.chk_profile)
+        self.zone.addTransition(self.zone.retry_zone, self.zone)
 
         self.zone.addTransition(self.zone.enable_time, self.holding_time)
         self.holding_time.addTransition(self.model.transitions.zone_tool2, self.zone)
@@ -312,6 +317,7 @@ class NewTool3 (QState):
         self.zone.addTransition(self.zone.BACKWARD, self.backward)
         self.zone.addTransition(self.zone.QINTERVENTION, self.qintervention)
         self.zone.addTransition(self.zone.CHECKPROFILE, self.chk_profile)
+        self.zone.addTransition(self.zone.retry_zone, self.zone)
 
         #HOLDING TIME PARA ACTIVAR HERRAMIENTA
         self.zone.addTransition(self.zone.enable_time, self.holding_time)
@@ -414,6 +420,7 @@ class CheckZone (QState):
     enable_time     = pyqtSignal()
 
     chck_response   = pyqtSignal()
+    retry_zone      = pyqtSignal()
 
     ERRORNOK        = pyqtSignal()
     BACKWARD        = pyqtSignal()
@@ -459,7 +466,7 @@ class CheckZone (QState):
             self.CHECKPROFILE.emit()
             return
 
-        if self.model.asegurar_lectura[self.tool] == True: #si la señal perdida era de reversa se regresará con estado_actual BACKWARD, por eso se mueve este if después para no ir a checkResponse cuando realmente es una reversa 
+        if self.model.asegurar_lectura[self.tool] == True:
             print("señal se había perdido...")
             self.chck_response.emit()
             return
@@ -571,14 +578,46 @@ class CheckZone (QState):
         #                publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         ################################################################################################
 
-        #si se habilita el estado_candados porque ya es la última tarea de la caja PDCR entonces se va a finish para mandar la señal de PALPADOR
-        if self.model.estado_candados == True:
-            if self.tool == "tool3":
-                #variable para cuando entras a zone ir a estado palpador hasta que se haya finalizado
-                if self.model.contains_PDCR == True:
-                    print("se emite la señal para palpador")
-                    self.chk_candados.emit()
-                    return
+        fechha_actual = self.model.get_currentTime()
+        fechha_inicio = datetime(2024,4,18,11,20,0)
+        fechha_fin = datetime(2024,4,19,10,0,0)
+        print("fechha_actual: ", fechha_actual)
+        print("fechha_inicio: ", fechha_inicio)
+        print("fechha_fin: ", fechha_fin)
+
+        fecha_okk = False
+
+        if (fechha_actual > fechha_inicio and fechha_actual < fechha_fin) or self.model.config_data["sinTorquePDCR"]:
+            print("fecha actual mayor que " + str(fechha_inicio) + " y menor que " + str(fechha_fin))
+            print("self.model.config_data[sinTorquePDCR]: ", self.model.config_data["sinTorquePDCR"])
+            print("valor de self.model.bypass_pdcr: ",self.model.bypass_pdcr)
+            print("fecha_okk = True")
+            fecha_okk = True
+
+        if fecha_okk == True and self.model.bypass_pdcr != "Finalizado":
+            if current_trq != None:
+                if "PDC-R" in current_trq[0]:
+                    if self.tool == "tool3":
+
+                        #para después quitar la queue
+                        self.model.save_box_candados = current_trq[0]
+                        self.model.save_current_trq_candados = current_trq[1]
+                        #para inicial el modo de revisión de candados
+                        self.model.estado_candados = True
+                        self.model.bypass_pdcr = "Inicio"
+
+                        print("se emite la señal chk_candados.emit() para bypass PDC-R")
+                        self.chk_candados.emit()
+                        return
+        else:
+            #si se habilita el estado_candados porque ya es la última tarea de la caja PDCR entonces se va a finish para mandar la señal de PALPADOR
+            if self.model.estado_candados == True:
+                if self.tool == "tool3":
+                    #variable para cuando entras a zone ir a estado palpador hasta que se haya finalizado
+                    if self.model.contains_PDCR == True:
+                        print("se emite la señal para palpador")
+                        self.chk_candados.emit()
+                        return
 
         #si el valor de current_trq es None (por el momento está vacío) o config_data está en True el flexible_mode
         if current_trq == None or self.model.config_data["flexible_mode"]:
@@ -645,7 +684,6 @@ class CheckZone (QState):
                 if self.tool == "tool2":
                     self.currentTool = "HERRAMIENTA 3"
 
-
                 if current_trq[0] == "MFB-P1" or current_trq[0] == "MFB-S":
                     #print("Mostrar imagen de 2 herramientas para MFB-P1 y S")
                     self.currentTool = "HERRAMIENTAS 2,3"
@@ -693,6 +731,8 @@ class CheckZone (QState):
                 return
 
         #############################################################################
+
+
 
         #si el string de zone está vacío: mandar profile a stop
         if not(len(zone)):
@@ -751,6 +791,11 @@ class CheckZone (QState):
                     #si la terminal actual es igual a la terminal solicitada en la tarea actual en cola
                     elif zone[1] == current_trq[1]:
 
+                        #if (fechha_actual > fechha_inicio and fechha_actual < fechha_fin) or self.model.config_data["sinTorquePDCR"]  cuando esto es true fecha_okk = true
+                        if fecha_okk == True and current_trq[0] == "PDC-R":
+                            print("avanzando con retry_zone para no habilitar herramienta en bypass")
+                            self.retry_zone.emit()
+                            return
 
                         #if caja == "PDC-P" or caja == "PDC-D":
                         #if caja == "BATTERY" or caja == "BATTERY-2":
@@ -779,7 +824,8 @@ class CheckZone (QState):
                             self.check_lock_raffi_function(current_trq[0])
 
                         else:
-
+                            tool_desbloqueada = self.tool+"_desbloqueada"
+                            publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : False}),hostname='127.0.0.1', qos = 2)
                             #if (current_trq[1] == "A21" or current_trq[1] == "A22" or current_trq[1] == "A23" or current_trq[1] == "A24" or current_trq[1] == "A20" or current_trq[1] == "A25" or current_trq[1] == "A30") and self.model.activar_tool[self.tool] == False:
                             if self.model.activar_tool[self.tool] == False: #se debe mantener para todas las cavidades
                                 print("se debe mantener la herramienta un tiempo en la zona para habilitarla")
@@ -792,7 +838,7 @@ class CheckZone (QState):
                                 self.enable_time.emit()
                                 return
                             else:
-
+                                
                                 self.model.activar_tool[self.tool] = False #una vez habilitada, deshabilitar esto en la variable de modelo
                                 print("tool: ",self.tool)
                                 print("self.model.activar_tool[self.tool]: ",self.model.activar_tool[self.tool])
@@ -1209,7 +1255,6 @@ class CheckResponse (QState):
         self.model.active_lock[box] = False
         self.model.active_lock_tool[self.tool] = False
 
-
     def releaseTorqueClamp (self, box):
         #aquí se liberan las cajas desúes de haber finalizado con alguna
         command = {
@@ -1287,7 +1332,6 @@ class Check_data_alarm (QState):
     def onEntry(self, event):
         print("ESTADO ACTUAL Check_data_alarm")
         print("herramienta que entró a Check_data_alarm: ",self.tool)
-
         #si la inspección de alarma está habilitada desde la configuración...
         if self.model.config_data["checkAlarma"]==True:
             activar_alarma=self.consulta_eval_datos(self.tool)
@@ -1329,7 +1373,7 @@ class Check_data_alarm (QState):
         torque_alto_fase=False
         try:
             query="SELECT * FROM et_mbi_2.torque_info where HERRAMIENTA='"+tool+"' order by ID desc LIMIT 2;"""
-            #query="SELECT INICIO, FIN FROM et_mbi_3.historial WHERE RESULTADO = 1 order by ID desc LIMIT 1;"
+            #query="SELECT INICIO, FIN FROM et_mbi_2.historial WHERE RESULTADO = 1 order by ID desc LIMIT 1;"
             endpoint = "http://{}/query/get/{}".format(self.model.server, query)
             resp_ultimos_torques = requests.get(endpoint).json()
             print("resp_ultimos_torques",resp_ultimos_torques)
@@ -1369,6 +1413,7 @@ class Check_data_alarm (QState):
                             Fase1=False
                     else:
                         Fase1=False
+                        
                 else:
                     Fase1=False
                 #Solo si es fase 1 va a evaluar
@@ -1581,7 +1626,7 @@ class gafetQuality (QState):
                     fecha_actual = self.model.get_currentTime()
                     try:
                         if self.model.alarma_activada==True:
-                            Info_msg = "ALARMA DE CALIDAD"
+                            Info_msg = "ALARMA DE CALIDAD, "+ self.model.qr_codes["HM"] +", " + str(self.model.torque_data[self.tool]["current_trq"])
                             
                         else:
                             Info_msg = "INTERVENCIÓN DE CALIDAD"
@@ -1705,6 +1750,14 @@ class Backward (QState):
                     }
                 profile = self.stop
             elif zone[1] == current_trq[1]:
+                tool_desbloqueada = self.tool+"_desbloqueada"
+                publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : False}),hostname='127.0.0.1', qos = 2)
+                
+                print("self.model.herramienta_bloqueada backward",self.model.herramienta_bloqueada)
+                if self.model.herramienta_bloqueada[self.tool]==True:
+                    self.model.herramienta_bloqueada[self.tool]=False
+                    tool_desbloqueada = self.tool+"_desbloqueada"
+                    publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}),hostname='127.0.0.1', qos = 2)
                 command = {
                     "lbl_result" : {"text": "Herramienta en " + zone[0] + ": " + zone[1], "color": "green"},
                     "lbl_steps" : {"text": "Herramienta activada en REVERSA", "color": "black"}
@@ -2285,6 +2338,7 @@ class CheckProfile (QState):
             print("current profile = stop profile")
             self.send_profile()
             print("ok.emit() en 1 seg")
+            
             self.model.estado_actual[self.tool] = "" #aquí ya terminó exitosamente la reversa de esa tuerca
             Timer(1.0, self.ok.emit).start()
 
@@ -2398,7 +2452,7 @@ class DelayPin (QState):
 
         if self.model.nuevo_pin == True:
             self.model.nuevo_pin = False
-            Timer(1.5, self.continuar.emit).start()
+            Timer(0.7, self.continuar.emit).start()
         else:
             self.continuar.emit()
      
@@ -2734,6 +2788,8 @@ class CheckZonePalpador (QState):
             self.model.active_lock[box] = False
             self.model.active_lock_tool["tool3"] = False
 
+            print("variable self.model.bypass_pdcr = Finalizado para avisar que ya terminó los candados")
+            self.model.bypass_pdcr = "Finalizado"
 
             Timer(self.delay2, self.end.emit).start()
 

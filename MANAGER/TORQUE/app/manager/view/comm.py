@@ -153,130 +153,146 @@ class MqttClient (QObject):
 
         if not("DISABLE_" in payload_str):
 
-            #busca el nombre del nido en el string del payload
-            if current_box in payload_str: 
+            condicion0 = False
+            condicion1 = False
+            condicion2 = False
+            condicion3 = False
 
-                #variable para poner la serie de la caja en las cajas que sea necesario
-                serie = ""
+            if not("PDC-R" in payload_str):
+                condicion0 = True
+            elif self.model.varianteDominante == "PDC-RMID" and "PDC-RMID" in payload_str:
+                condicion1 = True
+            elif self.model.varianteDominante == "PDC-RS" and "PDC-RMID" in payload_str:
+                condicion2 = True
+            elif self.model.varianteDominante == "PDC-R" and not("PDC-RMID" in payload_str):
+                condicion3 = True
 
-                #se asignan serie a las cajas que lo contengan
-                if "MFB-P2" in current_box:
-                    serie = self.model.mfbp2_serie
-                if "PDC-R" in current_box:
-                    serie = self.model.pdcr_serie
+            if condicion0 or condicion1 or condicion2 or condicion3:
 
-                #0, no se solicitan en ciclo
-                #1, ya se escaneó
-                #2, aún requiere escanearse
-                #3, cajas terminadas en el ciclo
+                #busca el nombre del nido en el string del payload
+                if current_box in payload_str: 
 
-                #"lbl_boxTITLE" : {"text": "", "color": "black"},
-                #"lbl_boxPDCR" : {"text": "", "color": "black"},
-                #"lbl_boxPDCP" : {"text": "", "color": "black"},
-                #"lbl_boxPDCD" : {"text": "", "color": "black"},
-                #"lbl_boxMFBP1" : {"text": "", "color": "black"},
-                #"lbl_boxMFBP2" : {"text": "", "color": "black"},
-                #"lbl_boxMFBE" : {"text": "", "color": "black"},
-                #"lbl_boxMFBS" : {"text": "", "color": "black"},
-                #"lbl_boxBATTERY" : {"text": "", "color": "black"},
-                #"lbl_boxBATTERY2" : {"text": "", "color": "black"},
+                    #variable para poner la serie de la caja en las cajas que sea necesario
+                    serie = ""
 
-                #se hace el replace para current_box_pub, pero current_box sigue valiendo lo mismo
-                current_box_pub = current_box.replace("-","")
-                if current_box == "PDC-RMID":
-                    current_box_pub = "PDCR"
+                    #se asignan serie a las cajas que lo contengan
+                    if "MFB-P2" in current_box:
+                        serie = self.model.mfbp2_serie
+                    if "PDC-R" in current_box:
+                        serie = self.model.pdcr_serie
 
-                #cajas que no están en ciclo
-                if self.model.cajas_habilitadas[current_box] == 0 or self.model.cajas_habilitadas[current_box] == 3:
+                    #0, no se solicitan en ciclo
+                    #1, ya se escaneó
+                    #2, aún requiere escanearse
+                    #3, cajas terminadas en el ciclo
 
-                    command = {f"lbl_box{current_box_pub}" : {"text": "", "color": "blue"}}
+                    #"lbl_boxTITLE" : {"text": "", "color": "black"},
+                    #"lbl_boxPDCR" : {"text": "", "color": "black"},
+                    #"lbl_boxPDCP" : {"text": "", "color": "black"},
+                    #"lbl_boxPDCD" : {"text": "", "color": "black"},
+                    #"lbl_boxMFBP1" : {"text": "", "color": "black"},
+                    #"lbl_boxMFBP2" : {"text": "", "color": "black"},
+                    #"lbl_boxMFBE" : {"text": "", "color": "black"},
+                    #"lbl_boxMFBS" : {"text": "", "color": "black"},
+                    #"lbl_boxBATTERY" : {"text": "", "color": "black"},
+                    #"lbl_boxBATTERY2" : {"text": "", "color": "black"},
 
-                    if current_box in self.model.boxPos1:
-                        self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
-                    if current_box in self.model.boxPos2:
-                        self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                    #se hace el replace para current_box_pub, pero current_box sigue valiendo lo mismo
+                    current_box_pub = current_box.replace("-","")
+                    if current_box == "PDC-RMID":
+                        current_box_pub = "PDCR"
 
-                #se busca que la caja esté habilitada por el ciclo
-                elif self.model.cajas_habilitadas[current_box] == 1 or self.model.cajas_habilitadas[current_box] == 2:
+                    #cajas que no están en ciclo
+                    if self.model.cajas_habilitadas[current_box] == 0 or self.model.cajas_habilitadas[current_box] == 3:
 
-                    raffi_box = "raffi_" + current_box
-                    clamp_box = "clamp_" + current_box
+                        command = {f"lbl_box{current_box_pub}" : {"text": "", "color": "blue"}}
+
+                        if current_box in self.model.boxPos1:
+                            self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                        if current_box in self.model.boxPos2:
+                            self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+
+                    #se busca que la caja esté habilitada por el ciclo
+                    elif self.model.cajas_habilitadas[current_box] == 1 or self.model.cajas_habilitadas[current_box] == 2:
+
+                        raffi_box = "raffi_" + current_box
+                        clamp_box = "clamp_" + current_box
 
 
-                    #RAFFI DESHABILITADO
-                    #los raffi solo se pueden activar cuando la caja ya fue clampeada
-                    if raffi_box in payload:
+                        #RAFFI DESHABILITADO
+                        #los raffi solo se pueden activar cuando la caja ya fue clampeada
+                        if raffi_box in payload:
 
-                        #entonces al detectar un raffi_"" en False, significa que se deshabilita el raffi y la caja vuelve a su estado de clampeada
-                        if payload[raffi_box] == False:
-                            self.nido_pub = f"{current_box}\n{serie}"
-                            self.color_nido = "green"
+                            #entonces al detectar un raffi_"" en False, significa que se deshabilita el raffi y la caja vuelve a su estado de clampeada
+                            if payload[raffi_box] == False:
+                                self.nido_pub = f"{current_box}\n{serie}"
+                                self.color_nido = "green"
 
-                    #HABILITAR/DESHABILITAR CAJA
-                    if current_box in payload:
+                        #HABILITAR/DESHABILITAR CAJA
+                        if current_box in payload:
 
-                        print("self.model.cajas_habilitadas[current_box]: ", self.model.cajas_habilitadas[current_box])
+                            print("self.model.cajas_habilitadas[current_box]: ", self.model.cajas_habilitadas[current_box])
 
-                        #al habilitar una caja, se muestra el mensaje de la caja habilitada
-                        if payload[current_box] == True:
-                            self.nido_pub = f"{current_box}\n{serie}"
-                            self.color_nido = "blue"
-
-                        #al deshabilitar una caja, se borra el label
-                        if payload[current_box] == False:
-                            self.nido_pub = ""
-                            self.color_nido = "blue"
-
-                            #si la caja está deshabilitada pero aún no se ha clampeado (se requiere volver a escanear porque el tiempo para escanearla se terminó)
-                            if self.model.cajas_habilitadas[current_box] == 2:
+                            #al habilitar una caja, se muestra el mensaje de la caja habilitada
+                            if payload[current_box] == True:
                                 self.nido_pub = f"{current_box}\n{serie}"
                                 self.color_nido = "blue"
 
-
-                    # CAJA CLAMPEADA
-                    if clamp_box in payload:
-                        if payload[clamp_box] == True:
-                            self.nido_pub = f"{current_box}\n{serie}"
-                            self.color_nido = "green"
-
-                        #al deshabilitar una caja, se borra el label
-                        if payload[clamp_box] == False:
-                            self.nido_pub = ""
-                            self.color_nido = "blue"
-
-                            #si la caja está deshabilitada pero aún no se ha clampeado (se requiere volver a escanear porque el tiempo para escanearla se terminó)
-                            if self.model.cajas_habilitadas[current_box] == 2:
-                                self.nido_pub = f"{current_box}\n{serie}"
+                            #al deshabilitar una caja, se borra el label
+                            if payload[current_box] == False:
+                                self.nido_pub = ""
                                 self.color_nido = "blue"
+
+                                #si la caja está deshabilitada pero aún no se ha clampeado (se requiere volver a escanear porque el tiempo para escanearla se terminó)
+                                if self.model.cajas_habilitadas[current_box] == 2:
+                                    self.nido_pub = f"{current_box}\n{serie}"
+                                    self.color_nido = "blue"
+
+
+                        # CAJA CLAMPEADA
+                        if clamp_box in payload:
+                            if payload[clamp_box] == True:
+                                self.nido_pub = f"{current_box}\n{serie}"
+                                self.color_nido = "green"
+
+                            #al deshabilitar una caja, se borra el label
+                            if payload[clamp_box] == False:
+                                self.nido_pub = ""
+                                self.color_nido = "blue"
+
+                                #si la caja está deshabilitada pero aún no se ha clampeado (se requiere volver a escanear porque el tiempo para escanearla se terminó)
+                                if self.model.cajas_habilitadas[current_box] == 2:
+                                    self.nido_pub = f"{current_box}\n{serie}"
+                                    self.color_nido = "blue"
                         
-                    #RAFFI HABILITADO
-                    if raffi_box in payload:
-                        if payload[raffi_box] == True:
-                            self.nido_pub = f"{current_box}\n{serie}"
-                            self.color_nido = "orange"
+                        #RAFFI HABILITADO
+                        if raffi_box in payload:
+                            if payload[raffi_box] == True:
+                                self.nido_pub = f"{current_box}\n{serie}"
+                                self.color_nido = "orange"
             
 
-                    #cuando es SMALL se habilita el nido en MID, entonces si la bandera es true, cambiar mensaje
-                    if self.model.smallflag == True:
-                        self.nido_pub = self.nido_pub.replace("PDC-RMID","PDC-RSMALL")
+                        #cuando es SMALL se habilita el nido en MID, entonces si la bandera es true, cambiar mensaje
+                        if self.model.smallflag == True:
+                            self.nido_pub = self.nido_pub.replace("PDC-RMID","PDC-RSMALL")
 
 
 
-                    #como la función mensajes clamp se hace cada que llega un mensaje del PLC,
-                    #si este mensaje contiene la palabra encoder (así como la current_box en su mensaje)
-                    if "encoder" in payload_str:
-                        pass
-                    #de lo contrario es un mensaje de el funcionamiento de las cajas , y hace un publish en la correspondiente gui
-                    else:
-                        command = {f"lbl_box{current_box_pub}" : {"text": f"{self.nido_pub}", "color": f"{self.color_nido}"}}
+                        #como la función mensajes clamp se hace cada que llega un mensaje del PLC,
+                        #si este mensaje contiene la palabra encoder (así como la current_box en su mensaje)
+                        if "encoder" in payload_str:
+                            pass
+                        #de lo contrario es un mensaje de el funcionamiento de las cajas , y hace un publish en la correspondiente gui
+                        else:
+                            command = {f"lbl_box{current_box_pub}" : {"text": f"{self.nido_pub}", "color": f"{self.color_nido}"}}
                     
-                        for i in self.model.boxPos1:
-                            if current_box == i:
-                                self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                            for i in self.model.boxPos1:
+                                if current_box == i:
+                                    self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
 
-                        for i in self.model.boxPos2:
-                            if current_box == i:
-                                self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                            for i in self.model.boxPos2:
+                                if current_box == i:
+                                    self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
 
 
     def on_connect(self, client, userdata, flags, rc):
@@ -825,6 +841,11 @@ class MqttClient (QObject):
                     for valor_torque in payload:
                         payload[valor_torque]=self.convert_to_float_or_str(payload[valor_torque])
                         self.model.info_torque[valor_torque]=payload[valor_torque]
+                    if self.model.info_torque["result"]!=1:
+                        self.model.herramienta_bloqueada[tool]=True
+                        print("torque maligno se va a bloquear la herramienta")
+                    else:
+                        self.model.herramienta_bloqueada[tool]=False
                     #si no está bloqueada la señal (por estar transicionando al salir de backward)
                     if self.model.lock_backward[tool] == False:
 
@@ -862,6 +883,7 @@ class MqttClient (QObject):
                             self.default_info_torque() #se reinicia el valor de las variables, pero se guarda el último CycleSelected
                         except Exception as ex:
                             print("post torque exception: ", ex)
+                        #se emite la señal de que se hizo un torque con esta herramienta
                         
                         revversa = self.model.torque_data[tool]["backward_profile"]
 
@@ -873,7 +895,6 @@ class MqttClient (QObject):
                             print("torque1_reversa emit()")
                             self.torque1_reversa.emit()
                         else:
-                            #se emite la señal de que se hizo un torque con esta herramienta
                             self.model.asegurar_lectura[tool] = True
                             print("torque1 emit()")
                             self.torque1.emit()
@@ -914,7 +935,10 @@ class MqttClient (QObject):
                     for valor_torque in payload:
                         payload[valor_torque]=self.convert_to_float_or_str(payload[valor_torque])
                         self.model.info_torque[valor_torque]=payload[valor_torque]
-
+                    if self.model.info_torque["result"]!=1:
+                        self.model.herramienta_bloqueada[tool]=True
+                    else:
+                        self.model.herramienta_bloqueada[tool]=False
                     #si no está bloqueada la señal (por estar transicionando al salir de backward)
                     if self.model.lock_backward[tool] == False:
 
@@ -945,13 +969,14 @@ class MqttClient (QObject):
                                 "torque_target": self.model.info_torque["torque_target"],
                                 "result":        self.model.info_torque["result"]
                                 }
-                            copy_CycleSelected_tool2 = copy(self.model.info_torque["CycleSelected"])
                             print("data to post torqueinfo",data)
+                            copy_CycleSelected_tool2 = copy(self.model.info_torque["CycleSelected"])
                             endpoint = "http://{}/api/post/torque_info".format(self.model.server)
                             resp = requests.post(endpoint, data=json.dumps(data))
                             self.default_info_torque()
                         except Exception as ex:
                             print("post torque exception: ", ex)
+                        #se emite la señal de que se hizo un torque con esta herramienta
                         
                         revversa = self.model.torque_data[tool]["backward_profile"]
 
@@ -963,7 +988,6 @@ class MqttClient (QObject):
                             print("torque2_reversa emit()")
                             self.torque2_reversa.emit()
                         else:
-                            #se emite la señal de que se hizo un torque con esta herramienta
                             self.model.asegurar_lectura[tool] = True
                             print("torque2 emit()")
                             self.torque2.emit()
@@ -1003,6 +1027,10 @@ class MqttClient (QObject):
                         payload[valor_torque]=self.convert_to_float_or_str(payload[valor_torque])
                         self.model.info_torque[valor_torque]=payload[valor_torque]
 
+                    if self.model.info_torque["result"]!=1:
+                        self.model.herramienta_bloqueada[tool]=True
+                    else:
+                        self.model.herramienta_bloqueada[tool]=False
                     #si no está bloqueada la señal (por estar transicionando al salir de backward)
                     if self.model.lock_backward[tool] == False:
                         #se copia la información del arreglo recibido del torque por esta herramienta
@@ -1039,6 +1067,7 @@ class MqttClient (QObject):
                             self.default_info_torque()
                         except Exception as ex:
                             print("post torque exception: ", ex)
+                        #se emite la señal de que se hizo un torque con esta herramienta
                         
                         revversa = self.model.torque_data[tool]["backward_profile"]
 
@@ -1050,7 +1079,6 @@ class MqttClient (QObject):
                             print("torque3_reversa emit()")
                             self.torque3_reversa.emit()
                         else:
-                            #se emite la señal de que se hizo un torque con esta herramienta
                             self.model.asegurar_lectura[tool] = True
                             print("torque3 emit()")
                             self.torque3.emit()
@@ -1215,7 +1243,6 @@ class MqttClient (QObject):
 
                     if "CENTERKEY" in str(payload):
 
-                        
                         for tool in self.model.estado_actual:
                             if self.model.estado_actual[tool]=="BACKWARD":
                                 
@@ -1273,6 +1300,12 @@ class MqttClient (QObject):
                             self.client.publish(self.model.pub_topics["plc"],json.dumps({"MFB-E": True}), qos = 2)
                         else:
                             self.qr_box.emit(string_qr_box)
+                    elif "BYPASSTOOL" in payload["qr_box"]:
+                        if payload["qr_box"]=="BYPASSTOOL1":
+                            if "MFB-P1" in self.model.torque_data["tool1"]["current_trq"] and self.model.torque_data["tool1"]["current_trq"][1]== self.model.zona_actual[1]:
+                                print("es la caja MFBP1, se encuentra dentro de las tareas actuales y ya esta en la zona")
+                                self.model.altura_zone["tool1"] = True
+                        "vamos a hacer algo"
                     else:
                         self.qr_box.emit(string_qr_box)
 

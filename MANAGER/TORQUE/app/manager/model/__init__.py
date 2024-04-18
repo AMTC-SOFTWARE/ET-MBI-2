@@ -35,11 +35,18 @@ class Model (object):
             "hora_servidor": True,
             "conectoresPDCP":True,
             "checkAlarma": True,
+            "sinTorquePDCR":False,
             "trazabilidad": True
         }
 
         self.alarma_activada=False
         self.alarma_caja_tuerca=""
+        #mensaje enviado al plc tool1_desbloqueada
+        self.herramienta_bloqueada={
+                "tool1": False,
+                "tool2": False,
+                "tool3": False
+        }
         #Variables definidas por el drive para determinar Fase1
         self.angulo_min_torq_down= 2000 
         self.angulo_min_torq_up= 3000 
@@ -105,6 +112,8 @@ class Model (object):
         #variable para mostrar al inicio lo que ya está guardado
         self.palpador_iniciado = False
         self.en_ciclo=False
+
+        self.bypass_pdcr = ""
 
         self.contador_focus=0
         self.qr_box_actual=""

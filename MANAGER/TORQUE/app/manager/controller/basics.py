@@ -22,7 +22,7 @@ class Startup(QState):
         self.model = model
 
     def onEntry(self, event):
-        
+
         try:
             #se oculta la GDI automáticamente:
             publish.single("GDI",json.dumps({"Esconder" : "Ocultando GDI..."}),hostname='127.0.0.1', qos = 2)
@@ -227,6 +227,9 @@ class StartCycle (QState):
         segundos=0
         color="black"
         try:
+            #se resetea variable bypass para el pdcr
+            self.model.bypass_pdcr = ""
+
             query="SELECT INICIO, FIN FROM et_mbi_2.historial WHERE RESULTADO = 1 order by ID desc LIMIT 1;"
             endpoint = "http://{}/query/get/{}".format(self.model.server, query)
             print("Endpoint: ",endpoint)
@@ -307,7 +310,10 @@ class StartCycle (QState):
             "DISABLE_PDC-D":False,
             "DISABLE_MFB-E":False,
             "DISABLE_BATTERY":False,
-            "DISABLE_BATTERY-2":False
+            "DISABLE_BATTERY-2":False,
+            "tool1_desbloqueada":False, #Varibles para desbloquear las herramientas que den un ciclo de error
+            "tool2_desbloqueada":False,
+            "tool3_desbloqueada":False
             }
         publish.single(self.model.pub_topics["plc"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
@@ -1912,20 +1918,36 @@ class Finish (QState):
                         "UBICACION": "SALIDA_DE_TORQUE",
                         "NAMETORQUE": self.model.serial
                         }
+
+                    fechha_actual = self.model.get_currentTime()
+                    fechha_inicio = datetime(2024,4,18,11,20,0)
+                    fechha_fin = datetime(2024,4,19,10,0,0)
+                    print("fechha_actual: ", fechha_actual)
+                    print("fechha_inicio: ", fechha_inicio)
+                    print("fechha_fin: ", fechha_fin)
+
+                    if (fechha_actual > fechha_inicio and fechha_actual < fechha_fin) or self.model.config_data["sinTorquePDCR"]:
+                        print("fecha actual mayor que " + str(fechha_inicio) + " y menor que " + str(fechha_fin))
+                        print("self.model.config_data[sinTorquePDCR]: ", self.model.config_data["sinTorquePDCR"])
+                        print("salTrazabilidad[FABRICACION_ESPECIAL] = si")
+                        salTrazabilidad["FABRICACION_ESPECIAL"] = "si"
+
                     endpointUpdate = "http://{}/seghm/update/seghm/{}".format(self.model.server,self.model.id_HM)
                     respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(salTrazabilidad))
                     respTrazabilidad = respTrazabilidad.json()
                     print("respTrazabilidad del update: ",respTrazabilidad)
                     
                     sleep(0.1)
-                    respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(salTrazabilidad))
-                    respTrazabilidad = respTrazabilidad.json()
-                    print("respTrazabilidad del update: ",respTrazabilidad)
+                    if "exception" in respTrazabilidad:
+                        respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(salTrazabilidad))
+                        respTrazabilidad = respTrazabilidad.json()
+                        print("respTrazabilidad del update: ",respTrazabilidad)
 
-                    sleep(0.1)
-                    respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(salTrazabilidad))
-                    respTrazabilidad = respTrazabilidad.json()
-                    print("respTrazabilidad del update: ",respTrazabilidad)
+                        sleep(0.1)
+                        if "exception" in respTrazabilidad:
+                            respTrazabilidad = requests.post(endpointUpdate, data=json.dumps(salTrazabilidad))
+                            respTrazabilidad = respTrazabilidad.json()
+                            print("respTrazabilidad del update: ",respTrazabilidad)
 
                     sleep(0.1)
                     print("||Realizando el POST de valores en FAMX2")
@@ -1948,13 +1970,9 @@ class Finish (QState):
                             respPost = respPost.json()
                             print("respuesta del POST a FAMX2 Valores: ",respPost)
 
-
-
-
                     #endpoint = "http://{}/seghm/get/seghm/NAMEPREENSAMBLE/=/INTERIOR/HM/=/{}".format(self.model.server,self.model.qr_codes["HM"])
                     #famx2response = requests.get(endpoint).json()
                     #print("Respuesta de FAMX2: \n",famx2response)
-
 
 
                 except Exception as ex:
