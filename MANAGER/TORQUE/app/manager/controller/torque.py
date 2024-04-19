@@ -578,17 +578,18 @@ class CheckZone (QState):
         #                publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         ################################################################################################
 
-        fechha_actual = self.model.get_currentTime()
-        fechha_inicio = datetime(2024,4,18,11,20,0)
-        fechha_fin = datetime(2024,4,19,10,0,0)
-        print("fechha_actual: ", fechha_actual)
-        print("fechha_inicio: ", fechha_inicio)
-        print("fechha_fin: ", fechha_fin)
+        #fechha_actual = self.model.get_currentTime()
+        #fechha_inicio = datetime(2024,4,18,11,20,0)
+        #fechha_fin = datetime(2024,4,19,10,0,0)
+        #print("fechha_actual: ", fechha_actual)
+        #print("fechha_inicio: ", fechha_inicio)
+        #print("fechha_fin: ", fechha_fin)
 
         fecha_okk = False
 
-        if (fechha_actual > fechha_inicio and fechha_actual < fechha_fin) or self.model.config_data["sinTorquePDCR"]:
-            print("fecha actual mayor que " + str(fechha_inicio) + " y menor que " + str(fechha_fin))
+        #if (fechha_actual > fechha_inicio and fechha_actual < fechha_fin) or self.model.config_data["sinTorquePDCR"]:
+        if self.model.config_data["sinTorquePDCR"]:
+            #print("fecha actual mayor que " + str(fechha_inicio) + " y menor que " + str(fechha_fin))
             print("self.model.config_data[sinTorquePDCR]: ", self.model.config_data["sinTorquePDCR"])
             print("valor de self.model.bypass_pdcr: ",self.model.bypass_pdcr)
             print("fecha_okk = True")

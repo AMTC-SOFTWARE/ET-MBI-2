@@ -1919,15 +1919,16 @@ class Finish (QState):
                         "NAMETORQUE": self.model.serial
                         }
 
-                    fechha_actual = self.model.get_currentTime()
-                    fechha_inicio = datetime(2024,4,18,11,20,0)
-                    fechha_fin = datetime(2024,4,19,10,0,0)
-                    print("fechha_actual: ", fechha_actual)
-                    print("fechha_inicio: ", fechha_inicio)
-                    print("fechha_fin: ", fechha_fin)
+                    #fechha_actual = self.model.get_currentTime()
+                    #fechha_inicio = datetime(2024,4,18,11,20,0)
+                    #fechha_fin = datetime(2024,4,19,10,0,0)
+                    #print("fechha_actual: ", fechha_actual)
+                    #print("fechha_inicio: ", fechha_inicio)
+                    #print("fechha_fin: ", fechha_fin)
 
-                    if (fechha_actual > fechha_inicio and fechha_actual < fechha_fin) or self.model.config_data["sinTorquePDCR"]:
-                        print("fecha actual mayor que " + str(fechha_inicio) + " y menor que " + str(fechha_fin))
+                    #if (fechha_actual > fechha_inicio and fechha_actual < fechha_fin) or self.model.config_data["sinTorquePDCR"]:
+                    if self.model.config_data["sinTorquePDCR"]:
+                        #print("fecha actual mayor que " + str(fechha_inicio) + " y menor que " + str(fechha_fin))
                         print("self.model.config_data[sinTorquePDCR]: ", self.model.config_data["sinTorquePDCR"])
                         print("salTrazabilidad[FABRICACION_ESPECIAL] = si")
                         salTrazabilidad["FABRICACION_ESPECIAL"] = "si"
