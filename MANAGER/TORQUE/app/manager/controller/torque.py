@@ -2332,9 +2332,9 @@ class CheckProfile (QState):
         publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
         if self.model.torque_bin[self.tool]["current_profile"] != self.model.torque_data[self.tool]["stop_profile"]:
-            if self.model.intentos_max_stop > 30:
-                print("current profile = stop profile 30 intentos agotados")
-                self.model.intentos_max_stop=0
+            if self.model.intentos_max_stop[self.tool] > 30:
+                print("current profile = stop profile 30 intentos agotados para tool: ",self.tool)
+                self.model.intentos_max_stop[self.tool] = 0
                 self.send_profile()
                 print("ok.emit() en 1 seg")
                 
@@ -2342,11 +2342,11 @@ class CheckProfile (QState):
                 Timer(1.0, self.ok.emit).start()
             else:
                 print("current profile != stop profile")
-                self.model.intentos_max_stop+=1
+                self.model.intentos_max_stop[self.tool] += 1
                 self.send_profile()
                 Timer(0.1, self.retry.emit).start()
         else:
-            self.model.intentos_max_stop=0
+            self.model.intentos_max_stop[self.tool] = 0
             print("current profile = stop profile")
             self.send_profile()
             print("ok.emit() en 1 seg")

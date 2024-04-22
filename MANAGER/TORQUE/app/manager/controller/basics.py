@@ -269,7 +269,9 @@ class StartCycle (QState):
         self.model.caja_por_validar=""
         self.model.en_ciclo=False
         self.model.validacion_conectores_pdcp=False
-        self.model.intentos_max_stop=0
+        self.model.intentos_max_stop["tool1"] = 0
+        self.model.intentos_max_stop["tool2"] = 0
+        self.model.intentos_max_stop["tool3"] = 0
 
         #variable para regresar a reversa cuando se sale por clampeo de otra caja
         self.model.estado_actual["tool1"] = ""

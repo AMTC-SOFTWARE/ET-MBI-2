@@ -47,7 +47,14 @@ class Model (object):
                 "tool2": False,
                 "tool3": False
         }
-        self.intentos_max_stop=0
+
+        #variable para determinar el máximo de intentos para regresar la herramienta a stop profile al salir de reversa
+        self.intentos_max_stop={
+                "tool1": 0,
+                "tool2": 0,
+                "tool3": 0
+        }
+
         #Variables definidas por el drive para determinar Fase1
         self.angulo_min_torq_down= 2000 
         self.angulo_min_torq_up= 3000 
