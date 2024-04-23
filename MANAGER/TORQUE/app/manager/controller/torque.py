@@ -1329,6 +1329,8 @@ class Check_data_alarm (QState):
         super().__init__(parent)
         self.model = model
         self.tool = tool
+        self.pub_topic = self.model.pub_topics["torque"][self.tool]
+        self.stop = self.model.torque_data[self.tool]["stop_profile"]
 
     def onEntry(self, event):
         print("ESTADO ACTUAL Check_data_alarm")
@@ -1349,7 +1351,26 @@ class Check_data_alarm (QState):
                         self.model.alarma_caja_tuerca=str(caja)+", "+str(tuerca)
                         self.model.alarma_activada=True
                         print("ALARMA: activada!!")
+                        self.model.ultima_imagen=self.tool
+                        command = {
+                            "lbl_boxTITLE" : {"text": "ALARMA TUERCA \n FALTANTE", "color": "red"},
+                            "img_center" : "TuercaFaltante.jpg",
+                            "alarma_emergencia": True
+                            }
+                        publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                        self.pub_topic = self.model.pub_topics["torque"]["tool1"]
+                        self.stop = self.model.torque_data["tool1"]["stop_profile"]
+                        publish.single(self.pub_topic,json.dumps({"profile": self.stop}),hostname='127.0.0.1', qos = 2)
+
+                        self.pub_topic = self.model.pub_topics["torque"]["tool2"]
+                        self.stop = self.model.torque_data["tool2"]["stop_profile"]
+                        publish.single(self.pub_topic,json.dumps({"profile": self.stop}),hostname='127.0.0.1', qos = 2)
+
+                        self.pub_topic = self.model.pub_topics["torque"]["tool3"]
+                        self.stop = self.model.torque_data["tool3"]["stop_profile"]
+                        publish.single(self.pub_topic,json.dumps({"profile": self.stop}),hostname='127.0.0.1', qos = 2)
                         self.nok.emit()
+
                     else:
                         print("ALARMA: se trata de una primer tuerca de caja")
                         self.ok.emit() #se trata de una primer tuerca de caja
@@ -1429,6 +1450,7 @@ class Check_data_alarm (QState):
                     #Si hay un torque alto en la reversa y el anterior fue fase1, entonces enciende la alarma
                     if torque_alto_reversa==True: #and torque_alto_fase==False:
                         activar_alarma=True
+                        self.model.alarma_emergencia=True
                     else:
                         activar_alarma=False
                         print("no hubo torque alto en la reversa o si hubo torque alto en la fase1")
@@ -1556,14 +1578,14 @@ class QualityIntervention (QState):
         if self.model.alarma_activada==True:
             command = {
                 "lbl_result" : {"text": f"Alarma Tuerca faltante en: "+self.model.alarma_caja_tuerca, "color": "red"},
-                "lbl_steps" : {"text": "Se requiere intervención de Calidad\nGire llave para cancelar ciclo o introduzca su gafete para continuar", "color": "black", "font": "22pt"}
+                "lbl_steps" : {"text": "Se requiere intervención de Calidad\nIntroduzca gafete de CALIDAD para continuar", "color": "black", "font": "22pt"}
                 }
 
             publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         else:
             command = {
                 "lbl_result" : {"text": "Demasiados reintentos en la misma posición", "color": "red"},
-                "lbl_steps" : {"text": "Se requiere intervención de Calidad\nGire llave para cancelar ciclo o introduzca su gafete para continuar", "color": "black", "font": "22pt"}
+                "lbl_steps" : {"text": "Se requiere intervención de Calidad\nIntroduzca gafete de CALIDAD para continuar", "color": "black", "font": "22pt"}
                 }
 
             publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
@@ -1608,6 +1630,7 @@ class gafetQuality (QState):
             }
         publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         command = {
+            "alarma_emergencia": False,
             "show":{"login": False}
             }
         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
@@ -1653,6 +1676,16 @@ class gafetQuality (QState):
                         self.model.alarma_activada=False
                         self.model.alarma_caja_tuerca=""
                         self.ok_alarma.emit()
+                        self.model.alarma_emergencia=False
+                        #imcenter en la imagen principal
+                        command = {
+                            "lbl_boxTITLE" : {"text": "ALARMA TUERCA \n VERIFICADA", "color": "green"},
+                            "img_center" : self.model.ultima_imagen+".jpg",
+                            "alarma_emergencia": False,
+                            "show":{"login": False}
+                            }
+                        publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                        self.model.ultima_imagen=""
                     else:
                         self.ok.emit()
                 else:
@@ -1678,6 +1711,7 @@ class gafetQuality (QState):
                 }
             publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
             self.nok.emit()
+    
     def onExit(self, event):
         print("Saliendo de estado qgafet... aquí se colocan en FALSE los DISABLE_box")
         command = {
@@ -2330,7 +2364,7 @@ class CheckProfile (QState):
                 "lbl_steps" : {"text": "Espere a que se active la herramienta", "color": "black"}
                 }
         publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-
+        
         if self.model.torque_bin[self.tool]["current_profile"] != self.model.torque_data[self.tool]["stop_profile"]:
             if self.model.intentos_max_stop[self.tool] > 30:
                 print("current profile = stop profile 30 intentos agotados para tool: ",self.tool)

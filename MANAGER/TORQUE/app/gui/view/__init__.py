@@ -758,7 +758,6 @@ class MainWindow (QMainWindow):
                 if message["img_nuts"] != "":
                     if exists(self.model.imgsPath + message["img_nuts"]):
                         #self.ui.img_nuts.setPixmap(QPixmap(self.model.imgsPath + message["img_nuts"]).scaled(110, 110, Qt.KeepAspectRatio))
-
                         pix = QPixmap(self.model.imgsPath + message["img_nuts"])
                         self.ui.img_nuts.setPixmap(pix)
 
@@ -773,7 +772,6 @@ class MainWindow (QMainWindow):
                 if message["img_toolCurrent"] != "":
                     if exists(self.model.imgsPath + message["img_toolCurrent"]):
                         #self.ui.img_toolCurrent.setPixmap(QPixmap(self.model.imgsPath + message["img_toolCurrent"]).scaled(110, 110, Qt.KeepAspectRatio))
-
                         pix = QPixmap(self.model.imgsPath + message["img_toolCurrent"])
                         self.ui.img_toolCurrent.setPixmap(pix)
 
@@ -793,6 +791,12 @@ class MainWindow (QMainWindow):
                 self.launcher(message["show"])         
             if "popOut" in message:
                 self.launcher(message) 
+            if "Paro_Emergencia" in message:
+                print("llega mensaje a gui",message)
+                self.model.paro_emergencia=message["Paro_Emergencia"]
+            if "alarma_emergencia" in message:
+                self.model.alarma_emergencia=message["alarma_emergencia"]
+                
             if "statusBar" in message:
                 if type(message["statusBar"]) == str:
                     if message["statusBar"] == "clear":
@@ -875,13 +879,17 @@ class MainWindow (QMainWindow):
 
 class Login (QDialog):
     def __init__(self, parent = None):
+        self.model = Model()
         super().__init__(parent)
         self.ui = login.Ui_login()
         self.ui.setupUi(self)
         self.ui.lineEdit.setEchoMode(QLineEdit.Password)
         self.ui.lineEdit.setStyleSheet('lineedit-password-character: 9679')
         self.ui.btn_ok.setFocusPolicy(Qt.NoFocus)
-        self.ui.lineEdit.setFocus()
+        self.ui.lineEdit.setFocus(True)
+        
+    def closeEvent(self, event):
+        event.ignore() 
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
@@ -923,20 +931,21 @@ class Tabla_hora_w (QDialog):
     def closeEvent(self, event):
         #event.ignore() 
         print("close event")
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             print("Escape key was pressed")
 
 class PopOut (QMessageBox):
     def __init__(self, parent = None):
+        self.model = Model()
         super().__init__(parent)
         self.setIcon(QMessageBox.Information)
         self.setStandardButtons(QMessageBox.Ok)
         self.button(QMessageBox.Ok).setVisible(False)
 
     def closeEvent(self, event):
-        print("se cierra dialogo desde 'X'")
-        #event.ignore() 
+        event.ignore()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:

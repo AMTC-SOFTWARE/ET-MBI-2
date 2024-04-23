@@ -40,7 +40,10 @@ class Model (object):
         }
 
         self.alarma_activada=False
+        self.alarma_emergencia=False
+        self.paro_emergia=False
         self.alarma_caja_tuerca=""
+        self.ultima_imagen=""
         #mensaje enviado al plc tool1_desbloqueada
         self.herramienta_bloqueada={
                 "tool1": False,

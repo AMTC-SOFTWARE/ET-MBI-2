@@ -24,7 +24,7 @@ class Ui_login(object):
 
         # Mover la ventana a la posición (770, 150)
         login.move(770, 150)
-
+        login.setModal(True)
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
         brush.setStyle(QtCore.Qt.SolidPattern)

@@ -141,7 +141,6 @@ class MqttClient (QObject):
                             print("espere un segundo para desactivar el raffi")
                             self.model.bool_state = not (self.model.bool_state)
         
-
     def raffi_timer(self):
         #para convertir variable a False después de que el tiempo haya terminado
         self.model.timer_raffi = False
@@ -294,7 +293,6 @@ class MqttClient (QObject):
                                 if current_box == i:
                                     self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
 
-
     def on_connect(self, client, userdata, flags, rc):
         try:
             connections = {
@@ -321,7 +319,7 @@ class MqttClient (QObject):
     def on_message(self, client, userdata, message):
         try:
             payload = json.loads(message.payload)
-            print(payload)
+            print("payload",payload)
             string_payload = str(payload)
             ignorar = False
             if "encoder" in string_payload:
@@ -339,15 +337,30 @@ class MqttClient (QObject):
                     Timer(0.05, self.model.log, args = ("STOP",)).start() 
                     if payload["emergency"] == False:
                         self.emergency.emit()
+                        
                         command = {
-                            "popOut":"Paro de emergencia activado"
+                            "lbl_boxTITLE" : {"text": "Paro de Emergencia \n ACTIVADO", "color": "red"},
+                            "popOut":"Paro de emergencia activado",
+                            "Paro_Emergencia":True
                             }
                         self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                        self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
                     else:
+                        command = {
+                            "lbl_boxTITLE" : {"text": "", "color": "red"},
+                            "Paro_Emergencia":False
+                            }
+                        self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                        self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
                         #QTimer.singleShot(1000, self.closePopout)
                         self.closePopout()
 
-            if self.model.input_data["plc"]["emergency"] == False:
+            if message.topic == self.model.sub_topics["gui"]:
+                if "ID" in payload:
+                    self.model.input_data["gui"]["ID"] = payload["ID"]
+                    self.ID.emit()
+                
+            if self.model.input_data["plc"]["emergency"] == False or self.model.alarma_emergencia==True:
                 return
 
             if message.topic == self.model.sub_topics["keyboard"]:
@@ -1311,12 +1324,12 @@ class MqttClient (QObject):
 
         except Exception as ex:
             print("input exception", ex)
+    
     def convert_to_float_or_str(self,value):
         try:
             return float(value)
         except ValueError:
             return str(value)
-
 
     def default_info_torque(self):
         self.model.info_torque={"AngularTreshold":0,
@@ -1343,11 +1356,13 @@ class MqttClient (QObject):
                           "torque_target":0,
                           "torque_trend":"",
             }
+    
     def closePopout (self):
         command = {
             "popOut":"close"
             }
         self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+        self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
 
     def boxTimeout(self, i, qr_box):
 
