@@ -1337,49 +1337,50 @@ class Check_data_alarm (QState):
         print("herramienta que entró a Check_data_alarm: ",self.tool)
         #si la inspección de alarma está habilitada desde la configuración...
         if self.model.config_data["checkAlarma"]==True:
-            activar_alarma=self.consulta_eval_datos(self.tool)
-            if activar_alarma:
-                caja = self.model.torque_data[self.tool]["current_trq"][0]
-                tuerca = self.model.torque_data[self.tool]["current_trq"][1]
-                if caja == "MFB-P1" or caja == "MFB-P2" or caja == "MFB-S" or caja == "MFB-E":
+            caja = self.model.torque_data[self.tool]["current_trq"][0]
+            tuerca = self.model.torque_data[self.tool]["current_trq"][1]
+            if caja == "MFB-P1" or caja == "MFB-P2" or caja == "MFB-S" or caja == "MFB-E":
 
-                    #Primeras tuercas de cada caja
-                    #MFB-S:  A51 8mm, A53 6mm
-                    #MFB-P1: A41 8mm, A42 6mm,
-                    #MFB-P2: A20 8mm, A29 6mm,
-                    if tuerca != "A20" and tuerca != "A29" and tuerca != "A41" and tuerca != "A42" and tuerca != "A51" and tuerca != "A53":
-                        self.model.alarma_caja_tuerca=str(caja)+", "+str(tuerca)
-                        self.model.alarma_activada=True
-                        print("ALARMA: activada!!")
-                        self.model.ultima_imagen=self.tool
-                        command = {
-                            "lbl_boxTITLE" : {"text": "ALARMA TUERCA \n FALTANTE", "color": "red"},
-                            "img_center" : "TuercaFaltante.jpg",
-                            "alarma_emergencia": True
-                            }
-                        publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
-                        self.pub_topic = self.model.pub_topics["torque"]["tool1"]
-                        self.stop = self.model.torque_data["tool1"]["stop_profile"]
-                        publish.single(self.pub_topic,json.dumps({"profile": self.stop}),hostname='127.0.0.1', qos = 2)
+                #Primeras tuercas de cada caja
+                #MFB-S:  A51 8mm, A53 6mm
+                #MFB-P1: A41 8mm, A42 6mm,
+                #MFB-P2: A20 8mm, A29 6mm,
+                activar_alarma=False
+                if tuerca != "A20" and tuerca != "A29" and tuerca != "A41" and tuerca != "A42" and tuerca != "A51" and tuerca != "A53":
+                    activar_alarma=self.consulta_eval_datos(self.tool)
+                if activar_alarma:
+                    
+                    self.model.alarma_caja_tuerca=str(caja)+", "+str(tuerca)
+                    self.model.alarma_activada=True
+                    print("ALARMA: activada!!")
+                    self.model.ultima_imagen=self.tool
+                    command = {
+                        "lbl_boxTITLE" : {"text": "ALARMA TUERCA \n FALTANTE", "color": "red"},
+                        "img_center" : "TuercaFaltante.jpg",
+                        "alarma_emergencia": True
+                        }
+                    publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                    self.pub_topic = self.model.pub_topics["torque"]["tool1"]
+                    self.stop = self.model.torque_data["tool1"]["stop_profile"]
+                    publish.single(self.pub_topic,json.dumps({"profile": self.stop}),hostname='127.0.0.1', qos = 2)
 
-                        self.pub_topic = self.model.pub_topics["torque"]["tool2"]
-                        self.stop = self.model.torque_data["tool2"]["stop_profile"]
-                        publish.single(self.pub_topic,json.dumps({"profile": self.stop}),hostname='127.0.0.1', qos = 2)
+                    self.pub_topic = self.model.pub_topics["torque"]["tool2"]
+                    self.stop = self.model.torque_data["tool2"]["stop_profile"]
+                    publish.single(self.pub_topic,json.dumps({"profile": self.stop}),hostname='127.0.0.1', qos = 2)
 
-                        self.pub_topic = self.model.pub_topics["torque"]["tool3"]
-                        self.stop = self.model.torque_data["tool3"]["stop_profile"]
-                        publish.single(self.pub_topic,json.dumps({"profile": self.stop}),hostname='127.0.0.1', qos = 2)
-                        self.nok.emit()
+                    self.pub_topic = self.model.pub_topics["torque"]["tool3"]
+                    self.stop = self.model.torque_data["tool3"]["stop_profile"]
+                    publish.single(self.pub_topic,json.dumps({"profile": self.stop}),hostname='127.0.0.1', qos = 2)
+                    self.model.alarma_emergencia=True
+                    self.nok.emit()
 
-                    else:
-                        print("ALARMA: se trata de una primer tuerca de caja")
-                        self.ok.emit() #se trata de una primer tuerca de caja
                 else:
-                    print("ALARMA: se trata de una caja con tuerca única")
-                    self.ok.emit() #se trata de una caja con tuerca única
+                    print("ALARMA: no se cumplen las condiciones para alarma")
+                    self.ok.emit() #se trata de una primer tuerca de caja
             else:
-                print("ALARMA: no se cumplieron las condiciones de la alarma")
-                self.ok.emit() #no se cumplieron las condiciones de la alarma
+                print("ALARMA: se trata de una caja con tuerca única")
+                self.ok.emit() #se trata de una caja con tuerca única
+            
         else:
             print("ALARMA: no está activada la alarma")
             self.ok.emit() #no está activada la alarma
@@ -1450,22 +1451,14 @@ class Check_data_alarm (QState):
                     #Si hay un torque alto en la reversa y el anterior fue fase1, entonces enciende la alarma
                     if torque_alto_reversa==True: #and torque_alto_fase==False:
                         activar_alarma=True
-                        self.model.alarma_emergencia=True
+                        
                     else:
                         activar_alarma=False
                         print("no hubo torque alto en la reversa o si hubo torque alto en la fase1")
                 else:
                     activar_alarma=False
                     print("No es FASE1")
-                print("resp_ultimo_arnés",resp_ultimos_torques)
-                print("angulo minimo",resp_ultimos_torques["angulo_minimo"][1])
-                print("angulo maximo",resp_ultimos_torques["angulo_maximo"][1])
-                print("angle1",resp_ultimos_torques["angulo_final"][0])
-                print("angngle2",resp_ultimos_torques["angulo_final"][1])
-                print("torque1",resp_ultimos_torques["torque_final"][0])
-                print("torque2",resp_ultimos_torques["torque_final"][1])
-                print("fecha1",resp_ultimos_torques["FECHA"][0])
-                print("fecha2",resp_ultimos_torques["FECHA"][1])
+                
             
             else:
                 activar_alarma=False

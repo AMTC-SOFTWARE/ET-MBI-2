@@ -11,7 +11,7 @@
     <OutputPath>.</OutputPath>
     <Name>app</Name>
     <RootNamespace>app</RootNamespace>
-    <InterpreterId>Global|VisualStudio|Main Environment</InterpreterId>
+    <InterpreterId>Global|VisualStudio|env (Python 3.7 (64-bit))</InterpreterId>
     <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
     <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
   </PropertyGroup>
@@ -141,7 +141,7 @@
     <Folder Include="toolkit\simulations\" />
   </ItemGroup>
   <ItemGroup>
-    <InterpreterReference Include="Global|VisualStudio|Main Environment" />
+    <InterpreterReference Include="Global|VisualStudio|env (Python 3.7 (64-bit))" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
