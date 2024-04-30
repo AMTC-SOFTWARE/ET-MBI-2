@@ -856,7 +856,8 @@ class MqttClient (QObject):
                         self.model.info_torque[valor_torque]=payload[valor_torque]
                     if self.model.info_torque["result"]!=1:
                         self.model.herramienta_bloqueada[tool]=True
-                        print("torque maligno se va a bloquear la herramienta")
+                        tool_desbloqueada = tool+"_desbloqueada"
+                        self.client.publish(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}), qos = 2)
                     else:
                         self.model.herramienta_bloqueada[tool]=False
                     #si no está bloqueada la señal (por estar transicionando al salir de backward)
@@ -914,6 +915,11 @@ class MqttClient (QObject):
                     else:
                         print("torque no emit, saliendo de reversa")
 
+                    if self.model.herramienta_bloqueada[tool]==True:
+                        self.model.herramienta_bloqueada[tool]=False
+                        tool_desbloqueada = tool+"_desbloqueada"
+                        self.client.publish(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : False}), qos = 2)
+
             if message.topic == self.model.sub_topics["torque_2"]:
 
                 payload_str = json.dumps(payload)
@@ -950,6 +956,8 @@ class MqttClient (QObject):
                         self.model.info_torque[valor_torque]=payload[valor_torque]
                     if self.model.info_torque["result"]!=1:
                         self.model.herramienta_bloqueada[tool]=True
+                        tool_desbloqueada = tool+"_desbloqueada"
+                        self.client.publish(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}), qos = 2) 
                     else:
                         self.model.herramienta_bloqueada[tool]=False
                     #si no está bloqueada la señal (por estar transicionando al salir de backward)
@@ -1006,6 +1014,10 @@ class MqttClient (QObject):
                             self.torque2.emit()
                     else:
                         print("torque no emit, saliendo de reversa")
+                    if self.model.herramienta_bloqueada[tool]==True:
+                        self.model.herramienta_bloqueada[tool]=False
+                        tool_desbloqueada = tool+"_desbloqueada"
+                        self.client.publish(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : False}), qos = 2)
 
             if message.topic == self.model.sub_topics["torque_3"]:
 
@@ -1042,6 +1054,8 @@ class MqttClient (QObject):
 
                     if self.model.info_torque["result"]!=1:
                         self.model.herramienta_bloqueada[tool]=True
+                        tool_desbloqueada = tool+"_desbloqueada"
+                        self.client.publish(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}), qos = 2)
                     else:
                         self.model.herramienta_bloqueada[tool]=False
                     #si no está bloqueada la señal (por estar transicionando al salir de backward)
@@ -1097,6 +1111,10 @@ class MqttClient (QObject):
                             self.torque3.emit()
                     else:
                         print("torque no emit, saliendo de reversa")
+                    if self.model.herramienta_bloqueada[tool]==True:
+                        self.model.herramienta_bloqueada[tool]=False
+                        tool_desbloqueada = tool+"_desbloqueada"
+                        self.client.publish(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : False}), qos = 2)
                 
             if message.topic == self.model.sub_topics["gui"]:
                 if "request" in payload:
@@ -1122,9 +1140,36 @@ class MqttClient (QObject):
                         #        self.mostrar_gdi = True
                         #        self.client.publish("GDI",json.dumps({"Mostrar":"window"}), qos = 2)
                         #        print("Mostrando GDI")
+                if "MOSTRARGDI" in str(payload):
+                        print("Mostrando GDI")
+                        try:
+                            #se oculta la GDI automáticamente:
+                            self.client.publish("GDI",json.dumps({"Mostrar" : True}), qos = 2)
+                        except Exception as ex:
+                            print("Error al Mostrar GDI ", ex)
+                if "ESCONDERGDI" in str(payload):
+                        print("Escondiendo GDI")
+                        try:
+                            #se oculta la GDI automáticamente:
+                            self.client.publish("GDI",json.dumps({"Esconder" : True}), qos = 2)
+                        except Exception as ex:
+                            print("Error al Esconder GDI ", ex)
 
                 if "codeQR" in payload:
-                    
+                    if "MOSTRARGDI" in str(payload):
+                        print("Mostrando GDI")
+                        try:
+                            #se oculta la GDI automáticamente:
+                            self.client.publish("GDI",json.dumps({"Mostrar" : True}), qos = 2)
+                        except Exception as ex:
+                            print("Error al Mostrar GDI ", ex)
+                    if "ESCONDERGDI" in str(payload):
+                        print("Escondiendo GDI")
+                        try:
+                            #se oculta la GDI automáticamente:
+                            self.client.publish("GDI",json.dumps({"Esconder" : True}), qos = 2)
+                        except Exception as ex:
+                            print("Error al Esconder GDI ", ex)
                     usuario = str(payload["codeQR"])
                     try:
                         endpoint = ("http://{}/api/get/usuarios/GAFET/=/{}/ACTIVE/=/1".format(self.model.server, usuario))

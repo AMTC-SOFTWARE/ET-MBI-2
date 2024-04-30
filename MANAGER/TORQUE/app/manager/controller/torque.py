@@ -825,8 +825,7 @@ class CheckZone (QState):
                             self.check_lock_raffi_function(current_trq[0])
 
                         else:
-                            tool_desbloqueada = self.tool+"_desbloqueada"
-                            publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : False}),hostname='127.0.0.1', qos = 2)
+                            
                             #if (current_trq[1] == "A21" or current_trq[1] == "A22" or current_trq[1] == "A23" or current_trq[1] == "A24" or current_trq[1] == "A20" or current_trq[1] == "A25" or current_trq[1] == "A30") and self.model.activar_tool[self.tool] == False:
                             if self.model.activar_tool[self.tool] == False: #se debe mantener para todas las cavidades
                                 print("se debe mantener la herramienta un tiempo en la zona para habilitarla")
@@ -1778,14 +1777,6 @@ class Backward (QState):
                     }
                 profile = self.stop
             elif zone[1] == current_trq[1]:
-                tool_desbloqueada = self.tool+"_desbloqueada"
-                publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : False}),hostname='127.0.0.1', qos = 2)
-                
-                print("self.model.herramienta_bloqueada backward",self.model.herramienta_bloqueada)
-                if self.model.herramienta_bloqueada[self.tool]==True:
-                    self.model.herramienta_bloqueada[self.tool]=False
-                    tool_desbloqueada = self.tool+"_desbloqueada"
-                    publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}),hostname='127.0.0.1', qos = 2)
                 command = {
                     "lbl_result" : {"text": "Herramienta en " + zone[0] + ": " + zone[1], "color": "green"},
                     "lbl_steps" : {"text": "Herramienta activada en REVERSA", "color": "black"}
