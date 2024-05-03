@@ -827,8 +827,7 @@ class CheckZone (QState):
                         else:
                             
                             if self.model.herramienta_bloqueada[self.tool]==True:
-                                self.model.herramienta_bloqueada[tool]=True
-                                tool_desbloqueada = tool+"_desbloqueada"
+                                tool_desbloqueada = self.tool+"_desbloqueada"
                                 self.client.publish(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}), qos = 2)
 
                             #if (current_trq[1] == "A21" or current_trq[1] == "A22" or current_trq[1] == "A23" or current_trq[1] == "A24" or current_trq[1] == "A20" or current_trq[1] == "A25" or current_trq[1] == "A30") and self.model.activar_tool[self.tool] == False:
@@ -1784,8 +1783,7 @@ class Backward (QState):
         command = {}
         if zone[0] == current_trq[0]:
             if self.model.herramienta_bloqueada[self.tool]==True:
-                self.model.herramienta_bloqueada[tool]=True
-                tool_desbloqueada = tool+"_desbloqueada"
+                tool_desbloqueada = self.tool+"_desbloqueada"
                 self.client.publish(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}), qos = 2)
 
             if zone[1] == "0":
