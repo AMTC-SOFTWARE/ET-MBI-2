@@ -520,6 +520,7 @@ class Model (object):
                         "torque_1": "TorqueModbus/2/status",
                         "torque_2": "TorqueModbus/3/status",
                         "torque_3": "TorqueModbus/4/status",
+                        "supervision": "Vsupervision/status",
                         "gui": "gui/status",
                         "gui_2": "gui_2/status",
                         "config": "config/status"
@@ -529,6 +530,7 @@ class Model (object):
                         "gui": "gui/set",
                         "gui_2": "gui_2/set",
                         "plc": "PLC/1",
+                        "supervision": "Vsupervision/set",
                         "torque": {
                                    #"tool1": "torque/1/set",
                                    #"tool2": "torque/2/set",

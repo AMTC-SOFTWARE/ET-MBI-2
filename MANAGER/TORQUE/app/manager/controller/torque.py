@@ -451,7 +451,7 @@ class CheckZone (QState):
         print("entrozone$%%$$$$$$$$$$%%%%%%%%%%%%%%%%%%%%%%%%%%$$$$$$$")
         #zone se inicializa con "0"
         zone = "0"
-
+        
         #si algún clampeo de otra caja o terminar algún otro torque te lleva a ToolsManager y te quita tu actual reversa, se regresa a ese estado
         if self.model.estado_actual[self.tool] == "ERRORNOK":
             self.ERRORNOK.emit()
@@ -826,6 +826,11 @@ class CheckZone (QState):
 
                         else:
                             
+                            if self.model.herramienta_bloqueada[self.tool]==True:
+                                self.model.herramienta_bloqueada[tool]=True
+                                tool_desbloqueada = tool+"_desbloqueada"
+                                self.client.publish(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}), qos = 2)
+
                             #if (current_trq[1] == "A21" or current_trq[1] == "A22" or current_trq[1] == "A23" or current_trq[1] == "A24" or current_trq[1] == "A20" or current_trq[1] == "A25" or current_trq[1] == "A30") and self.model.activar_tool[self.tool] == False:
                             if self.model.activar_tool[self.tool] == False: #se debe mantener para todas las cavidades
                                 print("se debe mantener la herramienta un tiempo en la zona para habilitarla")
@@ -1348,8 +1353,17 @@ class Check_data_alarm (QState):
                 if tuerca != "A20" and tuerca != "A29" and tuerca != "A41" and tuerca != "A42" and tuerca != "A51" and tuerca != "A53":
                     activar_alarma=self.consulta_eval_datos(self.tool)
                 if activar_alarma:
-                    
-                    self.model.alarma_caja_tuerca=str(caja)+", "+str(tuerca)
+                    fecha_actual = self.model.get_currentTime()
+                    self.model.alarma_caja_tuerca=str(caja)+","+str(tuerca)
+                    command = {
+                        "info":self.model.qr_codes["HM"]+" "+str(fecha_actual.strftime("%Y/%m/%d %H:%M:%S")) + "-ALARMA"#+"-"+str(self.model.alarma_caja_tuerca)+str(fecha_actual.strftime("%Y/%m/%d %H:%M:%S"))
+                        
+                    }
+                    publish.single(self.model.sub_topics["supervision"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                    command = {
+                        "save":"true"
+                    }
+                    publish.single(self.model.sub_topics["supervision"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                     self.model.alarma_activada=True
                     print("ALARMA: activada!!")
                     self.model.ultima_imagen=self.tool
@@ -1458,7 +1472,6 @@ class Check_data_alarm (QState):
                     activar_alarma=False
                     print("No es FASE1")
                 
-            
             else:
                 activar_alarma=False
                 
@@ -1741,7 +1754,7 @@ class Backward (QState):
         self.encoder = "encoder_" + self.tool[-1]
 
     def onEntry(self, event):
-
+        
 
         print("ESTADO ACTUAL: REVERSA")
 
@@ -1770,6 +1783,11 @@ class Backward (QState):
         profile = self.stop
         command = {}
         if zone[0] == current_trq[0]:
+            if self.model.herramienta_bloqueada[self.tool]==True:
+                self.model.herramienta_bloqueada[tool]=True
+                tool_desbloqueada = tool+"_desbloqueada"
+                self.client.publish(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}), qos = 2)
+
             if zone[1] == "0":
                 command = {
                     "lbl_result" : {"text":"Herramienta fuera de zona de torque", "color": "red"},
@@ -1777,6 +1795,7 @@ class Backward (QState):
                     }
                 profile = self.stop
             elif zone[1] == current_trq[1]:
+                
                 command = {
                     "lbl_result" : {"text": "Herramienta en " + zone[0] + ": " + zone[1], "color": "green"},
                     "lbl_steps" : {"text": "Herramienta activada en REVERSA", "color": "black"}

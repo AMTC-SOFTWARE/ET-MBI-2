@@ -493,6 +493,21 @@ class MqttClient (QObject):
                         self.pin.emit()
                     else:
                         self.model.pin_pressed = False
+
+                if "Confirmacion_bloqueoT1" in payload and self.model.herramienta_bloqueada["tool1"]==True:
+                    if payload["Confirmacion_bloqueoT1"] == True:
+                        self.model.herramienta_bloqueada["tool1"]=False
+                        tool_desbloqueada = tool+"_desbloqueada"
+                        self.client.publish(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : False}), qos = 2)
+
+                if "Confirmacion_bloqueoT2" in payload and self.model.herramienta_bloqueada["tool2"]==True:
+                    if payload["Confirmacion_bloqueoT2"] == True:
+                        self.model.herramienta_bloqueada["tool2"]=False
+                if "Confirmacion_bloqueoT3" in payload and self.model.herramienta_bloqueada["tool3"]==True:
+                    if payload["Confirmacion_bloqueoT3"] == True:
+                        self.model.herramienta_bloqueada["tool3"]=False
+
+
                 if "Precencia_PDCP" in payload and self.model.validacion_conectores_pdcp==True:
                     if payload["Precencia_PDCP"] == True:
                         self.model.caja_puesta=True
@@ -892,6 +907,9 @@ class MqttClient (QObject):
                                 }
                             print("data to post torqueinfo",data)
                             copy_CycleSelected_tool1 = copy(self.model.info_torque["CycleSelected"])
+                            copy_angulo_final1 = copy(self.model.info_torque["angle"])
+                            copy_angulo_maximo1 = copy(self.model.info_torque["angle_max"])
+
                             endpoint = "http://{}/api/post/torque_info".format(self.model.server)
                             resp = requests.post(endpoint, data=json.dumps(data))
                             self.default_info_torque() #se reinicia el valor de las variables, pero se guarda el último CycleSelected
@@ -899,13 +917,13 @@ class MqttClient (QObject):
                             print("post torque exception: ", ex)
                         #se emite la señal de que se hizo un torque con esta herramienta
                         
-                        revversa = self.model.torque_data[tool]["backward_profile"]
+                        revversa1 = self.model.torque_data[tool]["backward_profile"]
 
-                        print("revversa: ",revversa)
+                        print("revversa1: ",revversa1)
                         print("self.model.info_torque[CycleSelected]: ",copy_CycleSelected_tool1)
                         print("self.model.estado_actual[tool]: ",self.model.estado_actual[tool])
 
-                        if copy_CycleSelected_tool1 == revversa and self.model.estado_actual[tool] == "BACKWARD":
+                        if (copy_CycleSelected_tool1 == revversa1 or copy_angulo_final1>4000 or copy_angulo_maximo1>4000 ) and self.model.estado_actual[tool] == "BACKWARD":
                             print("torque1_reversa emit()")
                             self.torque1_reversa.emit()
                         else:
@@ -914,9 +932,7 @@ class MqttClient (QObject):
                             self.torque1.emit()
                     else:
                         print("torque no emit, saliendo de reversa")
-
                     if self.model.herramienta_bloqueada[tool]==True:
-                        self.model.herramienta_bloqueada[tool]=False
                         tool_desbloqueada = tool+"_desbloqueada"
                         self.client.publish(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : False}), qos = 2)
 
@@ -957,7 +973,7 @@ class MqttClient (QObject):
                     if self.model.info_torque["result"]!=1:
                         self.model.herramienta_bloqueada[tool]=True
                         tool_desbloqueada = tool+"_desbloqueada"
-                        self.client.publish(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}), qos = 2) 
+                        self.client.publish(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}), qos = 2)
                     else:
                         self.model.herramienta_bloqueada[tool]=False
                     #si no está bloqueada la señal (por estar transicionando al salir de backward)
@@ -992,6 +1008,8 @@ class MqttClient (QObject):
                                 }
                             print("data to post torqueinfo",data)
                             copy_CycleSelected_tool2 = copy(self.model.info_torque["CycleSelected"])
+                            copy_angulo_final2 = copy(self.model.info_torque["angle"])
+                            copy_angulo_maximo2 = copy(self.model.info_torque["angle_max"])
                             endpoint = "http://{}/api/post/torque_info".format(self.model.server)
                             resp = requests.post(endpoint, data=json.dumps(data))
                             self.default_info_torque()
@@ -999,13 +1017,13 @@ class MqttClient (QObject):
                             print("post torque exception: ", ex)
                         #se emite la señal de que se hizo un torque con esta herramienta
                         
-                        revversa = self.model.torque_data[tool]["backward_profile"]
+                        revversa2 = self.model.torque_data[tool]["backward_profile"]
 
-                        print("revversa: ",revversa)
+                        print("revversa2: ",revversa2)
                         print("self.model.info_torque[CycleSelected]: ",copy_CycleSelected_tool2)
                         print("self.model.estado_actual[tool]: ",self.model.estado_actual[tool])
 
-                        if copy_CycleSelected_tool2 == revversa and self.model.estado_actual[tool] == "BACKWARD":
+                        if (copy_CycleSelected_tool2 == revversa2 or copy_angulo_final2>4000 or copy_angulo_maximo2>4000 ) and self.model.estado_actual[tool] == "BACKWARD":
                             print("torque2_reversa emit()")
                             self.torque2_reversa.emit()
                         else:
@@ -1015,7 +1033,6 @@ class MqttClient (QObject):
                     else:
                         print("torque no emit, saliendo de reversa")
                     if self.model.herramienta_bloqueada[tool]==True:
-                        self.model.herramienta_bloqueada[tool]=False
                         tool_desbloqueada = tool+"_desbloqueada"
                         self.client.publish(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : False}), qos = 2)
 
@@ -1089,6 +1106,8 @@ class MqttClient (QObject):
                                 }
                             print("data to post torqueinfo",data)
                             copy_CycleSelected_tool3 = copy(self.model.info_torque["CycleSelected"])
+                            copy_angulo_final3 = copy(self.model.info_torque["angle"])
+                            copy_angulo_maximo3 = copy(self.model.info_torque["angle_max"])
                             endpoint = "http://{}/api/post/torque_info".format(self.model.server)
                             resp = requests.post(endpoint, data=json.dumps(data))
                             self.default_info_torque()
@@ -1096,13 +1115,13 @@ class MqttClient (QObject):
                             print("post torque exception: ", ex)
                         #se emite la señal de que se hizo un torque con esta herramienta
                         
-                        revversa = self.model.torque_data[tool]["backward_profile"]
+                        revversa3 = self.model.torque_data[tool]["backward_profile"]
 
-                        print("revversa: ",revversa)
+                        print("revversa3: ",revversa3)
                         print("self.model.info_torque[CycleSelected]: ",copy_CycleSelected_tool3)
                         print("self.model.estado_actual[tool]: ",self.model.estado_actual[tool])
 
-                        if copy_CycleSelected_tool3 == revversa and self.model.estado_actual[tool] == "BACKWARD":
+                        if (copy_CycleSelected_tool3 == revversa3 or copy_angulo_final3>4000 or copy_angulo_maximo3>4000 ) and self.model.estado_actual[tool] == "BACKWARD":
                             print("torque3_reversa emit()")
                             self.torque3_reversa.emit()
                         else:
@@ -1112,10 +1131,9 @@ class MqttClient (QObject):
                     else:
                         print("torque no emit, saliendo de reversa")
                     if self.model.herramienta_bloqueada[tool]==True:
-                        self.model.herramienta_bloqueada[tool]=False
                         tool_desbloqueada = tool+"_desbloqueada"
                         self.client.publish(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : False}), qos = 2)
-                
+
             if message.topic == self.model.sub_topics["gui"]:
                 if "request" in payload:
                     self.model.input_data["gui"]["request"] = payload["request"]
@@ -1154,8 +1172,8 @@ class MqttClient (QObject):
                             self.client.publish("GDI",json.dumps({"Esconder" : True}), qos = 2)
                         except Exception as ex:
                             print("Error al Esconder GDI ", ex)
-
                 if "codeQR" in payload:
+                    
                     if "MOSTRARGDI" in str(payload):
                         print("Mostrando GDI")
                         try:

@@ -226,6 +226,13 @@ class StartCycle (QState):
         minutos=0
         segundos=0
         color="black"
+        
+        tool_desbloqueada = "tool1_desbloqueada"
+        publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}),hostname='127.0.0.1', qos = 2)
+        tool_desbloqueada = "tool2_desbloqueada"
+        publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}),hostname='127.0.0.1', qos = 2)
+        tool_desbloqueada = "tool3_desbloqueada"
+        publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}),hostname='127.0.0.1', qos = 2)
         try:
             #se resetea variable bypass para el pdcr
             self.model.bypass_pdcr = ""
@@ -272,7 +279,6 @@ class StartCycle (QState):
         self.model.intentos_max_stop["tool1"] = 0
         self.model.intentos_max_stop["tool2"] = 0
         self.model.intentos_max_stop["tool3"] = 0
-
         #variable para regresar a reversa cuando se sale por clampeo de otra caja
         self.model.estado_actual["tool1"] = ""
         self.model.estado_actual["tool2"] = ""
@@ -502,6 +508,18 @@ class StartCycle (QState):
             print("Error en el conteo ", ex)
         QTimer.singleShot(100, self.stopTorque)
 
+
+        tool_desbloqueada = "tool1_desbloqueada"
+        publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : False}),hostname='127.0.0.1', qos = 2)
+        tool_desbloqueada = "tool2_desbloqueada"
+        publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : False}),hostname='127.0.0.1', qos = 2)
+        tool_desbloqueada = "tool3_desbloqueada"
+        publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : False}),hostname='127.0.0.1', qos = 2)
+        
+        command = {
+            "vision":"stop_record"
+        }
+        publish.single(self.model.sub_topics["supervision"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         if not(self.model.shutdown):
             self.ok.emit()
 
@@ -1659,7 +1677,14 @@ class CheckQr (QState):
             self.model.asegurar_lectura["tool1"] = False
             self.model.asegurar_lectura["tool2"] = False
             self.model.asegurar_lectura["tool3"] = False
-
+            #Se activa supervision
+            print("se va a mandar start record+++++-----------+----+-------+-+-+-+-+-+---------")
+            fecha_actual = self.model.get_currentTime()
+            command = {
+                "vision":"start_record",
+                "info":self.model.qr_codes["HM"]+" "+str(fecha_actual.strftime("%Y/%m/%d %H:%M:%S"))
+            }
+            publish.single(self.model.sub_topics["supervision"],json.dumps(command),hostname='127.0.0.1', qos = 2)
             self.ok.emit()
 
         except Exception as ex:
@@ -1768,10 +1793,22 @@ class QrRework (QState):
     def rework (self):
         self.model.retrabajo=True
         self.model.local_data["qr_rework"] = True
+        #Se activa supervision
+        command = {
+            "vision":"start_record"
+            
+        }
+        publish.single(self.model.sub_topics["supervision"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         Timer(0.05, self.ok.emit).start()
 
     def noRework(self):
         self.model.retrabajo=False
+        #Se activa supervision
+        command = {
+            "vision":"stop_record"
+            
+        }
+        publish.single(self.model.sub_topics["supervision"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         Timer(0.05, self.ok.emit).start()
 
 
@@ -1789,6 +1826,12 @@ class Finish (QState):
         color="black"
         self.model.alarma_activada=False
         self.model.alarma_caja_tuerca=""
+        #Se activa supervision
+        command = {
+            "vision":"stop_record"
+            
+        }
+        publish.single(self.model.sub_topics["supervision"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         try:
             query="SELECT INICIO, FIN FROM et_mbi_2.historial WHERE RESULTADO = 1 order by ID desc LIMIT 1;"
             endpoint = "http://{}/query/get/{}".format(self.model.server, query)
@@ -2060,6 +2103,11 @@ class Reset (QState):
         self.model.alarma_caja_tuerca=""
         self.model.en_ciclo=False
         self.model.retrabajo=False
+        #Se activa supervision
+        command = {
+            "vision":"stop_record"
+        }
+        publish.single(self.model.sub_topics["supervision"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         if "HM000000011936" in self.model.qr_codes["HM"]:
             self.model.config_data["trazabilidad"] = True
                         
