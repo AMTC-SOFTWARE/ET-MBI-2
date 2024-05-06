@@ -828,7 +828,7 @@ class CheckZone (QState):
                             
                             if self.model.herramienta_bloqueada[self.tool]==True:
                                 tool_desbloqueada = self.tool+"_desbloqueada"
-                                self.client.publish(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}), qos = 2)
+                                publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}),hostname='127.0.0.1', qos = 2)
 
                             #if (current_trq[1] == "A21" or current_trq[1] == "A22" or current_trq[1] == "A23" or current_trq[1] == "A24" or current_trq[1] == "A20" or current_trq[1] == "A25" or current_trq[1] == "A30") and self.model.activar_tool[self.tool] == False:
                             if self.model.activar_tool[self.tool] == False: #se debe mantener para todas las cavidades
@@ -1784,7 +1784,7 @@ class Backward (QState):
         if zone[0] == current_trq[0]:
             if self.model.herramienta_bloqueada[self.tool]==True:
                 tool_desbloqueada = self.tool+"_desbloqueada"
-                self.client.publish(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}), qos = 2)
+                publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}),hostname='127.0.0.1', qos = 2)
 
             if zone[1] == "0":
                 command = {
