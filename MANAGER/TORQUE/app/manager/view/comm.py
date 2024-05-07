@@ -781,7 +781,7 @@ class MqttClient (QObject):
                         #se obtienen los datos del current_trq
                         current_tool = encoder.replace("encoder_","tool")
                         #si current_trq no está vacío...
-                        if self.model.torque_data[current_tool]["current_trq"] != None:
+                        if current_tool != "tool4" and self.model.torque_data[current_tool]["current_trq"] != None:
                             caja = self.model.torque_data[current_tool]["current_trq"][0]
                             tuerca = self.model.torque_data[current_tool]["current_trq"][1]
 
