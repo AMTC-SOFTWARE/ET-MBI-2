@@ -43,16 +43,6 @@ class Admin (QDialog):
         self.client.on_message = self.on_message
         QTimer.singleShot(100, self.startClient)
 
-        #if exists("data\config"):
-        #    with open("data\config", "rb") as f:
-        #        self.config = load(f)
-        #        if "untwist" in self.config:
-        #            if self.config["untwist"] == True:
-        #                self.ui.checkBox_2.setChecked(True)
-        #            else:
-        #                self.ui.checkBox_2.setChecked(False)
-        #else:
-        #    self.config["untwist"] = False
 
         if self.data.config_data["cajas_repetidas"]:
             self.ui.checkBox_2.setChecked(True)
@@ -68,56 +58,127 @@ class Admin (QDialog):
 
         #empieza sin motrar GDI
         self.ui.checkBox_4.setChecked(False)
+        #empieza sin utilizar sensores inductivos
+        self.ui.checkBox_10.setChecked(False)
+        #se deshabilita el botón para apagar la PC
+        self.ui.btn_off.setEnabled(False)
+        #se esconde botón de apagado
+        self.ui.btn_off.setVisible(False) 
+        #se esconde checkbox_5 (se utilizaba para modo puntual)
+        self.ui.checkBox_5.setVisible(False) 
 
         if self.data.config_data["hora_servidor"]:
             self.ui.checkBox_6.setChecked(True)
         else:
             self.ui.checkBox_6.setChecked(False)
-        self.ui.btn_off.setEnabled(False)
 
-        
         if self.data.config_data["conectoresPDCP"]:
             self.ui.checkBox_7.setChecked(True)
         else:
             self.ui.checkBox_7.setChecked(False)
-        self.ui.btn_off.setEnabled(False)
-
+        
         if self.data.config_data["checkAlarma"]:
             self.ui.checkBox_8.setChecked(True)
         else:
             self.ui.checkBox_8.setChecked(False)
-        self.ui.btn_off.setEnabled(False)
 
         if self.data.config_data["sinTorquePDCR"]:
             self.ui.checkBox_9.setChecked(True)
         else:
             self.ui.checkBox_9.setChecked(False)
-        self.ui.btn_off.setEnabled(False)
+        
+        if self.data.config_data["shift_ctrl_function"]:
+            self.ui.checkBox_11.setChecked(True)
+        else:
+            self.ui.checkBox_11.setChecked(False)
 
         if self.data.config_data["trazabilidad"]:
-            self.ui.checkBox_10.setChecked(True)
+            self.ui.checkBox_12.setChecked(True)
         else:
-            self.ui.checkBox_10.setChecked(False)
-        self.ui.btn_off.setEnabled(False)
+            self.ui.checkBox_12.setChecked(False)
+
+        self.ui.checkBoxMFBP2_A20.setChecked(self.data.config_data["sensores_inductivos"]["MFB-P2"]["A20"])
+        self.ui.checkBoxMFBP2_A21.setChecked(self.data.config_data["sensores_inductivos"]["MFB-P2"]["A21"])
+        self.ui.checkBoxMFBP2_A22.setChecked(self.data.config_data["sensores_inductivos"]["MFB-P2"]["A22"])
+        self.ui.checkBoxMFBP2_A23.setChecked(self.data.config_data["sensores_inductivos"]["MFB-P2"]["A23"])
+        self.ui.checkBoxMFBP2_A24.setChecked(self.data.config_data["sensores_inductivos"]["MFB-P2"]["A24"])
+        self.ui.checkBoxMFBP2_A25.setChecked(self.data.config_data["sensores_inductivos"]["MFB-P2"]["A25"])
+        self.ui.checkBoxMFBP2_A26.setChecked(self.data.config_data["sensores_inductivos"]["MFB-P2"]["A26"])
+        self.ui.checkBoxMFBP2_A27.setChecked(self.data.config_data["sensores_inductivos"]["MFB-P2"]["A27"])
+        self.ui.checkBoxMFBP2_A28.setChecked(self.data.config_data["sensores_inductivos"]["MFB-P2"]["A28"])
+        self.ui.checkBoxMFBP2_A29.setChecked(self.data.config_data["sensores_inductivos"]["MFB-P2"]["A29"])
+        self.ui.checkBoxMFBP2_A30.setChecked(self.data.config_data["sensores_inductivos"]["MFB-P2"]["A30"])
+
+        self.ui.checkBoxMFBP1_A41.setChecked(self.data.config_data["sensores_inductivos"]["MFB-P1"]["A41"])
+        self.ui.checkBoxMFBP1_A42.setChecked(self.data.config_data["sensores_inductivos"]["MFB-P1"]["A42"])
+        self.ui.checkBoxMFBP1_A43.setChecked(self.data.config_data["sensores_inductivos"]["MFB-P1"]["A43"])
+        self.ui.checkBoxMFBP1_A44.setChecked(self.data.config_data["sensores_inductivos"]["MFB-P1"]["A44"])
+        self.ui.checkBoxMFBP1_A45.setChecked(self.data.config_data["sensores_inductivos"]["MFB-P1"]["A45"])
+        self.ui.checkBoxMFBP1_A46.setChecked(self.data.config_data["sensores_inductivos"]["MFB-P1"]["A46"])
+        self.ui.checkBoxMFBP1_A47.setChecked(self.data.config_data["sensores_inductivos"]["MFB-P1"]["A47"])
+
+        self.ui.checkBoxMFBS_A51.setChecked(self.data.config_data["sensores_inductivos"]["MFB-S"]["A51"])
+        self.ui.checkBoxMFBS_A52.setChecked(self.data.config_data["sensores_inductivos"]["MFB-S"]["A52"])
+        self.ui.checkBoxMFBS_A53.setChecked(self.data.config_data["sensores_inductivos"]["MFB-S"]["A53"])
+        self.ui.checkBoxMFBS_A54.setChecked(self.data.config_data["sensores_inductivos"]["MFB-S"]["A54"])
+        self.ui.checkBoxMFBS_A55.setChecked(self.data.config_data["sensores_inductivos"]["MFB-S"]["A55"])
+        self.ui.checkBoxMFBS_A56.setChecked(self.data.config_data["sensores_inductivos"]["MFB-S"]["A56"])
+
+        self.ui.checkBoxMFBE_E1.setChecked(self.data.config_data["sensores_inductivos"]["MFB-E"]["E1"])
+        self.ui.checkBoxMFBE_A1.setChecked(self.data.config_data["sensores_inductivos"]["MFB-E"]["A1"])
+        self.ui.checkBoxMFBE_A2.setChecked(self.data.config_data["sensores_inductivos"]["MFB-E"]["A2"])
 
 
-        self.ui.btn_off.setVisible(False) #se esconde botón de apagado
-        self.ui.checkBox_5.setVisible(False) #se esconde checkbox
+        self.ui.btn_reset.clicked.connect(self.resetMachine) #botón para reiniciar PC activa función resetMachine
         #self.ui.btn_torque.clicked.connect(self.qw_torques.show)
         #self.ui.btn_torque.clicked.connect(self.manualTorque)
-        self.ui.btn_reset.clicked.connect(self.resetMachine)
         #self.ui.btn_off.clicked.connect(self.poweroff)
 
-        self.ui.checkBox_1.stateChanged.connect(self.onClicked_1)
-        self.ui.checkBox_2.stateChanged.connect(self.onClicked_2)
-        self.ui.checkBox_3.stateChanged.connect(self.onClicked_3)
-        self.ui.checkBox_4.stateChanged.connect(self.onClicked_4)
-        #self.ui.checkBox_5.stateChanged.connect(self.onClicked_5)
-        self.ui.checkBox_6.stateChanged.connect(self.onClicked_6)
-        self.ui.checkBox_7.stateChanged.connect(self.onClicked_7)
-        self.ui.checkBox_8.stateChanged.connect(self.onClicked_8)
-        self.ui.checkBox_9.stateChanged.connect(self.onClicked_9)
-        self.ui.checkBox_10.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBox_1.stateChanged.connect(self.onClicked_1)           # Abrir Carpeta
+        self.ui.checkBox_2.stateChanged.connect(self.onClicked_2)           # Cajas Repetidas
+        self.ui.checkBox_3.stateChanged.connect(self.onClicked_3)           # Comparación PDC-P & PDC-D con FET
+        self.ui.checkBox_4.stateChanged.connect(self.onClicked_4)           # Habilitar GDI
+        #self.ui.checkBox_5.stateChanged.connect(self.onClicked_5)          # Modo Puntual
+        self.ui.checkBox_6.stateChanged.connect(self.onClicked_6)           # Usar Hora de Servidor
+        self.ui.checkBox_7.stateChanged.connect(self.onClicked_7)           # Revisión de Conectores PDC-P
+        self.ui.checkBox_8.stateChanged.connect(self.onClicked_8)           # Alarma de Tuerca Faltante
+        self.ui.checkBox_9.stateChanged.connect(self.onClicked_9)           # Sin Tuerca PDC-R (Ciclo no pide tuerca, solo candados)
+        self.ui.checkBox_10.stateChanged.connect(self.onClicked_10)         # Zonas con Sensores
+        self.ui.checkBox_11.stateChanged.connect(self.onClicked_11)         # Función shift ctrl Focus
+        self.ui.checkBox_12.stateChanged.connect(self.onClicked_12)         # Sistema de Trazabilidad
+
+        self.ui.checkBoxMFBP2_A20.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBoxMFBP2_A21.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBoxMFBP2_A22.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBoxMFBP2_A23.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBoxMFBP2_A24.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBoxMFBP2_A25.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBoxMFBP2_A26.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBoxMFBP2_A27.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBoxMFBP2_A28.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBoxMFBP2_A29.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBoxMFBP2_A30.stateChanged.connect(self.onClicked_10)
+
+        self.ui.checkBoxMFBP1_A41.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBoxMFBP1_A42.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBoxMFBP1_A43.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBoxMFBP1_A44.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBoxMFBP1_A45.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBoxMFBP1_A46.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBoxMFBP1_A47.stateChanged.connect(self.onClicked_10)
+
+        self.ui.checkBoxMFBS_A51.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBoxMFBS_A52.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBoxMFBS_A53.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBoxMFBS_A54.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBoxMFBS_A55.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBoxMFBS_A56.stateChanged.connect(self.onClicked_10)
+
+        self.ui.checkBoxMFBE_E1.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBoxMFBE_A1.stateChanged.connect(self.onClicked_10)
+        self.ui.checkBoxMFBE_A2.stateChanged.connect(self.onClicked_10)
+
+
         self.rcv.connect(self.qw_torques.input)
         self.permissions()
 
@@ -140,6 +201,8 @@ class Admin (QDialog):
             self.ui.checkBox_8.setEnabled(True)
             self.ui.checkBox_9.setEnabled(True)
             self.ui.checkBox_10.setEnabled(True)
+            self.ui.checkBox_11.setEnabled(True)
+            self.ui.checkBox_12.setEnabled(True)
         elif self.user_type == "CALIDAD":
             #self.ui.btn_off.setEnabled(False)
             self.ui.btn_reset.setEnabled(True)
@@ -154,6 +217,8 @@ class Admin (QDialog):
             self.ui.checkBox_8.setEnabled(True)
             self.ui.checkBox_9.setEnabled(True)
             self.ui.checkBox_10.setEnabled(False)
+            self.ui.checkBox_11.setEnabled(False)
+            self.ui.checkBox_12.setEnabled(False)
         elif self.user_type == "MANTENIMIENTO":
             #self.ui.btn_off.setEnabled(True)
             self.ui.btn_reset.setEnabled(True)
@@ -168,6 +233,8 @@ class Admin (QDialog):
             self.ui.checkBox_8.setEnabled(False)
             self.ui.checkBox_9.setEnabled(False)
             self.ui.checkBox_10.setEnabled(False)
+            self.ui.checkBox_11.setEnabled(False)
+            self.ui.checkBox_12.setEnabled(False)
         elif self.user_type == "PRODUCCION":
             #self.ui.btn_off.setEnabled(False)
             #self.ui.btn_reset.setEnabled(True)
@@ -182,6 +249,8 @@ class Admin (QDialog):
             self.ui.checkBox_8.setEnabled(False)
             self.ui.checkBox_9.setEnabled(False)
             self.ui.checkBox_10.setEnabled(False)
+            self.ui.checkBox_11.setEnabled(False)
+            self.ui.checkBox_12.setEnabled(False)
         self.show()
 
     #def show_rework (self):
@@ -328,23 +397,14 @@ class Admin (QDialog):
             if self.ui.checkBox_4.isChecked():
                 print("Mostrando GDI: contains(Mostrar)")
                 self.client.publish("GDI",json.dumps({"Mostrar" : "Mostrando GDI..."}), qos = 2)
-                self.pop_out.setText("Mostrando GDI")
-                self.pop_out.setWindowTitle("Acción Realizada")
-                QTimer.singleShot(2000, self.pop_out.button(QMessageBox.Ok).click)
-                self.pop_out.exec()
             else:
                 print("Ocultando GDI: containts(Esconder)")
                 self.client.publish("GDI",json.dumps({"Esconder" : "Ocultando GDI..."}), qos = 2)
-                self.pop_out.setText("Ocultando GDI")
-                self.pop_out.setWindowTitle("Acción Realizada")
-                QTimer.singleShot(2000, self.pop_out.button(QMessageBox.Ok).click)
-                self.pop_out.exec()
         except Exception as ex:
             print("Error al ocultar o mostrar GDI ", ex)
 
     #checkbox Libre
     def onClicked_5(self):
-        
         #if self.ui.checkBox_5.isChecked():
         #    self.data.config_data["flexible_mode"] = True
         #else:
@@ -357,7 +417,6 @@ class Admin (QDialog):
             La hora del servidor define cuando los registros se hacen con la hora extraida del servidor
             """
             self.data.config_data["hora_servidor"] = True
-            
         else:
             self.data.config_data["hora_servidor"] = False
            
@@ -368,7 +427,6 @@ class Admin (QDialog):
             Conectores PDCP True habilitados
             """
             self.data.config_data["conectoresPDCP"] = True
-            
         else:
             self.data.config_data["conectoresPDCP"] = False
 
@@ -379,37 +437,174 @@ class Admin (QDialog):
             Alarma de tuerca faltante habilitada
             """
             self.data.config_data["checkAlarma"] = True
-            
         else:
             self.data.config_data["checkAlarma"] = False
 
     def onClicked_9(self):     
         if self.ui.checkBox_9.isChecked():
             """
-            bypass pdcr
+            bypass PDCR
             """
             self.data.config_data["sinTorquePDCR"] = True
-            
         else:
             self.data.config_data["sinTorquePDCR"] = False
             
+    def onClicked_10(self):     
+        if self.ui.checkBox_10.isChecked():
+
+            self.ui.checkBoxMFBP2_A20.setEnabled(True)
+            self.ui.checkBoxMFBP2_A21.setEnabled(True)
+            self.ui.checkBoxMFBP2_A22.setEnabled(True)
+            self.ui.checkBoxMFBP2_A23.setEnabled(True)
+            self.ui.checkBoxMFBP2_A24.setEnabled(True)
+            self.ui.checkBoxMFBP2_A25.setEnabled(True)
+            self.ui.checkBoxMFBP2_A26.setEnabled(True)
+            self.ui.checkBoxMFBP2_A27.setEnabled(True)
+            self.ui.checkBoxMFBP2_A28.setEnabled(True)
+            self.ui.checkBoxMFBP2_A29.setEnabled(True)
+            self.ui.checkBoxMFBP2_A30.setEnabled(True)
+
+            self.ui.checkBoxMFBP1_A41.setEnabled(True)
+            self.ui.checkBoxMFBP1_A42.setEnabled(True)
+            self.ui.checkBoxMFBP1_A43.setEnabled(True)
+            self.ui.checkBoxMFBP1_A44.setEnabled(True)
+            self.ui.checkBoxMFBP1_A45.setEnabled(True)
+            self.ui.checkBoxMFBP1_A46.setEnabled(True)
+            self.ui.checkBoxMFBP1_A47.setEnabled(True)
+
+            self.ui.checkBoxMFBS_A51.setEnabled(True)
+            self.ui.checkBoxMFBS_A52.setEnabled(True)
+            self.ui.checkBoxMFBS_A53.setEnabled(True)
+            self.ui.checkBoxMFBS_A54.setEnabled(True)
+            self.ui.checkBoxMFBS_A55.setEnabled(True)
+            self.ui.checkBoxMFBS_A56.setEnabled(True)
+
+            self.ui.checkBoxMFBE_E1.setEnabled(True)
+            self.ui.checkBoxMFBE_A1.setEnabled(True)
+            self.ui.checkBoxMFBE_A2.setEnabled(True)
+
+        else:
             
+            self.ui.checkBoxMFBP2_A20.setChecked(False)
+            self.ui.checkBoxMFBP2_A21.setChecked(False)
+            self.ui.checkBoxMFBP2_A22.setChecked(False)
+            self.ui.checkBoxMFBP2_A23.setChecked(False)
+            self.ui.checkBoxMFBP2_A24.setChecked(False)
+            self.ui.checkBoxMFBP2_A25.setChecked(False)
+            self.ui.checkBoxMFBP2_A26.setChecked(False)
+            self.ui.checkBoxMFBP2_A27.setChecked(False)
+            self.ui.checkBoxMFBP2_A28.setChecked(False)
+            self.ui.checkBoxMFBP2_A29.setChecked(False)
+            self.ui.checkBoxMFBP2_A30.setChecked(False)
+
+            self.ui.checkBoxMFBP1_A41.setChecked(False)
+            self.ui.checkBoxMFBP1_A42.setChecked(False)
+            self.ui.checkBoxMFBP1_A43.setChecked(False)
+            self.ui.checkBoxMFBP1_A44.setChecked(False)
+            self.ui.checkBoxMFBP1_A45.setChecked(False)
+            self.ui.checkBoxMFBP1_A46.setChecked(False)
+            self.ui.checkBoxMFBP1_A47.setChecked(False)
+
+            self.ui.checkBoxMFBS_A51.setChecked(False)
+            self.ui.checkBoxMFBS_A52.setChecked(False)
+            self.ui.checkBoxMFBS_A53.setChecked(False)
+            self.ui.checkBoxMFBS_A54.setChecked(False)
+            self.ui.checkBoxMFBS_A55.setChecked(False)
+            self.ui.checkBoxMFBS_A56.setChecked(False)
+
+            self.ui.checkBoxMFBE_E1.setChecked(False)
+            self.ui.checkBoxMFBE_A1.setChecked(False)
+            self.ui.checkBoxMFBE_A2.setChecked(False)
+
+            ######################
+
+            self.ui.checkBoxMFBP2_A20.setEnabled(False)
+            self.ui.checkBoxMFBP2_A21.setEnabled(False)
+            self.ui.checkBoxMFBP2_A22.setEnabled(False)
+            self.ui.checkBoxMFBP2_A23.setEnabled(False)
+            self.ui.checkBoxMFBP2_A24.setEnabled(False)
+            self.ui.checkBoxMFBP2_A25.setEnabled(False)
+            self.ui.checkBoxMFBP2_A26.setEnabled(False)
+            self.ui.checkBoxMFBP2_A27.setEnabled(False)
+            self.ui.checkBoxMFBP2_A28.setEnabled(False)
+            self.ui.checkBoxMFBP2_A29.setEnabled(False)
+            self.ui.checkBoxMFBP2_A30.setEnabled(False)
+
+            self.ui.checkBoxMFBP1_A41.setEnabled(False)
+            self.ui.checkBoxMFBP1_A42.setEnabled(False)
+            self.ui.checkBoxMFBP1_A43.setEnabled(False)
+            self.ui.checkBoxMFBP1_A44.setEnabled(False)
+            self.ui.checkBoxMFBP1_A45.setEnabled(False)
+            self.ui.checkBoxMFBP1_A46.setEnabled(False)
+            self.ui.checkBoxMFBP1_A47.setEnabled(False)
+
+            self.ui.checkBoxMFBS_A51.setEnabled(False)
+            self.ui.checkBoxMFBS_A52.setEnabled(False)
+            self.ui.checkBoxMFBS_A53.setEnabled(False)
+            self.ui.checkBoxMFBS_A54.setEnabled(False)
+            self.ui.checkBoxMFBS_A55.setEnabled(False)
+            self.ui.checkBoxMFBS_A56.setEnabled(False)
+
+            self.ui.checkBoxMFBE_E1.setEnabled(False)
+            self.ui.checkBoxMFBE_A1.setEnabled(False)
+            self.ui.checkBoxMFBE_A2.setEnabled(False)
+
+
+        self.data.config_data["sensores_inductivos"]["MFB-P2"]["A20"] = self.ui.checkBoxMFBP2_A20.isChecked()
+        self.data.config_data["sensores_inductivos"]["MFB-P2"]["A21"] = self.ui.checkBoxMFBP2_A21.isChecked()
+        self.data.config_data["sensores_inductivos"]["MFB-P2"]["A22"] = self.ui.checkBoxMFBP2_A22.isChecked()
+        self.data.config_data["sensores_inductivos"]["MFB-P2"]["A23"] = self.ui.checkBoxMFBP2_A23.isChecked()
+        self.data.config_data["sensores_inductivos"]["MFB-P2"]["A24"] = self.ui.checkBoxMFBP2_A24.isChecked()
+        self.data.config_data["sensores_inductivos"]["MFB-P2"]["A25"] = self.ui.checkBoxMFBP2_A25.isChecked()
+        self.data.config_data["sensores_inductivos"]["MFB-P2"]["A26"] = self.ui.checkBoxMFBP2_A26.isChecked()
+        self.data.config_data["sensores_inductivos"]["MFB-P2"]["A27"] = self.ui.checkBoxMFBP2_A27.isChecked()
+        self.data.config_data["sensores_inductivos"]["MFB-P2"]["A28"] = self.ui.checkBoxMFBP2_A28.isChecked()
+        self.data.config_data["sensores_inductivos"]["MFB-P2"]["A29"] = self.ui.checkBoxMFBP2_A29.isChecked()
+        self.data.config_data["sensores_inductivos"]["MFB-P2"]["A30"] = self.ui.checkBoxMFBP2_A30.isChecked()
+
+        self.data.config_data["sensores_inductivos"]["MFB-P1"]["A41"] = self.ui.checkBoxMFBP1_A41.isChecked()
+        self.data.config_data["sensores_inductivos"]["MFB-P1"]["A42"] = self.ui.checkBoxMFBP1_A42.isChecked()
+        self.data.config_data["sensores_inductivos"]["MFB-P1"]["A43"] = self.ui.checkBoxMFBP1_A43.isChecked()
+        self.data.config_data["sensores_inductivos"]["MFB-P1"]["A44"] = self.ui.checkBoxMFBP1_A44.isChecked()
+        self.data.config_data["sensores_inductivos"]["MFB-P1"]["A45"] = self.ui.checkBoxMFBP1_A45.isChecked()
+        self.data.config_data["sensores_inductivos"]["MFB-P1"]["A46"] = self.ui.checkBoxMFBP1_A46.isChecked()
+        self.data.config_data["sensores_inductivos"]["MFB-P1"]["A47"] = self.ui.checkBoxMFBP1_A47.isChecked()
+
+        self.data.config_data["sensores_inductivos"]["MFB-S"]["A51"] = self.ui.checkBoxMFBS_A51.isChecked()
+        self.data.config_data["sensores_inductivos"]["MFB-S"]["A52"] = self.ui.checkBoxMFBS_A52.isChecked()
+        self.data.config_data["sensores_inductivos"]["MFB-S"]["A53"] = self.ui.checkBoxMFBS_A53.isChecked()
+        self.data.config_data["sensores_inductivos"]["MFB-S"]["A54"] = self.ui.checkBoxMFBS_A54.isChecked()
+        self.data.config_data["sensores_inductivos"]["MFB-S"]["A55"] = self.ui.checkBoxMFBS_A55.isChecked()
+        self.data.config_data["sensores_inductivos"]["MFB-S"]["A56"] = self.ui.checkBoxMFBS_A56.isChecked()
+
+        self.data.config_data["sensores_inductivos"]["MFB-E"]["E1"] = self.ui.checkBoxMFBE_E1.isChecked()
+        self.data.config_data["sensores_inductivos"]["MFB-E"]["A1"] = self.ui.checkBoxMFBE_A1.isChecked()
+        self.data.config_data["sensores_inductivos"]["MFB-E"]["A2"] = self.ui.checkBoxMFBE_A2.isChecked()
+
+        print("cambio en sensores_inductivos: ",self.data.config_data["sensores_inductivos"])
+
+    #Función para Shift/Ctrl en Focus de LineEdit de QR_CAJA y QR_KEY
+    def onClicked_11(self):
+        if self.ui.checkBox_11.isChecked():
+            self.data.config_data["shift_ctrl_function"] = True
+        else:
+            self.data.config_data["shift_ctrl_function"] = False
 
     #trazabilidad
-    def onClicked_10(self):     #Descomentar el día que se habilite el envío de info al servidor de P2
-        if self.ui.checkBox_10.isChecked():
+    def onClicked_12(self):
+        if self.ui.checkBox_12.isChecked():
             self.data.config_data["trazabilidad"] = True
             print("Sistema de Trazabilidad Habilitado")
             self.pop_out.setText("El Sistema de Trazabilidad ha sido Habilitado")
             self.pop_out.setWindowTitle("Acción Realizada")
-            QTimer.singleShot(2000, self.pop_out.button(QMessageBox.Ok).click)
+            QTimer.singleShot(1000, self.pop_out.button(QMessageBox.Ok).click)
             self.pop_out.exec()
         else:
             self.data.config_data["trazabilidad"] = False
             print("Sistema de Trazabilidad Deshabilitado")
             self.pop_out.setText("El Sistema de Trazabilidad ha sido Deshabilitado")
             self.pop_out.setWindowTitle("Acción Realizada")
-            QTimer.singleShot(2000, self.pop_out.button(QMessageBox.Ok).click)
+            QTimer.singleShot(1000, self.pop_out.button(QMessageBox.Ok).click)
             self.pop_out.exec()
 
     def closeEvent(self, event):

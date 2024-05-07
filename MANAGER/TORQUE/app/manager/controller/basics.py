@@ -30,17 +30,6 @@ class Startup(QState):
             print("Error al ocultar GDI ", ex)
 
         Timer(0.05, self.model.log, args = ("STARTUP",)).start() 
-        if exists("data\config"):
-            with open("data\config", "rb") as f:
-                data = load(f)
-                if "encoder_feedback" in data:
-                    for i in data["encoder_feedback"]:
-                        if type(data["encoder_feedback"][i]) == bool:
-                            self.model.config_data["encoder_feedback"][i] = data["encoder_feedback"][i]
-                if "retry_btn_mode" in data:
-                    for i in data["retry_btn_mode"]:
-                        if type(data["retry_btn_mode"][i]) == bool:
-                            self.model.config_data[ "retry_btn_mode"][i] = data[ "retry_btn_mode"][i]
         self.model.config_data["untwist"] = False
         self.model.config_data["flexible_mode"] = False
 
@@ -569,20 +558,9 @@ class Config (QState):
         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
     def onExit (self, event):
-        if exists("data\config"):
-            with open("data\config", "rb") as f:
-                data = load(f)
-                if "encoder_feedback" in data:
-                    for i in data["encoder_feedback"]:
-                        if type(data["encoder_feedback"][i]) == bool:
-                            self.model.config_data["encoder_feedback"][i] = data["encoder_feedback"][i]
-                if "retry_btn_mode" in data:
-                    for i in data["retry_btn_mode"]:
-                        if type(data["retry_btn_mode"][i]) == bool:
-                            self.model.config_data[ "retry_btn_mode"][i] = data[ "retry_btn_mode"][i]
-                if "untwist" in data:
-                    if type(data["untwist"]) == bool:
-                        self.model.config_data["untwist"] = data["untwist"]
+
+        print("saliendo de config...")
+        print(self.model.config_data["sensores_inductivos"])
 
 
 class ScanQr (QState):

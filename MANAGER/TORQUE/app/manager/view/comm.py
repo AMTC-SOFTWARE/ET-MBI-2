@@ -401,19 +401,20 @@ class MqttClient (QObject):
                 #    self.model.pin_pressed = True
                 #    self.pin.emit()
 
-                if self.keyboard_key == "keyboard_ctrl" and self.model.en_ciclo==True:
-                    command = {
-                            "lineEdit" : True,
-                            "lineEdit_focus" : True
-                            }
-                    self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
-                if self.keyboard_key == "keyboard_shift" and self.model.en_ciclo==True:
+                if self.model.config_data["shift_ctrl_function"] == True:
+                    if self.keyboard_key == "keyboard_ctrl" and self.model.en_ciclo==True:
+                        command = {
+                                "lineEdit" : True,
+                                "lineEdit_focus" : True
+                                }
+                        self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                    if self.keyboard_key == "keyboard_shift" and self.model.en_ciclo==True:
 
-                    command = {
-                           "lineEditKey" : True,
-                           "lineEditKey_focus":True
-                            }
-                    self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                        command = {
+                               "lineEditKey" : True,
+                               "lineEditKey_focus":True
+                                }
+                        self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
 
                 if self.keyboard_key == "keyboard_esc":
                     command = {"popOut":"close"}
@@ -438,10 +439,6 @@ class MqttClient (QObject):
                     #    self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                     #    print("AQUI HAY REMOVER EL MENSAJE PARA EVITAR QUE ESTE TODO EL TIEMPO")
                         
-
-                
-                    
-
                 self.raffi_check("PDC-R", "keyboard_F9")
                 self.raffi_check("PDC-RMID", "keyboard_F9")
                 self.raffi_check("MFB-P2", "keyboard_F8")
@@ -503,10 +500,10 @@ class MqttClient (QObject):
                 if "Confirmacion_bloqueoT2" in payload and self.model.herramienta_bloqueada["tool2"]==True:
                     if payload["Confirmacion_bloqueoT2"] == True:
                         self.model.herramienta_bloqueada["tool2"]=False
+                
                 if "Confirmacion_bloqueoT3" in payload and self.model.herramienta_bloqueada["tool3"]==True:
                     if payload["Confirmacion_bloqueoT3"] == True:
                         self.model.herramienta_bloqueada["tool3"]=False
-
 
                 if "Precencia_PDCP" in payload and self.model.validacion_conectores_pdcp==True:
                     if payload["Precencia_PDCP"] == True:
@@ -525,6 +522,7 @@ class MqttClient (QObject):
                             "lbl_boxNEW" : {"text":"", "color": "green"},
                             }
                         self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                
                 if "PDCP_Validacion" in payload and self.model.validacion_conectores_pdcp==True:
                     if payload["PDCP_Validacion"] == True:
                         self.model.validacion_conectores_pdcp=False
@@ -543,6 +541,7 @@ class MqttClient (QObject):
                             }
                         self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                         Timer(15, self.boxTimeout, args = (self.model.caja_por_validar, self.model.qr_box_actual)).start()
+                
                 if "Conector_S1" in payload and self.model.validacion_conectores_pdcp==True:
                     if payload["Conector_S1"] == True:
                         command = {
@@ -559,6 +558,7 @@ class MqttClient (QObject):
                             "lbl_boxNEW" : {"text":"", "color": "green"},
                             }
                         self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                
                 if "Conector_S2" in payload and self.model.validacion_conectores_pdcp==True and self.model.caja_puesta==True:
                     if payload["Conector_S2"] == True:
                         command = {
@@ -576,8 +576,6 @@ class MqttClient (QObject):
                             "lbl_boxNEW" : {"text":"", "color": "green"},
                             }
                         self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
-
-
 
                 if "candados_finish" in payload:
                     if payload["candados_finish"] == True:
@@ -633,6 +631,89 @@ class MqttClient (QObject):
                     else:
                         print("No entró porque self.model.estado_candados: ",self.model.estado_candados)
 
+                if "MFBP2_candado_limit" in payload:
+                    if payload["MFBP2_candado_limit"] == True:
+                        self.model.candados_limit_inductivos["MFB-P2"] = True
+                    else:
+                        self.model.candados_limit_inductivos["MFB-P2"] = False
+
+                if "MFBP1_candado_limit" in payload:
+                    if payload["MFBP1_candado_limit"] == True:
+                        self.model.candados_limit_inductivos["MFB-P1"] = True
+                    else:
+                        self.model.candados_limit_inductivos["MFB-P1"] = False
+
+                if "MFBS_candado_limit" in payload:
+                    if payload["MFBS_candado_limit"] == True:
+                        self.model.candados_limit_inductivos["MFB-S"] = True
+                    else:
+                        self.model.candados_limit_inductivos["MFB-S"] = False
+
+                if "MFBE_candado_limit" in payload:
+                    if payload["MFBE_candado_limit"] == True:
+                        self.model.candados_limit_inductivos["MFB-E"] = True
+                    else:
+                        self.model.candados_limit_inductivos["MFB-E"] = False
+
+                #formato sensor inductivo: inductivo_caja_tuerca
+                for inductivo in list(payload):
+                    if "inductivo_" in inductivo:
+                        
+                        inductivo_array = inductivo.split("_") #inductivo_array = [inductivo,caja,tuerca]
+                        print("inductivo_array: ",inductivo_array)
+
+                        caja_inductivo = inductivo_array[1]
+                        tuerca_inductivo = inductivo_array[2]
+
+                        print("self.model.config_data[sensores_inductivos][caja_inductivo][tuerca_inductivo]: ",self.model.config_data["sensores_inductivos"][caja_inductivo][tuerca_inductivo])
+
+                        if self.model.config_data["sensores_inductivos"][caja_inductivo][tuerca_inductivo] == True:
+
+                            #se obtienen los datos del inductivo_tool
+                            inductivo_tool = self.model.torque_cycles[caja_inductivo][tuerca_inductivo][0]
+                            print("inductivo_tool: ",inductivo_tool)
+
+                            if self.model.estado_candados == False or inductivo_tool == "tool1":
+                            
+                                #si current_trq no está vacío...
+                                if self.model.torque_data[inductivo_tool]["current_trq"] != None:
+                                    caja = self.model.torque_data[inductivo_tool]["current_trq"][0]
+                                    tuerca = self.model.torque_data[inductivo_tool]["current_trq"][1]
+
+                                    if caja == caja_inductivo:
+                                        if tuerca == tuerca_inductivo and self.model.candados_limit_inductivos[caja] == True:
+
+                                            encoder_inductivo = copy(inductivo_tool)
+                                            encoder_inductivo = encoder_inductivo.replace("tool","encoder_")
+                                            print("encoder_inductivo: ",encoder_inductivo)
+
+                                            if payload[inductivo] == True:
+                                                self.model.input_data["plc"][encoder_inductivo]["zone"] = '{"'+ caja_inductivo + '":"'+ tuerca_inductivo + '"}' #ejemplo: self.model.input_data["plc"][encoder_2]["zone"] = "{"PDC-D":"E1"}"
+                                            else:
+                                                self.model.input_data["plc"][encoder_inductivo]["zone"] = '{"'+ caja_inductivo + '":"0"}'
+                                            print("self.model.input_data[plc][encoder][zone]", self.model.input_data["plc"][encoder_inductivo]["zone"])
+
+                                            if encoder_inductivo == "encoder_1":
+                                                print("emit zone de tool1")
+                                                self.zone_tool1.emit() 
+
+                                            if encoder_inductivo == "encoder_2":
+                                                print("emit zone de tool2")
+                                                self.zone_tool2.emit()
+
+                                            if encoder_inductivo == "encoder_3":
+                                                print("emit zone de tool3")
+                                                self.zone_tool3.emit()
+                                        
+                                        elif tuerca == tuerca_inductivo and self.model.candados_limit_inductivos[caja] == False:
+                                            print("Cerrar Tapa para nido: ",caja)
+                                            command = {
+                                                "lbl_steps" : {"text": f"Candado de caja {caja} abierto", "color": "red"},
+                                                "lbl_result" : {"text": "Cerrar Nido para continuar", "color": "black"},
+                                                }
+                                            self.client.publish(self.model.torque_data[inductivo_tool]["gui"],json.dumps(command), qos = 2)
+
+                #encoder4
                 if "encoder" in payload and "name" in payload and "value" in payload:
 
                     #obtener encoder_1, encoder_2, encoder_3, o encoder_4
@@ -709,35 +790,39 @@ class MqttClient (QObject):
                             #ejemplo de tuerca: "E1"
                             #si el encoder leído contiene la caja y la tuerca del torque que está en la tarea actual (current_trq)
                             if caja in payload["name"] and tuerca in payload["name"]:
+                                print("caja: ",caja)
+                                print("tuerca: ",tuerca)
+                                print("self.model.config_data[sensores_inductivos][caja][tuerca]: ",self.model.config_data["sensores_inductivos"][caja][tuerca])
+                                if self.model.config_data["sensores_inductivos"][caja][tuerca] == False:
 
-                                #aquí entra cuando "value = False"...
-                                if not(payload["value"]):
-                                    #actualizar payload["name"] actual con 0, ejemplo: {"PDC-D":"0"}
-                                    payload["name"] = payload["name"][:payload["name"].find(":") + 1] + '"0"}'
+                                    #aquí entra cuando "value = False"...
+                                    if not(payload["value"]):
+                                        #actualizar payload["name"] actual con 0, ejemplo: {"PDC-D":"0"}
+                                        payload["name"] = payload["name"][:payload["name"].find(":") + 1] + '"0"}'
 
-                                #a este punto llegas con un payload["name"] que vale a la caja:terminal {"PDC-D":"E1"} o con un valor de 0 {"PDC-D":"0"}
+                                    #a este punto llegas con un payload["name"] que vale a la caja:terminal {"PDC-D":"E1"} o con un valor de 0 {"PDC-D":"0"}
 
-                                lista_encoders = ["encoder_1","encoder_2","encoder_3"]
-                                for i in lista_encoders:
-                                    if i == encoder:
-                                        #se actualiza la zona de este encoder
-                                        self.model.input_data["plc"][i]["zone"] = payload["name"] #ejemplo: self.model.input_data["plc"][encoder_2]["zone"] = "{"PDC-D":"E1"}"
+                                    lista_encoders = ["encoder_1","encoder_2","encoder_3"]
+                                    for i in lista_encoders:
+                                        if i == encoder:
+                                            #se actualiza la zona de este encoder
+                                            self.model.input_data["plc"][i]["zone"] = payload["name"] #ejemplo: self.model.input_data["plc"][encoder_2]["zone"] = "{"PDC-D":"E1"}"
 
 
-                                print("encoder: ",encoder)
-                                print("self.model.input_data[plc][encoder][zone]", self.model.input_data["plc"][encoder]["zone"])
+                                    print("encoder: ",encoder)
+                                    print("self.model.input_data[plc][encoder][zone]", self.model.input_data["plc"][encoder]["zone"])
 
-                                if encoder == "encoder_1":
-                                    print("emit zone de tool1")
-                                    self.zone_tool1.emit() 
+                                    if encoder == "encoder_1":
+                                        print("emit zone de tool1")
+                                        self.zone_tool1.emit() 
 
-                                if encoder == "encoder_2":
-                                    print("emit zone de tool2")
-                                    self.zone_tool2.emit()
+                                    if encoder == "encoder_2":
+                                        print("emit zone de tool2")
+                                        self.zone_tool2.emit()
 
-                                if encoder == "encoder_3":
-                                    print("emit zone de tool3")
-                                    self.zone_tool3.emit()
+                                    if encoder == "encoder_3":
+                                        print("emit zone de tool3")
+                                        self.zone_tool3.emit()
 
 
                     #si está en revisión de candados

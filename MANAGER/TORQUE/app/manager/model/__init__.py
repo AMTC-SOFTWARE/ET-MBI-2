@@ -36,6 +36,49 @@ class Model (object):
             "conectoresPDCP":True,
             "checkAlarma": True,
             "sinTorquePDCR":False,
+            "shift_ctrl_function":True,
+            "sensores_inductivos":
+            {
+                "MFB-P2":
+                {
+                        "A20":False,
+                        "A21":False,
+                        "A22":False,
+                        "A23":False,
+                        "A24":False,
+                        "A25":False,
+                        "A26":False,
+                        "A27":False,
+                        "A28":False,
+                        "A29":False,
+                        "A30":False
+                },
+                "MFB-P1":
+                {
+                        "A41":False,
+                        "A42":False,
+                        "A43":False,
+                        "A44":False,
+                        "A45":False,
+                        "A46":False,
+                        "A47":False
+                },
+                "MFB-S":
+                {
+                        "A51":False,
+                        "A52":False,
+                        "A53":False,
+                        "A54":False,
+                        "A55":False,
+                        "A56":False
+                },
+                "MFB-E":
+                {
+                        "E1":False,
+                        "A1":False,
+                        "A2":False
+                }
+            },
             "trazabilidad": True
         }
 
@@ -44,6 +87,16 @@ class Model (object):
         self.paro_emergia=False
         self.alarma_caja_tuerca=""
         self.ultima_imagen=""
+
+        #variables para saber el estado de la tapa del nido de sensores inductivos (si no está abajo la tapa se omiten los sensores)
+        self.candados_limit_inductivos = {
+            "MFB-P2":False,    
+            "MFB-P1":False,    
+            "MFB-S":False,    
+            "MFB-E":False,    
+        }
+
+
         #mensaje enviado al plc tool1_desbloqueada
         self.herramienta_bloqueada={
                 "tool1": False,
