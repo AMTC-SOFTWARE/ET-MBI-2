@@ -792,8 +792,15 @@ class MqttClient (QObject):
                             if caja in payload["name"] and tuerca in payload["name"]:
                                 print("caja: ",caja)
                                 print("tuerca: ",tuerca)
-                                print("self.model.config_data[sensores_inductivos][caja][tuerca]: ",self.model.config_data["sensores_inductivos"][caja][tuerca])
-                                if self.model.config_data["sensores_inductivos"][caja][tuerca] == False:
+
+                                iinductivos = False
+                                if caja in self.model.config_data["sensores_inductivos"]: #se busca que la caja sea una MFB-P2, MFB-P1, MFB-S o MFB-E
+                                    if tuerca in self.model.config_data["sensores_inductivos"][caja]: #se busca que sea una tuerca válida para esa caja
+                                        print("self.model.config_data[sensores_inductivos][caja][tuerca]: ",self.model.config_data["sensores_inductivos"][caja][tuerca])
+                                        if self.model.config_data["sensores_inductivos"][caja][tuerca] == True:
+                                            iinductivos = True
+
+                                if iinductivos == False:
 
                                     #aquí entra cuando "value = False"...
                                     if not(payload["value"]):
