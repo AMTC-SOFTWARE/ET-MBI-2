@@ -896,25 +896,37 @@ class MqttClient (QObject):
                                 
                         if encoder == "encoder_1":
 
+                            #si current_trq no está vacío...
                             if self.model.torque_data["tool1"]["current_trq"] != None:
                                 caja = self.model.torque_data["tool1"]["current_trq"][0]
                                 tuerca = self.model.torque_data["tool1"]["current_trq"][1]
-                            
+
                                 #ejemplo de señal: {"encoder":1,"name":{"PDC-D":"E1"},"value":True}
                                 #ejemplo de caja: "PDC-D"
                                 #ejemplo de tuerca: "E1"
+                                #si el encoder leído contiene la caja y la tuerca del torque que está en la tarea actual (current_trq)
                                 if caja in payload["name"] and tuerca in payload["name"]:
+                                    print("caja: ",caja)
+                                    print("tuerca: ",tuerca)
 
-                                    #aquí entra cuando "value = False"...
-                                    if not(payload["value"]):
-                                        #actualizar payload["name"] actual con 0, ejemplo: {"PDC-D":"0"}
-                                        payload["name"] = payload["name"][:payload["name"].find(":") + 1] + '"0"}'
+                                    iinductivos = False
+                                    if caja in self.model.config_data["sensores_inductivos"]: #se busca que la caja sea una MFB-P2, MFB-P1, MFB-S o MFB-E
+                                        if tuerca in self.model.config_data["sensores_inductivos"][caja]: #se busca que sea una tuerca válida para esa caja
+                                            print("self.model.config_data[sensores_inductivos][caja][tuerca]: ",self.model.config_data["sensores_inductivos"][caja][tuerca])
+                                            if self.model.config_data["sensores_inductivos"][caja][tuerca] == True:
+                                                iinductivos = True
 
-                                    #ejemplo: en self.model.input_data["plc"] ::::: [encoder_2]["zone"] = "{"PDC-D":"E1"}"
-                                    self.model.input_data["plc"][encoder]["zone"] = payload["name"] #valores como "E1", "A22", "0", etc...
-                                    print("self.model.input_data[plc][encoder][zone]", self.model.input_data["plc"][encoder]["zone"])
-                                    print("emit zone de tool1")
-                                    self.zone_tool1.emit()
+                                    if iinductivos == False:
+                                        #aquí entra cuando "value = False"...
+                                        if not(payload["value"]):
+                                            #actualizar payload["name"] actual con 0, ejemplo: {"PDC-D":"0"}
+                                            payload["name"] = payload["name"][:payload["name"].find(":") + 1] + '"0"}'
+
+                                        #ejemplo: en self.model.input_data["plc"] ::::: [encoder_2]["zone"] = "{"PDC-D":"E1"}"
+                                        self.model.input_data["plc"][encoder]["zone"] = payload["name"] #valores como "E1", "A22", "0", etc...
+                                        print("self.model.input_data[plc][encoder][zone]", self.model.input_data["plc"][encoder]["zone"])
+                                        print("emit zone de tool1")
+                                        self.zone_tool1.emit()
 
                 if "retry_btn" in payload:
                     self.model.input_data["plc"]["retry_btn"] = bool(payload["retry_btn"])
