@@ -477,7 +477,34 @@ class MqttClient (QObject):
                 #            command = {"popOut":"¿Seguro que desea dar llave?\n Presione Esc. para salir, Espacio para continuar..."}
                 #            self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                 #            self.model.llave = True
-
+                if "MFBP2_candado_limit" in payload:
+                    
+                    command = {
+                        "MFBP2_candado_limit" :payload["MFBP2_candado_limit"]
+                        }
+                    self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                    
+                if "MFBP1_candado_limit" in payload:
+                    
+                    command = {
+                        "MFBP1_candado_limit" :payload["MFBP1_candado_limit"]
+                        }
+                    self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                    
+                if "MFBS_candado_limit" in payload:
+                    
+                    command = {
+                        "MFBS_candado_limit" :payload["MFBS_candado_limit"]
+                        }
+                    self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                    
+                if "MFBE_candado_limit" in payload:
+                    
+                    command = {
+                        "MFBE_candado_limit" :payload["MFBE_candado_limit"]
+                        }
+                    self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                    
                 if "button" in payload:
                     if payload["button"] == True:
                         print("Tapa cerrada para BATTERY-2... deshabilitando BATTERY-2")
@@ -601,7 +628,8 @@ class MqttClient (QObject):
                             if payload["TOOL1_ALTURA"] == True:
                                 self.model.altura_zone["tool1"] = True
                             else:
-                                self.model.altura_zone["tool1"] = False
+                                if self.model.config_data["deshabilitar_altura"]["tool1"] == False:
+                                    self.model.altura_zone["tool1"] = False
                             print("emit zone de tool1 por altura")
                             self.zone_tool1.emit()
 
@@ -624,7 +652,8 @@ class MqttClient (QObject):
                             if payload["TOOL2_ALTURA"] == True:
                                 self.model.altura_zone["tool2"] = True
                             else:
-                                self.model.altura_zone["tool2"] = False
+                                if self.model.config_data["deshabilitar_altura"]["tool2"] == False:
+                                    self.model.altura_zone["tool2"] = False
                             print("emit zone de tool2 por altura")
                             self.zone_tool2.emit()
 
@@ -665,6 +694,11 @@ class MqttClient (QObject):
                         caja_inductivo = inductivo_array[1]
                         tuerca_inductivo = inductivo_array[2]
 
+                        command = {
+                            tuerca_inductivo :payload[inductivo]
+                            }
+                        self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                        
                         print("self.model.config_data[sensores_inductivos][caja_inductivo][tuerca_inductivo]: ",self.model.config_data["sensores_inductivos"][caja_inductivo][tuerca_inductivo])
 
                         if self.model.config_data["sensores_inductivos"][caja_inductivo][tuerca_inductivo] == True:
@@ -679,8 +713,9 @@ class MqttClient (QObject):
                                 if self.model.torque_data[inductivo_tool]["current_trq"] != None:
                                     caja = self.model.torque_data[inductivo_tool]["current_trq"][0]
                                     tuerca = self.model.torque_data[inductivo_tool]["current_trq"][1]
-
+                                    
                                     if caja == caja_inductivo:
+                                        #SI LA tuerca es diferente a tuerca_inductivo
                                         if tuerca == tuerca_inductivo and self.model.candados_limit_inductivos[caja] == True:
 
                                             encoder_inductivo = copy(inductivo_tool)
@@ -694,16 +729,42 @@ class MqttClient (QObject):
                                             print("self.model.input_data[plc][encoder][zone]", self.model.input_data["plc"][encoder_inductivo]["zone"])
 
                                             if encoder_inductivo == "encoder_1":
-                                                print("emit zone de tool1")
-                                                self.zone_tool1.emit() 
+                                                if self.model.otra_cavidad_activa[inductivo_tool]==True:
+                                                    command = {
+                                                        "lbl_steps" : {"text": f"Herramienta1 en dos Cavidades al mismo tiempo", "color": "red"},
+                                                        "lbl_result" : {"text": "Verificar sensores de posicion de herramienta", "color": "black"},
+                                                        }
+                                                    self.client.publish(self.model.torque_data[inductivo_tool]["gui"],json.dumps(command), qos = 2)
+
+                                                else:
+
+                                                    print("emit zone de tool1")
+                                                    self.zone_tool1.emit() 
 
                                             if encoder_inductivo == "encoder_2":
-                                                print("emit zone de tool2")
-                                                self.zone_tool2.emit()
+                                                if self.model.otra_cavidad_activa[inductivo_tool]==True:
+                                                    command = {
+                                                        "lbl_steps" : {"text": f"Herramienta2 en dos Cavidades al mismo tiempo", "color": "red"},
+                                                        "lbl_result" : {"text": "Verificar sensores de posicion de herramienta", "color": "black"},
+                                                        }
+                                                    self.client.publish(self.model.torque_data[inductivo_tool]["gui"],json.dumps(command), qos = 2)
+
+                                                else:
+                                                    print("emit zone de tool2")
+                                                    self.zone_tool2.emit()
 
                                             if encoder_inductivo == "encoder_3":
-                                                print("emit zone de tool3")
-                                                self.zone_tool3.emit()
+                                                if self.model.otra_cavidad_activa[inductivo_tool]==True:
+
+                                                    command = {
+                                                        "lbl_steps" : {"text": f"Herramienta3 en dos Cavidades al mismo tiempo", "color": "red"},
+                                                        "lbl_result" : {"text": "Verificar sensores de posicion de herramienta", "color": "black"},
+                                                        }
+                                                    self.client.publish(self.model.torque_data[inductivo_tool]["gui"],json.dumps(command), qos = 2)
+
+                                                else:
+                                                    print("emit zone de tool3")
+                                                    self.zone_tool3.emit()
                                         
                                         elif tuerca == tuerca_inductivo and self.model.candados_limit_inductivos[caja] == False:
                                             print("Cerrar Tapa para nido: ",caja)
@@ -712,6 +773,18 @@ class MqttClient (QObject):
                                                 "lbl_result" : {"text": "Cerrar Nido para continuar", "color": "black"},
                                                 }
                                             self.client.publish(self.model.torque_data[inductivo_tool]["gui"],json.dumps(command), qos = 2)
+
+                                        elif tuerca!=tuerca_inductivo and self.model.candados_limit_inductivos[caja] == True:
+                                            
+                                            if payload[inductivo] == True:
+                                                self.model.otra_cavidad_activa[inductivo_tool]=True
+                                            else:
+                                                self.model.otra_cavidad_activa[inductivo_tool]=False
+                    else:
+                        self.model.otra_cavidad_activa["tool1"]=False
+                        self.model.otra_cavidad_activa["tool2"]=False
+                        self.model.otra_cavidad_activa["tool3"]=False
+
 
                 #encoder4
                 if "encoder" in payload and "name" in payload and "value" in payload:
@@ -1239,6 +1312,15 @@ class MqttClient (QObject):
                         self.client.publish(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : False}), qos = 2)
 
             if message.topic == self.model.sub_topics["gui"]:
+                if "Mantenimiento" in payload:
+                    print("la gui trae mantenimiento y llega al comm")
+                    fecha_actual = self.model.get_currentTime()
+                    command = {
+                        "vision":"start_record",
+                        "info":self.model.qr_codes["HM"]+" "+str(fecha_actual.strftime("%Y/%m/%d %H:%M:%S"))
+                    }
+                    self.client.publish(self.model.sub_topics["supervision"],json.dumps(command), qos = 2)
+                
                 if "request" in payload:
                     self.model.input_data["gui"]["request"] = payload["request"]
                     if payload["request"] == "login":
@@ -1450,6 +1532,7 @@ class MqttClient (QObject):
                             self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                             self.model.llave = True
 
+
                 if "ID" in payload:
                     self.model.input_data["gui"]["ID"] = payload["ID"]
                     self.ID.emit()
@@ -1469,6 +1552,60 @@ class MqttClient (QObject):
                         self.model.shutdown = True
 
             if message.topic == self.model.sub_topics["gui"] or message.topic == self.model.sub_topics["gui_2"]:
+                if "MTTOuser" in payload:
+                    user_mantenimiento = payload["MTTOuser"]
+                    endpoint = ("http://{}/api/get/usuarios/GAFET/=/{}/ACTIVE/=/1".format(self.model.server, user_mantenimiento))
+                    response = requests.get(endpoint).json()
+                    print(response)
+                    if "TYPE" in response:
+                        if response["TYPE"] == "SUPERUSUARIO" or response["TYPE"] == "AMTC" or response["TYPE"] == "MANTENIMIENTO":
+                            fecha_actual = self.model.get_currentTime()
+                            data = {
+                                "NAME": response["NAME"],
+                                "GAFET":  user_mantenimiento,
+                                "TYPE": response["TYPE"],
+                                "LOG": "torque_KEY",
+                                "DATETIME": fecha_actual.strftime("%Y/%m/%d %H:%M:%S"),
+                                }
+                            print("dataaa mtto",data)
+                            command = {
+                                "userOK" : True,
+                                "login_mtto": False
+                                }
+                            
+                            self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                        else:
+                            self.client.publish(self.model.pub_topics["gui"],json.dumps({"userOK": False}), qos = 2)
+                if "PDC-R" in payload:
+                    self.client.publish(self.model.pub_topics["plc"],json.dumps({"PDC-R": payload["PDC-R"]}), qos = 2)
+                if "PDC-RMID" in payload:
+                    self.client.publish(self.model.pub_topics["plc"],json.dumps({"PDC-RMID": payload["PDC-RMID"]}), qos = 2) 
+                if "PDC-D" in payload:
+                    self.client.publish(self.model.pub_topics["plc"],json.dumps({"PDC-P": payload["PDC-P"]}), qos = 2)  
+                if "PDC-P" in payload:
+                    self.client.publish(self.model.pub_topics["plc"],json.dumps({"PDC-D": payload["PDC-D"]}), qos = 2)  
+                if "MFB-P1" in payload:
+                    self.client.publish(self.model.pub_topics["plc"],json.dumps({"MFB-P1": payload["MFB-P1"]}), qos = 2)
+                if "MFB-P2" in payload:
+                    self.client.publish(self.model.pub_topics["plc"],json.dumps({"MFB-P2": payload["MFB-P1"]}), qos = 2)        
+
+                if "Mantenimiento" in payload:
+                    if payload["Mantenimiento"]==True:
+                        if self.model.en_ciclo==False:
+                            print("la gui trae mantenimiento y llega al comm")
+                            fecha_actual = self.model.get_currentTime()
+                            command = {
+                                "vision":"start_record",
+                                "info":self.model.qr_codes["HM"]+" "+str(fecha_actual.strftime("%Y/%m/%d %H:%M:%S"))
+                            }
+                            self.client.publish(self.model.sub_topics["supervision"],json.dumps(command), qos = 2)
+                        #else:
+                    else:
+                        if self.model.en_ciclo==False:
+                            command = {
+                                "vision":"stop_record"                        }
+                            self.client.publish(self.model.sub_topics["supervision"],json.dumps(command), qos = 2)
+                        #else:
                 if "qr_box" in payload:
                     string_qr_box = str(payload["qr_box"])
                     string_qr_box = string_qr_box.replace(" ","") #se eliminan los espacios de los QRs

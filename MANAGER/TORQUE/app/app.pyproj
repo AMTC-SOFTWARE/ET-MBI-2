@@ -30,6 +30,7 @@
     <Compile Include="gui\view\img_popout.py" />
     <Compile Include="gui\view\login.py" />
     <Compile Include="gui\view\main.py" />
+    <Compile Include="gui\view\mtto1.py" />
     <Compile Include="gui\view\resources_rc.py" />
     <Compile Include="gui\view\scanner.py" />
     <Compile Include="gui\view\Tabla_horas.py" />

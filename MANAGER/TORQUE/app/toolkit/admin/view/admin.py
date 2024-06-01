@@ -14,14 +14,14 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_admin(object):
     def setupUi(self, admin):
         admin.setObjectName("admin")
-        admin.resize(365, 370)
+        admin.resize(500, 500)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(admin.sizePolicy().hasHeightForWidth())
         admin.setSizePolicy(sizePolicy)
-        admin.setMinimumSize(QtCore.QSize(365, 370))
-        admin.setMaximumSize(QtCore.QSize(365, 370))
+        admin.setMinimumSize(QtCore.QSize(500, 500))
+        admin.setMaximumSize(QtCore.QSize(500, 500))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -289,6 +289,33 @@ class Ui_admin(object):
         font.setPointSize(11)
         self.checkBox_12.setFont(font)
         self.checkBox_12.setObjectName("checkBox_12")
+        
+        self.checkBox_altura_tool1 = QtWidgets.QCheckBox(admin)
+        self.checkBox_altura_tool1.setEnabled(False)
+        self.checkBox_altura_tool1.setGeometry(QtCore.QRect(10, 340, 211, 31))
+        font = QtGui.QFont()
+        font.setPointSize(11)
+        self.checkBox_altura_tool1.setFont(font)
+        self.checkBox_altura_tool1.setObjectName("checkBox_altura_tool1")
+
+        self.checkBox_altura_tool2 = QtWidgets.QCheckBox(admin)
+        self.checkBox_altura_tool2.setEnabled(False)
+        self.checkBox_altura_tool2.setGeometry(QtCore.QRect(10, 370, 211, 31))
+        font = QtGui.QFont()
+        font.setPointSize(11)
+        self.checkBox_altura_tool2.setFont(font)
+        self.checkBox_altura_tool2.setObjectName("checkBox_altura_tool2")
+
+        self.checkBox_altura_tool3 = QtWidgets.QCheckBox(admin)
+        self.checkBox_altura_tool3.setEnabled(False)
+        self.checkBox_altura_tool3.setGeometry(QtCore.QRect(10, 400, 211, 31))
+        font = QtGui.QFont()
+        font.setPointSize(11)
+        self.checkBox_altura_tool3.setFont(font)
+        self.checkBox_altura_tool3.setObjectName("checkBox_altura_tool3")
+
+
+
 
         ################ MFB-P2 ############################
 
@@ -520,6 +547,10 @@ class Ui_admin(object):
         self.checkBox_10.setText(_translate("admin", "Zonas - Sensores Inductivos"))
         self.checkBox_11.setText(_translate("admin", "Función Shift Ctrl Focus"))
         self.checkBox_12.setText(_translate("admin", "Sistema de Trazabilidad"))
+        self.checkBox_altura_tool1.setText(_translate("admin", "Deshabilitar Altura Tool1"))
+        self.checkBox_altura_tool2.setText(_translate("admin", "Deshabilitar Altura Tool2"))
+        self.checkBox_altura_tool3.setText(_translate("admin", "Deshabilitar Altura Tool3"))
+
 
 if __name__ == "__main__":
     import sys

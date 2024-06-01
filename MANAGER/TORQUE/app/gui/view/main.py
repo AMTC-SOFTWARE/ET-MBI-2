@@ -711,6 +711,13 @@ class Ui_main(object):
         self.menuMenu.setObjectName("menuMenu")
         main.setMenuBar(self.menubar)
         self.menubar.addAction(self.menuMenu.menuAction())
+        
+        self.btn_mtto = QtWidgets.QPushButton(main)
+        self.btn_mtto.setGeometry(QtCore.QRect(450, 0, 140, 35)) #posx, posy, ancho, alto
+        self.btn_mtto.setObjectName("btn_mtto")
+        #self.btn_eimf.setStyleSheet('background-color: silver; color: white; font-weight:bold; font-size:15pt; font: Century Schoolbook')
+        self.btn_mtto.setStyleSheet('background-color: orange; color: black; font-weight:bold; font-size:12pt; font: Segoe UI Black')
+
         self.btn_hxh = QtWidgets.QPushButton(main)
         self.btn_hxh.setGeometry(QtCore.QRect(250, 0, 140, 35)) #posx, posy, ancho, alto
         self.btn_hxh.setObjectName("btn_eifm")
@@ -729,6 +736,7 @@ class Ui_main(object):
         main.setWindowTitle(_translate("main", "MainWindow"))
         ########################################################
         self.btn_hxh.setText(_translate("main", "Hora por Hora"))
+        self.btn_mtto.setText(_translate("main", "Mantenimiento"))
         self.lbl_user.setText(_translate("main", "Usuario"))
         self.lbl_info3.setText(_translate("main", "MODO\n"
 "ADMIN"))

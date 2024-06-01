@@ -16,7 +16,7 @@ from time import strftime, sleep
 from copy import copy
 import requests
 import pandas as pd
-from gui.view import resources_rc, main, login, scanner, img_popout, Tabla_horas
+from gui.view import resources_rc, main, login, scanner, img_popout, Tabla_horas, mtto1
 from gui.view.comm import MqttClient
 from gui.model import Model
 import math
@@ -38,7 +38,8 @@ class MainWindow (QMainWindow):
         self.qw_img_popout = Img_popout(parent = self)
         self.pop_out = PopOut(self)
         self.qw_Tabla_horas = Tabla_hora_w(parent = self)
-
+        self.uiManteniemiento= Mantenimiento_ui(parent=self)
+        
         self.client = MqttClient(self.model, self)
         self.client.subscribe.connect(self.input)
         self.output.connect(self.client.publish)
@@ -117,6 +118,7 @@ class MainWindow (QMainWindow):
         self.qw_scanner.ui.lineEdit.returnPressed.connect(self.scanner)
         self.qw_scanner.ui.btn_cancel.clicked.connect(self.qw_scanner.ui.lineEdit.clear)
         self.ui.btn_hxh.clicked.connect(self.horaxhora)
+        self.ui.btn_mtto.clicked.connect(self.mantenimiento)
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.status)
         #self.timer.start(200)
@@ -327,7 +329,11 @@ class MainWindow (QMainWindow):
         except Exception as ex:
             print("Error en el conteo ", ex)
         
-    
+    def mantenimiento(self):
+        print("mantenimiento")
+        self.output.emit({"Mantenimiento":True})
+        self.uiManteniemiento.show()
+        
     def menuProcess(self, q):
         try:
             case = q.text()               
@@ -881,6 +887,8 @@ class Login (QDialog):
     def __init__(self, parent = None):
         self.model = Model()
         super().__init__(parent)
+        self.modo_mantenimiento=False
+        
         self.ui = login.Ui_login()
         self.ui.setupUi(self)
         self.ui.lineEdit.setEchoMode(QLineEdit.Password)
@@ -889,7 +897,10 @@ class Login (QDialog):
         self.ui.lineEdit.setFocus(True)
         
     def closeEvent(self, event):
-        event.ignore() 
+        if self.modo_mantenimiento==False:
+            event.ignore() 
+            
+            
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
@@ -936,6 +947,669 @@ class Tabla_hora_w (QDialog):
         if event.key() == Qt.Key_Escape:
             print("Escape key was pressed")
 
+class Mantenimiento_ui (QMainWindow):
+    output = pyqtSignal(dict)
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        self.model = Model()
+        self.client = MqttClient(self.model, self)
+        
+        self.client.subscribe.connect(self.input)
+        self.output.connect(self.client.publish)
+        name = "GUI"
+        topic = "gui"
+
+        self.model.name = name
+        self.model.setTopic = topic.lower() + "/set"
+        self.model.statusTopic = topic.lower() + "/status"
+
+        self.ui = mtto1.Mantenimiento_ui()
+        
+        self.qw_login_mtto = Login(parent = self)
+        self.ui.setupUi(self) 
+        
+        self.login_show         = True
+
+
+        self.ui.centralwidgetok.setEnabled(False)
+        
+        menu = self.ui.menuMenu
+        #actionLogin = QAction("Login",self)
+        #actionLogout = QAction("Logout",self)
+        #actionGDI = QAction("GDI",self) #se elimina la acción para mostrar/esconder GDI desde aquí
+        #menu.addAction(actionLogin)
+        #menu.addAction(actionLogout)
+        
+        #menu.addAction(actionGDI) #ya no se llama desde el menu
+        menu.triggered[QAction].connect(self.menuProcess)
+        
+        self.qw_login_mtto.ui.lineEdit.returnPressed.connect( self.login)
+        self.qw_login_mtto.ui.btn_ok.clicked.connect(self.login)
+
+
+
+        self.ui.checkBox_7.setChecked(False) #clamp PDC-R
+        self.ui.checkBox_8.setChecked(False) #clamp PDC-RMID
+        self.ui.checkBox_4.setChecked(False) #clamp MFB-P2
+        self.ui.checkBox_3.setChecked(False) #clamp MFB-P1
+        self.ui.checkBox.setChecked(False) #clamp PDC-D
+        self.ui.checkBox_2.setChecked(False) #clamp PDC-P
+        self.ui.checkBox_5.setChecked(False) #clamp MFB-S
+        self.ui.checkBox_6.setChecked(False) #clamp MFB-E
+        
+        self.ui.checkBox_7.stateChanged.connect(self.onClicked_7)
+        self.ui.checkBox_8.stateChanged.connect(self.onClicked_8)
+        self.ui.checkBox_4.stateChanged.connect(self.onClicked_4)
+        self.ui.checkBox_3.stateChanged.connect(self.onClicked_3)
+        self.ui.checkBox.stateChanged.connect(self.onClicked)
+        self.ui.checkBox_2.stateChanged.connect(self.onClicked_2)
+        self.ui.checkBox_5.stateChanged.connect(self.onClicked_5)
+        self.ui.checkBox_6.stateChanged.connect(self.onClicked_6)
+
+    @pyqtSlot()
+    def login (self):
+        try:
+            text = self.qw_login_mtto.ui.lineEdit.text()
+            if len(text) > 0: 
+                self.output.emit({"MTTOuser":text})
+                self.qw_login_mtto.ui.lineEdit.setPlaceholderText("Código de acceso")
+            else:
+                self.qw_login_mtto.ui.lineEdit.setPlaceholderText("Código vacío intenta de nuevo.")
+            self.qw_login_mtto.ui.lineEdit.clear()
+            self.qw_login_mtto.ui.lineEdit.setFocus()
+        except Exception as ex:
+            print("login() exception: ", ex)
+    def menuProcess(self, q):
+        try:
+            case = q.text()               
+            if case == "Login":
+                self.qw_login_mtto.setVisible(self.login_show) #se muestra u oculta login al presionar el botón
+                self.qw_login_mtto.ui.lineEdit.setText("")
+                self.qw_login_mtto.ui.lineEdit.setPlaceholderText("Escanea o escribe tu codigo")
+                self.qw_login_mtto.modo_mantenimiento=True
+                #if self.login_show == True:#si estaba true para que se mostrara, ahora al volver a presionar el botón será false, entonces lo ocultará
+                #    self.login_show = False
+                #else:
+                #    self.login_show = True
+
+                self.output.emit({"request":"login"})
+
+            elif case == "Logout":
+                self.qw_login_mtto.setVisible(False) 
+                self.qw_login_mtto.ui.lineEdit.setText("")
+                self.qw_login_mtto.ui.lineEdit.setPlaceholderText("Escanea o escribe tu codigo")
+                self.ui.centralwidgetok.setEnabled(False)
+                
+            #elif case == "GDI": #ya no se manda llamar desde el menu, tienes que entrar a config
+            #    self.output.emit({"request":"gdi"})
+        except Exception as ex:
+            print("menuProcess() exceptión: ", ex)        
+
+    def onClicked_7(self):     #clamp PDC-R
+        if self.ui.checkBox_7.isChecked():
+            """
+            CLAMP PDC-R
+            """
+            self.output.emit({"PDC-R":True})
+        else:
+            self.output.emit({"PDC-R":False})
+            
+    def onClicked_8(self):     #clamp PDC-RMID
+        if self.ui.checkBox_8.isChecked():
+            """
+            CLAMP PDC-RMID
+            """
+            self.output.emit({"PDC-RMID":True})
+        else:
+            self.output.emit({"PDC-RMID":False})
+            
+    def onClicked_4(self):     #clamp MFB-P2
+        if self.ui.checkBox_4.isChecked():
+            """
+            #clamp MFB-P2
+            """
+            self.output.emit({"MFB-P2":True})
+        else:
+            self.output.emit({"MFB-P2":False})
+     
+    def onClicked_3(self):     #clamp MFB-P1
+        if self.ui.checkBox_3.isChecked():
+            """
+            #clamp MFB-P1
+            """
+            self.output.emit({"MFB-P1":True})
+        else:
+            self.output.emit({"MFB-P1":False})
+            
+    def onClicked(self):     #clamp PDC-D
+        if self.ui.checkBox.isChecked():
+            """
+            #clamp PDC-D
+            """
+            self.output.emit({"PDC-D":True})
+        else:
+            self.output.emit({"PDC-D":False})
+     
+    def onClicked_2(self):     #clamp PDC-P
+        if self.ui.checkBox_2.isChecked():
+            """
+            #clamp PDC-P
+            """
+            self.output.emit({"PDC-P":True})
+        else:
+            self.output.emit({"PDC-P":False})
+            
+    def onClicked_5(self):     #clamp MFB-S
+        if self.ui.checkBox_5.isChecked():
+            """
+            #clamp MFB-S
+            """
+            self.output.emit({"MFB-S":True})
+        else:
+            self.output.emit({"MFB-S":False})
+           
+    def onClicked_6(self):     #clamp MFB-E
+        if self.ui.checkBox_5.isChecked():
+            """
+            #clamp MFB-E
+            """
+            self.output.emit({"MFB-E":True})
+        else:
+            self.output.emit({"MFB-E":False})
+
+
+    def closeEvent(self, event):
+        #event.ignore()
+        
+        self.ui.checkBox_7.setChecked(False)
+        
+        self.output.emit({"Mantenimiento":False})
+        print("close event")
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            print("Escape key was pressed")
+            
+    @pyqtSlot(dict)
+    def input(self, message):
+        #print(message)
+        if "login_mtto" in message:
+            self.qw_login_mtto.setVisible(message["login_mtto"])
+                
+        if "userOK" in message:
+            if message["userOK"] == True:
+                self.ui.centralwidgetok.setEnabled(True)
+            else:
+                self.ui.centralwidgetok.setEnabled(False)
+        if "A41" in message:
+            if message["A41"] == True:
+                self.ui.label_12.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_12.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "A42" in message:
+            if message["A42"] == True:
+                self.ui.label_15.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_15.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "A43" in message:
+            if message["A43"] == True:
+                self.ui.label_17.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_17.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+                
+        if "A44" in message:
+            if message["A44"] == True:
+                self.ui.label_19.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_19.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "A45" in message:
+            if message["A45"] == True:
+                self.ui.label_21.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_21.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "A46" in message:
+            if message["A46"] == True:
+                self.ui.label_23.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_23.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            
+        if "A47" in message:
+            if message["A47"] == True:
+                self.ui.label_25.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_25.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "A20" in message:
+            if message["A20"] == True:
+                self.ui.label_28.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_28.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "A21" in message:
+            if message["A21"] == True:
+                self.ui.label_30.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_30.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "A22" in message:
+            if message["A22"] == True:
+                self.ui.label_32.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_32.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "A23" in message:
+            if message["A23"] == True:
+                self.ui.label_34.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_34.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "A24" in message:
+            if message["A24"] == True:
+                self.ui.label_36.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_36.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "A25" in message:
+            if message["A25"] == True:
+                self.ui.label_38.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_38.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "A26" in message:
+            if message["A26"] == True:
+                self.ui.label_40.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_40.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "A27" in message:
+            if message["A27"] == True:
+                self.ui.label_42.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_42.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "A28" in message:
+            if message["A28"] == True:
+                self.ui.label_44.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_44.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "A29" in message:
+            if message["A29"] == True:
+                self.ui.label_46.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_46.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "A30" in message:
+            if message["A30"] == True:
+                self.ui.label_48.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_48.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "A51" in message:
+            if message["A51"] == True:
+                self.ui.label_51.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_51.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "A52" in message:
+            if message["A52"] == True:
+                self.ui.label_53.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_53.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "A53" in message:
+            if message["A53"] == True:
+                self.ui.label_55.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_55.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "A54" in message:
+            if message["A54"] == True:
+                self.ui.label_57.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_57.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "A55" in message:
+            if message["A55"] == True:
+                self.ui.label_59.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_59.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "A56" in message:
+            if message["A56"] == True:
+                self.ui.label_61.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_61.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+
+        if "A1" in message:
+            if message["A1"] == True:
+                self.ui.label_64.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_64.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "A2" in message:
+            if message["A2"] == True:
+                self.ui.label_66.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_66.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "E1" in message:
+            if message["E1"] == True:
+                self.ui.label_68.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_68.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+                
+        if "MFBP1_candado_limit" in message:
+            if message["MFBP1_candado_limit"] == True:
+                self.ui.label_71.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_71.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "MFBP2_candado_limit" in message:
+            if message["MFBP2_candado_limit"] == True:
+                self.ui.label_73.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_73.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "MFBS_candado_limit" in message:
+            if message["MFBS_candado_limit"] == True:
+                self.ui.label_75.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_75.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "MFBE_candado_limit" in message:
+            if message["MFBE_candado_limit"] == True:
+                self.ui.label_77.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_77.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
 class PopOut (QMessageBox):
     def __init__(self, parent = None):
         self.model = Model()

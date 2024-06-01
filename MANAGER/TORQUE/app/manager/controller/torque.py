@@ -827,6 +827,8 @@ class CheckZone (QState):
                         else:
                             
                             if self.model.herramienta_bloqueada[self.tool]==True:
+                                publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : False}),hostname='127.0.0.1', qos = 2)
+                                print("se hizo false")
                                 tool_desbloqueada = self.tool+"_desbloqueada"
                                 publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}),hostname='127.0.0.1', qos = 2)
 
@@ -1150,6 +1152,11 @@ class CheckResponse (QState):
                         resultado = "Bueno"
 
                 print("resultado: ",resultado)
+                #se reinicia variable de posición ok en zona de altura para esta herramienta 
+                #después de un Torque ya sea OK o NOK
+                if self.model.config_data["deshabilitar_altura"][self.tool] == False:
+                    self.model.altura_zone[self.tool] = False
+                    
                 #Si el resultado del torque es correcto (OK) o está en modo reversa
                 if resultado == "Bueno"  or self.model.config_data["untwist"]:
                     
@@ -1783,6 +1790,8 @@ class Backward (QState):
         command = {}
         if zone[0] == current_trq[0]:
             if self.model.herramienta_bloqueada[self.tool]==True:
+                publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : False}),hostname='127.0.0.1', qos = 2)
+                print("se hizo false")
                 tool_desbloqueada = self.tool+"_desbloqueada"
                 publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}),hostname='127.0.0.1', qos = 2)
 

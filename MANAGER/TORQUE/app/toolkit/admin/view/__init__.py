@@ -55,7 +55,9 @@ class Admin (QDialog):
         else:
             self.ui.checkBox_3.setChecked(False)
 
-
+        self.ui.checkBox_altura_tool1.setChecked(self.data.config_data["deshabilitar_altura"]["tool1"])
+        self.ui.checkBox_altura_tool2.setChecked(self.data.config_data["deshabilitar_altura"]["tool2"])
+        self.ui.checkBox_altura_tool3.setChecked(self.data.config_data["deshabilitar_altura"]["tool3"])
         #empieza sin motrar GDI
         self.ui.checkBox_4.setChecked(False)
         #empieza sin utilizar sensores inductivos
@@ -66,6 +68,7 @@ class Admin (QDialog):
         self.ui.btn_off.setVisible(False) 
         #se esconde checkbox_5 (se utilizaba para modo puntual)
         self.ui.checkBox_5.setVisible(False) 
+
 
         if self.data.config_data["hora_servidor"]:
             self.ui.checkBox_6.setChecked(True)
@@ -178,6 +181,9 @@ class Admin (QDialog):
         self.ui.checkBoxMFBE_A1.stateChanged.connect(self.onClicked_10)
         self.ui.checkBoxMFBE_A2.stateChanged.connect(self.onClicked_10)
 
+        self.ui.checkBox_altura_tool1.stateChanged.connect(self.onClicked_altura_tool1)
+        self.ui.checkBox_altura_tool2.stateChanged.connect(self.onClicked_altura_tool2)
+        self.ui.checkBox_altura_tool3.stateChanged.connect(self.onClicked_altura_tool3)
 
         self.rcv.connect(self.qw_torques.input)
         self.permissions()
@@ -203,6 +209,9 @@ class Admin (QDialog):
             self.ui.checkBox_10.setEnabled(True)
             self.ui.checkBox_11.setEnabled(True)
             self.ui.checkBox_12.setEnabled(True)
+            self.ui.checkBox_altura_tool1.setEnabled(True)
+            self.ui.checkBox_altura_tool2.setEnabled(True)
+            self.ui.checkBox_altura_tool3.setEnabled(True)
         elif self.user_type == "CALIDAD":
             #self.ui.btn_off.setEnabled(False)
             self.ui.btn_reset.setEnabled(True)
@@ -219,6 +228,9 @@ class Admin (QDialog):
             self.ui.checkBox_10.setEnabled(False)
             self.ui.checkBox_11.setEnabled(False)
             self.ui.checkBox_12.setEnabled(False)
+            self.ui.checkBox_altura_tool1.setEnabled(False)
+            self.ui.checkBox_altura_tool2.setEnabled(False)
+            self.ui.checkBox_altura_tool3.setEnabled(False)
         elif self.user_type == "MANTENIMIENTO":
             #self.ui.btn_off.setEnabled(True)
             self.ui.btn_reset.setEnabled(True)
@@ -235,6 +247,9 @@ class Admin (QDialog):
             self.ui.checkBox_10.setEnabled(False)
             self.ui.checkBox_11.setEnabled(False)
             self.ui.checkBox_12.setEnabled(False)
+            self.ui.checkBox_altura_tool1.setEnabled(False)
+            self.ui.checkBox_altura_tool2.setEnabled(False)
+            self.ui.checkBox_altura_tool3.setEnabled(False)
         elif self.user_type == "PRODUCCION":
             #self.ui.btn_off.setEnabled(False)
             #self.ui.btn_reset.setEnabled(True)
@@ -251,6 +266,9 @@ class Admin (QDialog):
             self.ui.checkBox_10.setEnabled(False)
             self.ui.checkBox_11.setEnabled(False)
             self.ui.checkBox_12.setEnabled(False)
+            self.ui.checkBox_altura_tool1.setEnabled(False)
+            self.ui.checkBox_altura_tool2.setEnabled(False)
+            self.ui.checkBox_altura_tool3.setEnabled(False)
         self.show()
 
     #def show_rework (self):
@@ -606,6 +624,27 @@ class Admin (QDialog):
             self.pop_out.setWindowTitle("Acción Realizada")
             QTimer.singleShot(1000, self.pop_out.button(QMessageBox.Ok).click)
             self.pop_out.exec()
+            
+    def onClicked_altura_tool1(self):
+        if self.ui.checkBox_altura_tool1.isChecked():
+            self.data.config_data["deshabilitar_altura"]["tool1"] = True
+        else:
+            self.data.config_data["deshabilitar_altura"]["tool1"] = False
+        print("self.data.config_data[deshabilitar_altura][tool1]: ",self.data.config_data["deshabilitar_altura"]["tool1"])
+
+    def onClicked_altura_tool2(self):
+        if self.ui.checkBox_altura_tool2.isChecked():
+            self.data.config_data["deshabilitar_altura"]["tool2"] = True
+        else:
+            self.data.config_data["deshabilitar_altura"]["tool2"] = False
+        print("self.data.config_data[deshabilitar_altura][tool2]: ",self.data.config_data["deshabilitar_altura"]["tool2"])
+
+    def onClicked_altura_tool3(self):
+        if self.ui.checkBox_altura_tool3.isChecked():
+            self.data.config_data["deshabilitar_altura"]["tool3"] = True
+        else:
+            self.data.config_data["deshabilitar_altura"]["tool3"] = False
+        print("self.data.config_data[deshabilitar_altura][tool3]: ",self.data.config_data["deshabilitar_altura"]["tool3"])
 
     def closeEvent(self, event):
         self.client.publish("config/status", '{"finish": true}')

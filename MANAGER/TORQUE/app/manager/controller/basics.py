@@ -283,12 +283,13 @@ class StartCycle (QState):
                                 "tool2":False,
                                 "tool3":False}
         
-        #se reinician variables de posición OK en zona de altura
-        self.model.altura_zone = {
-                        "tool1":False,
-                        "tool2":False,
-                        "tool3":False
-            }
+        #se reinician variables de posición OK en zona de altura (a menos que esté deshabilitado desde la config.)
+        if self.model.config_data["deshabilitar_altura"]["tool1"] == False:
+            self.model.altura_zone["tool1"] = False
+        if self.model.config_data["deshabilitar_altura"]["tool2"] == False:
+            self.model.altura_zone["tool2"] = False
+        if self.model.config_data["deshabilitar_altura"]["tool3"] == False:
+            self.model.altura_zone["tool3"] = False
 
         #reiniciar variable para dar delay entre cada pin
         self.model.nuevo_pin = False
@@ -558,9 +559,12 @@ class Config (QState):
         publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
     def onExit (self, event):
-
+        self.model.altura_zone["tool1"] = self.model.config_data["deshabilitar_altura"]["tool1"]
+        self.model.altura_zone["tool2"] = self.model.config_data["deshabilitar_altura"]["tool2"]
+        self.model.altura_zone["tool3"] = self.model.config_data["deshabilitar_altura"]["tool3"]
+        print("self.model.config_data: ",self.model.config_data)
         print("saliendo de config...")
-        print(self.model.config_data["sensores_inductivos"])
+        
 
 
 class ScanQr (QState):
@@ -1658,11 +1662,13 @@ class CheckQr (QState):
             #Se activa supervision
             print("se va a mandar start record+++++-----------+----+-------+-+-+-+-+-+---------")
             fecha_actual = self.model.get_currentTime()
+            self.model.en_ciclo=True
             command = {
                 "vision":"start_record",
                 "info":self.model.qr_codes["HM"]+" "+str(fecha_actual.strftime("%Y/%m/%d %H:%M:%S"))
             }
             publish.single(self.model.sub_topics["supervision"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            
             self.ok.emit()
 
         except Exception as ex:
@@ -1772,6 +1778,7 @@ class QrRework (QState):
         self.model.retrabajo=True
         self.model.local_data["qr_rework"] = True
         #Se activa supervision
+        self.model.en_ciclo=True
         command = {
             "vision":"start_record"
             
