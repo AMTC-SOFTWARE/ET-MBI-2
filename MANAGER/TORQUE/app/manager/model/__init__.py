@@ -46,36 +46,36 @@ class Model (object):
             {
                 "MFB-P2":
                 {
-                        "A20":False,
-                        "A21":False,
-                        "A22":False,
-                        "A23":False,
-                        "A24":False,
-                        "A25":False,
-                        "A26":False,
-                        "A27":False,
-                        "A28":False,
-                        "A29":False,
-                        "A30":False
+                        "A20":True,
+                        "A21":True,
+                        "A22":True,
+                        "A23":True,
+                        "A24":True,
+                        "A25":True,
+                        "A26":True,
+                        "A27":True,
+                        "A28":True,
+                        "A29":True,
+                        "A30":True
                 },
                 "MFB-P1":
                 {
-                        "A41":False,
-                        "A42":False,
-                        "A43":False,
-                        "A44":False,
-                        "A45":False,
-                        "A46":False,
-                        "A47":False
+                        "A41":True,
+                        "A42":True,
+                        "A43":True,
+                        "A44":True,
+                        "A45":True,
+                        "A46":True,
+                        "A47":True
                 },
                 "MFB-S":
                 {
-                        "A51":False,
-                        "A52":False,
-                        "A53":False,
-                        "A54":False,
-                        "A55":False,
-                        "A56":False
+                        "A51":True,
+                        "A52":True,
+                        "A53":True,
+                        "A54":True,
+                        "A55":True,
+                        "A56":True
                 },
                 "MFB-E":
                 {
