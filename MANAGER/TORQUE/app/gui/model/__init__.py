@@ -11,6 +11,9 @@ class Model (object):
         self.user = {"type":"", "pass":"", "user":""}
         self.setTopic = "gui/set"
         self.statusTopic = "gui/status"
+        
+        self.setTopic_MTTO = "guiMtto/set"
+        self.statusTopic_MTTO = "guiMtto/status"
         self.inBuffer = {}
         self.server = "127.0.0.1:5000" #para correr localmente
         self.mejor_tiempo=1000

@@ -215,7 +215,22 @@ class StartCycle (QState):
         minutos=0
         segundos=0
         color="black"
-        
+        self.model.cavidad_sensada={
+            "tool1":{"MFB-P2":[]},
+            "tool2":{"MFB-P1":[],
+                     "MFB-S":[],
+                     "MFB-E":[]},         
+            "tool3":{"MFB-P2":[],
+                     "MFB-P1":[],
+                     "MFB-S":[],
+                     "MFB-E":[]}
+            }
+        self.model.otra_cavidad_activa = {
+            "tool1":"",
+            "tool2":"",
+            "tool3":""
+            }
+
         tool_desbloqueada = "tool1_desbloqueada"
         publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}),hostname='127.0.0.1', qos = 2)
         tool_desbloqueada = "tool2_desbloqueada"
@@ -1811,6 +1826,21 @@ class Finish (QState):
         color="black"
         self.model.alarma_activada=False
         self.model.alarma_caja_tuerca=""
+        self.model.cavidad_sensada={
+            "tool1":{"MFB-P2":[]},
+            "tool2":{"MFB-P1":[],
+                     "MFB-S":[],
+                     "MFB-E":[]},         
+            "tool3":{"MFB-P2":[],
+                     "MFB-P1":[],
+                     "MFB-S":[],
+                     "MFB-E":[]}
+            }
+        self.model.otra_cavidad_activa = {
+            "tool1":"",
+            "tool2":"",
+            "tool3":""
+            }
         #Se activa supervision
         command = {
             "vision":"stop_record"
@@ -2088,6 +2118,21 @@ class Reset (QState):
         self.model.alarma_caja_tuerca=""
         self.model.en_ciclo=False
         self.model.retrabajo=False
+        self.model.cavidad_sensada={
+            "tool1":{"MFB-P2":[]},
+            "tool2":{"MFB-P1":[],
+                     "MFB-S":[],
+                     "MFB-E":[]},         
+            "tool3":{"MFB-P2":[],
+                     "MFB-P1":[],
+                     "MFB-S":[],
+                     "MFB-E":[]}
+            }
+        self.model.otra_cavidad_activa = {
+            "tool1":"",
+            "tool2":"",
+            "tool3":""
+            }
         #Se activa supervision
         command = {
             "vision":"stop_record"

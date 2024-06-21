@@ -663,18 +663,39 @@ class MqttClient (QObject):
                 if "MFBP2_candado_limit" in payload:
                     if payload["MFBP2_candado_limit"] == True:
                         self.model.candados_limit_inductivos["MFB-P2"] = True
+                        if self.model.en_ciclo:
+                            command = {
+                            "lbl_steps" : {"text": "TAPA MFB-P2 detectada ", "color": "green"},
+                            "lbl_result" : {"text": "Continue con el Torque", "color": "green"},
+                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                            }
+                        self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
                     else:
                         self.model.candados_limit_inductivos["MFB-P2"] = False
 
                 if "MFBP1_candado_limit" in payload:
                     if payload["MFBP1_candado_limit"] == True:
                         self.model.candados_limit_inductivos["MFB-P1"] = True
+                        if self.model.en_ciclo:
+                            command = {
+                            "lbl_steps" : {"text": "TAPA MFB-P1 detectada ", "color": "green"},
+                            "lbl_result" : {"text": "Continue con el Torque", "color": "green"},
+                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                            }
+                        self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                     else:
                         self.model.candados_limit_inductivos["MFB-P1"] = False
 
                 if "MFBS_candado_limit" in payload:
                     if payload["MFBS_candado_limit"] == True:
                         self.model.candados_limit_inductivos["MFB-S"] = True
+                        if self.model.en_ciclo:
+                            command = {
+                            "lbl_steps" : {"text": "TAPA MFB-S detectada ", "color": "green"},
+                            "lbl_result" : {"text": "Continue con el Torque", "color": "green"},
+                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                            }
+                        self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                     else:
                         self.model.candados_limit_inductivos["MFB-S"] = False
 
@@ -693,7 +714,12 @@ class MqttClient (QObject):
 
                         caja_inductivo = inductivo_array[1]
                         tuerca_inductivo = inductivo_array[2]
-
+                        
+                        #se obtienen los datos del inductivo_tool
+                        inductivo_tool = self.model.torque_cycles[caja_inductivo][tuerca_inductivo][0]
+                        
+                        
+                        
                         command = {
                             tuerca_inductivo :payload[inductivo]
                             }
@@ -705,6 +731,7 @@ class MqttClient (QObject):
 
                             #se obtienen los datos del inductivo_tool
                             inductivo_tool = self.model.torque_cycles[caja_inductivo][tuerca_inductivo][0]
+                            print("self.model.torque_cycles[caja_inductivo][tuerca_inductivo]:",self.model.torque_cycles[caja_inductivo][tuerca_inductivo])
                             print("inductivo_tool: ",inductivo_tool)
 
                             if self.model.estado_candados == False or inductivo_tool == "tool1":
@@ -715,6 +742,34 @@ class MqttClient (QObject):
                                     tuerca = self.model.torque_data[inductivo_tool]["current_trq"][1]
                                     
                                     if caja == caja_inductivo:
+                                        print("tuerca",tuerca)
+                                        print("tuerca_inductivo",tuerca_inductivo)
+                                        if tuerca!=tuerca_inductivo and self.model.candados_limit_inductivos[caja] == True:
+                                          
+                                          if payload[inductivo] == True:
+                                              print("hay dos sensores activados de ",inductivo_tool)
+                                              self.model.otra_cavidad_activa[inductivo_tool]=True
+                                              #Se obtienen las cavidades sensadas
+                                              self.model.cavidad_sensada[inductivo_tool][caja_inductivo].append(tuerca_inductivo)
+                                              print("self.model.cavidad_sensada",self.model.cavidad_sensada)
+                                          else:
+                                              #Se obtienen las cavidades sensadas
+                                              
+                                              self.model.cavidad_sensada[inductivo_tool][caja_inductivo].pop(self.model.cavidad_sensada[inductivo_tool][caja_inductivo].index(tuerca_inductivo))
+                                              print("self.model.cavidad_sensada drop",self.model.cavidad_sensada)
+                                              if isinstance(self.model.cavidad_sensada[inductivo_tool][caja_inductivo],list) and len(self.model.cavidad_sensada[inductivo_tool][caja_inductivo])>1:
+                                                  print("muchas tuercas detectadas")
+                                                  self.model.otra_cavidad_activa[inductivo_tool]=True
+                                              else:
+                                                  print("Ya no hay herramienta en dos posiciones")
+                                                  self.model.otra_cavidad_activa[inductivo_tool]=False
+                                                  command = {
+                                                        "lbl_steps" : {"text": f"Vuelve a colocar la herramienta"+inductivo_tool+" en posicion", "color": "green"},
+                                                        "lbl_result" : {"text": "", "color": "black"},
+                                                        }
+                                                  self.client.publish(self.model.torque_data[inductivo_tool]["gui"],json.dumps(command), qos = 2)
+                                                  
+                                              
                                         #SI LA tuerca es diferente a tuerca_inductivo
                                         if tuerca == tuerca_inductivo and self.model.candados_limit_inductivos[caja] == True:
 
@@ -729,7 +784,9 @@ class MqttClient (QObject):
                                             print("self.model.input_data[plc][encoder][zone]", self.model.input_data["plc"][encoder_inductivo]["zone"])
 
                                             if encoder_inductivo == "encoder_1":
+                                                print("self.model.otra_cavidad_activa[inductivo_tool] ya para enviar emit TOOL1",self.model.otra_cavidad_activa[inductivo_tool])
                                                 if self.model.otra_cavidad_activa[inductivo_tool]==True:
+                                                    print("debe mostrar mensaje de dos cavidades de ",inductivo_tool)
                                                     command = {
                                                         "lbl_steps" : {"text": f"Herramienta1 en dos Cavidades al mismo tiempo", "color": "red"},
                                                         "lbl_result" : {"text": "Verificar sensores de posicion de herramienta", "color": "black"},
@@ -742,7 +799,10 @@ class MqttClient (QObject):
                                                     self.zone_tool1.emit() 
 
                                             if encoder_inductivo == "encoder_2":
+                                                print("self.model.otra_cavidad_activa[inductivo_tool] ya para enviar emit TOOL2",self.model.otra_cavidad_activa[inductivo_tool])
                                                 if self.model.otra_cavidad_activa[inductivo_tool]==True:
+                                                    
+                                                    print("debe mostrar mensaje de dos cavidades de ",inductivo_tool)
                                                     command = {
                                                         "lbl_steps" : {"text": f"Herramienta2 en dos Cavidades al mismo tiempo", "color": "red"},
                                                         "lbl_result" : {"text": "Verificar sensores de posicion de herramienta", "color": "black"},
@@ -750,12 +810,13 @@ class MqttClient (QObject):
                                                     self.client.publish(self.model.torque_data[inductivo_tool]["gui"],json.dumps(command), qos = 2)
 
                                                 else:
-                                                    print("emit zone de tool2")
+                                                    print("emit zone de tool2") 
                                                     self.zone_tool2.emit()
 
                                             if encoder_inductivo == "encoder_3":
+                                                print("self.model.otra_cavidad_activa[inductivo_tool] ya para enviar emit TOOL3",self.model.otra_cavidad_activa[inductivo_tool])
                                                 if self.model.otra_cavidad_activa[inductivo_tool]==True:
-
+                                                    print("debe mostrar mensaje de dos cavidades de ",inductivo_tool)
                                                     command = {
                                                         "lbl_steps" : {"text": f"Herramienta3 en dos Cavidades al mismo tiempo", "color": "red"},
                                                         "lbl_result" : {"text": "Verificar sensores de posicion de herramienta", "color": "black"},
@@ -773,17 +834,10 @@ class MqttClient (QObject):
                                                 "lbl_result" : {"text": "Cerrar Nido para continuar", "color": "black"},
                                                 }
                                             self.client.publish(self.model.torque_data[inductivo_tool]["gui"],json.dumps(command), qos = 2)
-
-                                        elif tuerca!=tuerca_inductivo and self.model.candados_limit_inductivos[caja] == True:
                                             
-                                            if payload[inductivo] == True:
-                                                self.model.otra_cavidad_activa[inductivo_tool]=True
-                                            else:
-                                                self.model.otra_cavidad_activa[inductivo_tool]=False
-                    else:
-                        self.model.otra_cavidad_activa["tool1"]=False
-                        self.model.otra_cavidad_activa["tool2"]=False
-                        self.model.otra_cavidad_activa["tool3"]=False
+                    #self.model.robot_data["v_queue"][box].pop(self.model.robot_data["v_queue"][box].index(self.model.robot_data["current_trig"]))
+                    
+                                          
 
 
                 #encoder4

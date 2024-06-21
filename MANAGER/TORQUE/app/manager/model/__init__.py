@@ -36,6 +36,11 @@ class Model (object):
             "conectoresPDCP":True,
             "checkAlarma": True,
             "sinTorquePDCR":False,
+            "deshabilitar_altura": {
+                "tool1": False,
+                "tool2": False,
+                "tool3": False  
+            },
             "shift_ctrl_function":True,
             "sensores_inductivos":
             {
@@ -253,7 +258,29 @@ class Model (object):
                                     "tool2":False,
                                     "tool3":False
                                 }
-
+        self.conteo_tuercas = {
+            "tool1":0,
+            "tool2":0,
+            "tool3":0
+            
+            }
+        
+        self.otra_cavidad_activa = {
+            "tool1":"",
+            "tool2":"",
+            "tool3":""
+            }
+        
+        self.cavidad_sensada={
+            "tool1":{"MFB-P2":[]},
+            "tool2":{"MFB-P1":[],
+                     "MFB-S":[],
+                     "MFB-E":[]},         
+            "tool3":{"MFB-P2":[],
+                     "MFB-P1":[],
+                     "MFB-S":[],
+                     "MFB-E":[]}
+            }
         #señal para dejar un delay entre cada candado
         self.nuevo_pin = False
 

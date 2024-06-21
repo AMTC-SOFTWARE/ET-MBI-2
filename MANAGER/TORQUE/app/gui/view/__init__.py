@@ -4,7 +4,7 @@
 """
 
 from PyQt5.QtWidgets import QDialog, QMainWindow, QPushButton, QLineEdit, QMessageBox, QAction, QFrame, QTableWidgetItem
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QTimer
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QTimer, QDateTime, QDate, QTime
 from PyQt5.QtGui import QPixmap, QColor
 from threading import Timer
 from os.path import exists
@@ -16,11 +16,13 @@ from time import strftime, sleep
 from copy import copy
 import requests
 import pandas as pd
-from gui.view import resources_rc, main, login, scanner, img_popout, Tabla_horas, mtto1
+from gui.view import resources_rc, main, login, scanner, img_popout, Tabla_horas, mtto1, Tabla_errores
 from gui.view.comm import MqttClient
 from gui.model import Model
 import math
 import re
+import pymysql
+import matplotlib.pyplot as plt
 class MainWindow (QMainWindow):
 
     output = pyqtSignal(dict)
@@ -946,6 +948,21 @@ class Tabla_hora_w (QDialog):
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             print("Escape key was pressed")
+            
+
+class Tabla_errores_c (QDialog):
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        
+        self.ui = Tabla_errores.Ui_TableErrors()
+        self.ui.setupUi(self)
+        
+    def closeEvent(self, event):
+        #event.ignore() 
+        print("close event")
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            print("Escape key was pressed")
 
 class Mantenimiento_ui (QMainWindow):
     output = pyqtSignal(dict)
@@ -964,8 +981,9 @@ class Mantenimiento_ui (QMainWindow):
         self.model.statusTopic = topic.lower() + "/status"
 
         self.ui = mtto1.Mantenimiento_ui()
-        
+        self.qw_Tabla_errores = Tabla_errores_c(parent = self)
         self.qw_login_mtto = Login(parent = self)
+        
         self.ui.setupUi(self) 
         
         self.login_show         = True
@@ -986,7 +1004,23 @@ class Mantenimiento_ui (QMainWindow):
         self.qw_login_mtto.ui.lineEdit.returnPressed.connect( self.login)
         self.qw_login_mtto.ui.btn_ok.clicked.connect(self.login)
 
+        self.ui.dateTimeEdit.setDisplayFormat("yyyy-MM-dd hh:mm:ss")
+        self.ui.dateTimeEdit_2.setDisplayFormat("yyyy-MM-dd hh:mm:ss")
+        
+        fecha_actuaal = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        tomorrow=datetime.now() + timedelta(days=1, hours=5)
+        
+        print("str(fecha_actuaal)",str(fecha_actuaal))
+        print("tomorrow",tomorrow.strftime("%Y-%m-%d %H:%M:%S"))
+        actual_datetime=self.ui.dateTimeEdit_2.dateTimeFromText(str(fecha_actuaal))
+        tomorrow_datetime=self.ui.dateTimeEdit.dateTimeFromText(str(tomorrow.strftime("%Y-%m-%d %H:%M:%S")))
+        
 
+        #self.ui.dateTimeEdit.setDateTime(QDateTime(QDate(2024, 2, 2), QTime(4, 4, 4)))
+        self.ui.dateTimeEdit_2.setDateTime(actual_datetime)
+        self.ui.dateTimeEdit.setDateTime(tomorrow_datetime)
+        
+        
 
         self.ui.checkBox_7.setChecked(False) #clamp PDC-R
         self.ui.checkBox_8.setChecked(False) #clamp PDC-RMID
@@ -1005,7 +1039,10 @@ class Mantenimiento_ui (QMainWindow):
         self.ui.checkBox_2.stateChanged.connect(self.onClicked_2)
         self.ui.checkBox_5.stateChanged.connect(self.onClicked_5)
         self.ui.checkBox_6.stateChanged.connect(self.onClicked_6)
-
+        
+        self.ui.pushButton_2.clicked.connect(self.graficas_reintentos)
+        self.ui.pushButton_3.clicked.connect(self.Actualizar_fecha)
+        self.ui.pushButton.clicked.connect(self.Tabla_fallas)
     @pyqtSlot()
     def login (self):
         try:
@@ -1117,7 +1154,273 @@ class Mantenimiento_ui (QMainWindow):
         else:
             self.output.emit({"MFB-E":False})
 
+    def Actualizar_fecha(self):
+        print("hoyy")
+        fecha_actuaal = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        tomorrow=datetime.now() + timedelta(days=1, hours=5)
+        
+        print("str(fecha_actuaal)",str(fecha_actuaal))
+        print("tomorrow",tomorrow.strftime("%Y-%m-%d %H:%M:%S"))
+        actual_datetime=self.ui.dateTimeEdit_2.dateTimeFromText(str(fecha_actuaal))
+        tomorrow_datetime=self.ui.dateTimeEdit.dateTimeFromText(str(tomorrow.strftime("%Y-%m-%d %H:%M:%S")))
+        
 
+        #self.ui.dateTimeEdit.setDateTime(QDateTime(QDate(2024, 2, 2), QTime(4, 4, 4)))
+        self.ui.dateTimeEdit_2.setDateTime(actual_datetime)
+        self.ui.dateTimeEdit.setDateTime(tomorrow_datetime)
+    def graficas_reintentos(self):
+        print("grafica de reintentos")
+        # Configuración de la conexión ----------------------------------
+        host = "10.71.82.52"
+        user = "dedicado"
+        password = "4dm1n_001"
+        db = "et_mbi_3"
+        #año-mes-dia hora:min:seg
+        init_date = "2023-10-17 07:00:00"
+        end_date = "2023-10-17 17:00:00"
+        #----------------------------------------------------------------
+        
+
+        datetime_lecture1=self.ui.dateTimeEdit.dateTime()
+        end_date=self.ui.dateTimeEdit.textFromDateTime(datetime_lecture1)
+        
+        datetime_lecture2=self.ui.dateTimeEdit_2.dateTime()
+        init_date=self.ui.dateTimeEdit.textFromDateTime(datetime_lecture2)
+        
+        print("datetime_lecture1",datetime_lecture1)
+        print("datet_text",end_date)
+        
+        try:
+            ##############
+            query = "SELECT INTENTOS_T FROM "+ db +".historial WHERE INICIO >= '" + init_date + "' AND INICIO <= '" + end_date + "' AND INTENTOS_T != '{}'"
+            response = self.get_response(host, user, password, db, query)
+            ##############
+
+            #print("tipo: ",type(response))
+            #print("RESPONSE: ",response["INTENTOS_T"])
+
+            cantidad_reintentos = len(response["INTENTOS_T"])
+
+            lista_resultados = response["INTENTOS_T"]
+            fusibles_reintentados = 0 #para contar el total de fusibles reintentados, excepto RELX
+            total_reintentos={}
+
+            for i in range(len(lista_resultados)):
+
+                arnes = json.loads(lista_resultados[i]) #cada elemento de la lista es un string, aquí se convierte a diccionario
+
+                #print("arnes: ",arnes)
+                for caja in arnes:
+                    #print("caja: ",caja)
+                    if not(caja in total_reintentos):
+                        total_reintentos[caja] = {}
+
+                    for fusible in arnes[caja]:
+                        #print("fusible: ",fusible)
+                        #print("reintentos: ",arnes[caja][fusible])
+
+                        if fusible != "RELX" and fusible != "RELU": #si el fusible es diferente del RELX o de RELU
+
+                            fusibles_reintentados += arnes[caja][fusible]
+
+                            if not(fusible in total_reintentos[caja]):
+                                total_reintentos[caja][fusible] = int(arnes[caja][fusible])
+                            else:
+                                total_reintentos[caja][fusible] = total_reintentos[caja][fusible] + int(arnes[caja][fusible])
+
+            print("total_reintentos:::::", total_reintentos)
+
+            contador_graficas=0
+            # Crear una figura y dividirla en subtramas
+            fig, axs = plt.subplots(4, 2)  # 2 filas y 2 columnas de subtramas
+            print("total_reintentos.keys()",total_reintentos.keys())
+            
+            for caja in total_reintentos.keys():
+                #print("caja",caja)
+                claves = list(total_reintentos[caja].keys())
+                valores = list(total_reintentos[caja].values())
+    
+                # Crear gráficos en cada subtrama
+                if contador_graficas==0:
+                    axs[0, 0].bar(claves, valores)
+                    axs[0, 0].set_title(caja)
+                elif contador_graficas==1:
+    
+                    axs[0, 1].bar(claves, valores, color='orange')
+                    axs[0, 1].set_title(caja)
+                elif contador_graficas==2:
+                    axs[1, 0].bar(claves, valores, color='green')
+                    axs[1, 0].set_title(caja)
+                elif contador_graficas==3:
+                    axs[1, 1].bar(claves, valores, color='red')
+                    axs[1, 1].set_title(caja)
+                elif contador_graficas==4:
+                    axs[2, 0].bar(claves, valores, color='purple')
+                    axs[2, 0].set_title(caja)
+                elif contador_graficas==5:
+                    axs[2, 1].bar(claves, valores, color='pink')
+                    axs[2, 1].set_title(caja)
+                elif contador_graficas==6:
+                    axs[3, 0].bar(claves, valores, color='blue')
+                    axs[3, 0].set_title(caja)
+                elif contador_graficas==7:
+                    axs[3, 1].bar(claves, valores, color='red')
+                    axs[3, 1].set_title(caja)
+                contador_graficas+=1
+                #Ajustar el diseño de las subtramas
+                plt.tight_layout()
+                #plt.bar(claves, valores)  # Gráfico de barras
+                #plt.xlabel('Eje X (Claves)')
+                #plt.ylabel('Eje Y (Valores)')
+                #plt.title('Gráfico de Ejemplo')
+
+            # Obtén el administrador de la figura actual
+            manager = plt.get_current_fig_manager()
+
+            x = 10
+            y = 80
+            width = 750
+            height = 900
+
+            # Ajusta la posición de la ventana emergente
+            manager.window.setGeometry(x, y, width, height)
+
+            plt.show()  # Muestra el gráfico
+        except Exception as ex:
+           print("myJsonResponse connection Exception: ", ex)
+           return {"exception": ex.args}
+    def get_response(self, host, user, password, db, query):
+        try:
+            connection = pymysql.connect(host = host, user = user, passwd = password, database = db, cursorclass=pymysql.cursors.DictCursor)
+        except Exception as ex:
+            print("myJsonResponse connection Exception: ", ex)
+            return {"exception": ex.args}
+
+        print("query: ",query)
+        try:
+            with connection.cursor() as cursor:
+                items = cursor.execute(query)
+                result = cursor.fetchall()
+
+                if len(result) == 1:
+                    response = result[0]
+                elif len(result) > 1:
+                    response = {}
+                    keys = list(result[0])
+                    for key in keys:
+                        response[key] = []
+                        for item in result:
+                            response[key].append(item.pop(key))         
+                else:
+                    response = {"items": items}
+
+        except Exception as ex:
+            print("myJsonResponse cursor Exception: ", ex)
+            response = {"exception" : ex.args}
+            
+        cursor.close()
+        connection.close()
+        return response
+
+    def Tabla_fallas(self):
+        print("tablas de fallas")
+        self.qw_Tabla_errores.show()
+        
+        # Configuración de la conexión ----------------------------------
+        host = "10.71.82.52"
+        user = "dedicado"
+        password = "4dm1n_001"
+        db = "et_mbi_3"
+        #año-mes-dia hora:min:seg
+        init_date = "2023-10-17 07:00:00"
+        end_date = "2023-10-17 17:00:00"
+        #----------------------------------Calculo de reintentos
+        
+        datetime_lecture1=self.ui.dateTimeEdit.dateTime()
+        end_date=self.ui.dateTimeEdit.textFromDateTime(datetime_lecture1)
+        
+        datetime_lecture2=self.ui.dateTimeEdit_2.dateTime()
+        init_date=self.ui.dateTimeEdit.textFromDateTime(datetime_lecture2)
+        
+        print("datetime_lecture1",datetime_lecture1)
+        print("datet_text",end_date)
+        try:
+            ##############
+            query = "SELECT INTENTOS_T FROM "+ db +".historial WHERE INICIO >= '" + init_date + "' AND INICIO <= '" + end_date + "' AND INTENTOS_T != '{}'"
+            response = self.get_response(host, user, password, db, query)
+            ##############
+
+            #print("tipo: ",type(response))
+            #print("RESPONSE: ",response["INTENTOS_T"])
+
+            cantidad_reintentos = len(response["INTENTOS_T"])
+
+            lista_resultados = response["INTENTOS_T"]
+            fusibles_reintentados = 0 #para contar el total de fusibles reintentados, excepto RELX
+            total_reintentos={}
+
+            for i in range(len(lista_resultados)):
+
+                arnes = json.loads(lista_resultados[i]) #cada elemento de la lista es un string, aquí se convierte a diccionario
+
+                #print("arnes: ",arnes)
+                for caja in arnes:
+                    #print("caja: ",caja)
+                    if not(caja in total_reintentos):
+                        total_reintentos[caja] = {}
+
+                    for fusible in arnes[caja]:
+                        #print("fusible: ",fusible)
+                        #print("reintentos: ",arnes[caja][fusible])
+
+                        if fusible != "RELX" and fusible != "RELU": #si el fusible es diferente del RELX o de RELU
+
+                            fusibles_reintentados += arnes[caja][fusible]
+
+                            if not(fusible in total_reintentos[caja]):
+                                total_reintentos[caja][fusible] = int(arnes[caja][fusible])
+                            else:
+                                total_reintentos[caja][fusible] = total_reintentos[caja][fusible] + int(arnes[caja][fusible])
+
+            print("total_reintentos:::::", total_reintentos)
+
+        except Exception as ex:
+            print("datos de errores: ", ex)
+            return {"exception": ex.args}
+        
+        #----------------------------------Calculo de top cavidades con mas reintentos
+        # Aplanar el diccionario
+        flattened_list = [(outer_key, inner_key, value) for outer_key, inner_dict in total_reintentos.items() for inner_key, value in inner_dict.items()]
+        
+        # Ordenar la lista de tuplas por los valores en orden descendente
+        sorted_list = sorted(flattened_list, key=lambda x: x[2], reverse=True)
+        
+        cavidad_top1=sorted_list[0][1]
+        #----------------------------------Querys para consulta de torque info de las cavidades
+        #query="SELECT * FROM et_mbi_3.torque_info where CICLO_manager LIKE '"+cavidad_top1+"' order by ID desc LIMIT 2;
+        query="SELECT * FROM et_mbi_3.torque_info where result !=1 AND fase_driver >2 AND CICLO_manager LIKE '%"+cavidad_top1+"%' order by ID desc LIMIT 10;"""
+        endpoint = "http://{}/query/get/{}".format(self.model.server, query)
+        resp_ultimos_torques = requests.get(endpoint).json()
+        print("resp_ultimos_torques",resp_ultimos_torques)
+
+
+        fila=0
+        
+        #celda_mejor_tiempo=QTableWidgetItem(f"   {parte_entera} minutos, {segundos} s." )
+        celda_mejor_tiempo=QTableWidgetItem("vams1a celda" )
+            
+        self.qw_Tabla_errores.ui.tableWidget.setItem(fila,0,celda_mejor_tiempo)
+                
+        #query="SELECT * FROM et_mbi_3.torque_info where HERRAMIENTA='"+tool+"' order by ID desc LIMIT 2;"""
+        ##query="SELECT INICIO, FIN FROM et_mbi_3.historial WHERE RESULTADO = 1 order by ID desc LIMIT 1;"
+        #endpoint = "http://{}/query/get/{}".format(self.model.server, query)
+        #resp_ultimos_torques = requests.get(endpoint).json()
+        #print("resp_ultimos_torques",resp_ultimos_torques)
+        #
+
+
+
+        
     def closeEvent(self, event):
         #event.ignore()
         
@@ -1385,21 +1688,6 @@ class Mantenimiento_ui (QMainWindow):
                       "border-bottom-right-radius : 8px;")
         if "A29" in message:
             if message["A29"] == True:
-                self.ui.label_46.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_46.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "A30" in message:
-            if message["A30"] == True:
                 self.ui.label_48.setStyleSheet("background-color: " + "lime" + ";" 
                     + "border :3px solid black;\n"
                       "border-top-left-radius :8px;\n"
@@ -1408,6 +1696,21 @@ class Mantenimiento_ui (QMainWindow):
                       "border-bottom-right-radius : 8px;")
             else:
                 self.ui.label_48.setStyleSheet("background-color: " + "gray" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+        if "A30" in message:
+            if message["A30"] == True:
+                self.ui.label_46.setStyleSheet("background-color: " + "lime" + ";" 
+                    + "border :3px solid black;\n"
+                      "border-top-left-radius :8px;\n"
+                      "border-top-right-radius : 8px;\n"
+                      "border-bottom-left-radius :8px;\n"
+                      "border-bottom-right-radius : 8px;")
+            else:
+                self.ui.label_46.setStyleSheet("background-color: " + "gray" + ";" 
                     + "border :3px solid black;\n"
                       "border-top-left-radius :8px;\n"
                       "border-top-right-radius : 8px;\n"
@@ -1636,4 +1939,20 @@ if __name__ == "__main__":
     sys.exit(app.exec_())
     
 
-    
+
+    #{'CICLO_manager': ["['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']"], 'FECHA': ['Thu, 20 Jun 2024 14:20:55 GMT', 'Thu, 20 Jun 2024 13:54:18 GMT', 'Thu, 20 Jun 2024 13:53:47 GMT', 'Thu, 20 Jun 2024 13:53:25 GMT', 'Thu, 20 Jun 2024 13:23:44 GMT', 'Thu, 20 Jun 2024 13:00:43 GMT', 'Thu, 20 Jun 2024 12:23:40 GMT', 'Thu, 20 Jun 2024 11:28:17 GMT', 'Thu, 20 Jun 2024 09:11:34 GMT', 'Thu, 20 Jun 2024 09:10:16 GMT'], 'HERRAMIENTA': ['tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3'], 'HM': ['HM000000288412', 'HM000000288401', 'HM000000288401', 'HM000000288401', 'HM000000288378', 'HM000000288317', 'HM000000288314', 'HM000000288242', 'HM000000287653', 'HM000000287653'], 'ID': [871492, 871422, 871418, 871414, 871372, 871290, 871246, 871084, 870476, 870472], 'REGISTRO': ['{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 3.0, "FinalSpeed": 6.0, "PostSeatingRealTorque": -0.4000000059604645, "PostSeatingTorque": 9.571611404418945, "RundownSpeed": 0.0, "SeatingTorque": 9.571611404418945, "SetErrorcode": 16448.0, "ToolCount": 57854.0, "TorqueCorrection": 1.0, "angle": -0.4000000059604645, "angle_max": 500.0, "angle_min": 10.0, "angle_target": 0.0, "angle_trend": "Angle below", "fase": 4.0, "result": 2.0, "torque": 9.571611404418945, "torque_max": 3.0, "torque_min": 0.5, "torque_target": 2.9000000953674316, "torque_trend": "Torque over"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 3.0, "FinalSpeed": 6.0, "PostSeatingRealTorque": 1665.2000732421875, "PostSeatingTorque": 6.028872013092041, "RundownSpeed": 0.0, "SeatingTorque": 6.028872013092041, "SetErrorcode": 16448.0, "ToolCount": 57838.0, "TorqueCorrection": 1.0, "angle": 1665.2000732421875, "angle_max": 1845.2000732421875, "angle_min": 1692.0001220703125, "angle_target": 4.700000286102295, "angle_trend": "Angle below", "fase": 4.0, "result": 2.0, "torque": 6.028872013092041, "torque_max": 4.900000095367432, "torque_min": 0.0, "torque_target": 0.0, "torque_trend": "Torque over"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 3.0, "FinalSpeed": 6.0, "PostSeatingRealTorque": 1691.2000732421875, "PostSeatingTorque": 5.065495491027832, "RundownSpeed": 0.0, "SeatingTorque": 5.065495491027832, "SetErrorcode": 16448.0, "ToolCount": 57836.0, "TorqueCorrection": 1.0, "angle": 1691.2000732421875, "angle_max": 1871.2000732421875, "angle_min": 1692.0001220703125, "angle_target": 4.700000286102295, "angle_trend": "Angle below", "fase": 4.0, "result": 2.0, "torque": 5.065495491027832, "torque_max": 4.900000095367432, "torque_min": 0.0, "torque_target": 0.0, "torque_trend": "Torque over"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 0.0, "FinalSpeed": 6.0, "PostSeatingRealTorque": 1632.7000732421875, "PostSeatingTorque": 6.028872013092041, "RundownSpeed": 0.0, "SeatingTorque": 6.028872013092041, "SetErrorcode": 16448.0, "ToolCount": 57834.0, "TorqueCorrection": 1.0, "angle": 1632.7000732421875, "angle_max": 1812.7000732421875, "angle_min": 1692.0001220703125, "angle_target": 4.700000286102295, "angle_trend": "Angle below", "fase": 4.0, "result": 2.0, "torque": 6.028872013092041, "torque_max": 4.900000095367432, "torque_min": 0.0, "torque_target": 0.0, "torque_trend": "Torque over"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 3.0, "FinalSpeed": 6.0, "PostSeatingRealTorque": 98.20000457763672, "PostSeatingTorque": 2.8590526580810547, "RundownSpeed": 0.0, "SeatingTorque": 2.8590526580810547, "SetErrorcode": 16448.0, "ToolCount": 57826.0, "TorqueCorrection": 1.0, "angle": 98.20000457763672, "angle_max": 60.0, "angle_min": 10.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 4.0, "result": 2.0, "torque": 2.8590526580810547, "torque_max": 17.600000381469727, "torque_min": 14.399999618530273, "torque_target": 16.0, "torque_trend": "Torque below"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 0.0, "FinalSpeed": 6.0, "PostSeatingRealTorque": 1677.800048828125, "PostSeatingTorque": 5.997795581817627, "RundownSpeed": 0.0, "SeatingTorque": 5.997795581817627, "SetErrorcode": 16448.0, "ToolCount": 57806.0, "TorqueCorrection": 1.0, "angle": 1677.800048828125, "angle_max": 1857.800048828125, "angle_min": 1692.0001220703125, "angle_target": 4.700000286102295, "angle_trend": "Angle below", "fase": 4.0, "result": 2.0, "torque": 5.997795581817627, "torque_max": 4.900000095367432, "torque_min": 0.0, "torque_target": 0.0, "torque_trend": "Torque over"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 0.0, "FinalSpeed": 6.0, "PostSeatingRealTorque": 1685.5, "PostSeatingTorque": 5.997795581817627, "RundownSpeed": 0.0, "SeatingTorque": 5.997795581817627, "SetErrorcode": 16448.0, "ToolCount": 57796.0, "TorqueCorrection": 1.0, "angle": 1685.5, "angle_max": 1865.5, "angle_min": 1692.0001220703125, "angle_target": 4.700000286102295, "angle_trend": "Angle below", "fase": 4.0, "result": 2.0, "torque": 5.997795581817627, "torque_max": 4.900000095367432, "torque_min": 0.0, "torque_target": 0.0, "torque_trend": "Torque over"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 0.0, "FinalSpeed": 6.0, "PostSeatingRealTorque": 1652.0, "PostSeatingTorque": 6.091025352478027, "RundownSpeed": 0.0, "SeatingTorque": 6.091025352478027, "SetErrorcode": 16448.0, "ToolCount": 57758.0, "TorqueCorrection": 1.0, "angle": 1652.0, "angle_max": 1832.0, "angle_min": 1692.0001220703125, "angle_target": 4.700000286102295, "angle_trend": "Angle below", "fase": 4.0, "result": 2.0, "torque": 6.091025352478027, "torque_max": 4.900000095367432, "torque_min": 0.0, "torque_target": 0.0, "torque_trend": "Torque over"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 3.0, "FinalSpeed": 6.0, "PostSeatingRealTorque": 2754.60009765625, "PostSeatingTorque": 0.031076660379767418, "RundownSpeed": 0.0, "SeatingTorque": 0.031076660379767418, "SetErrorcode": 16448.0, "ToolCount": 57638.0, "TorqueCorrection": 1.0, "angle": 2754.60009765625, "angle_max": 2800.0, "angle_min": 2500.0, "angle_target": 2750.0, "angle_trend": "Angle OK", "fase": 4.0, "result": 2.0, "torque": 0.031076660379767418, "torque_max": 4.900000095367432, "torque_min": 0.10000000149011612, "torque_target": 0.0, "torque_trend": "Torque below"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 3.0, "FinalSpeed": 6.0, "PostSeatingRealTorque": 1603.2000732421875, "PostSeatingTorque": 5.997795581817627, "RundownSpeed": 0.0, "SeatingTorque": 5.997795581817627, "SetErrorcode": 16448.0, "ToolCount": 57636.0, "TorqueCorrection": 1.0, "angle": 1603.2000732421875, "angle_max": 1783.2000732421875, "angle_min": 1692.0001220703125, "angle_target": 4.700000286102295, "angle_trend": "Angle below", "fase": 4.0, "result": 2.0, "torque": 5.997795581817627, "torque_max": 4.900000095367432, "torque_min": 0.0, "torque_target": 0.0, "torque_trend": "Torque over"}'], 
+    # 'angle_target': [0.0, 4.7, 4.7, 4.7, 0.0, 4.7, 4.7, 4.7, 2750.0, 4.7], 
+    # 'angle_trend': ['Angle below', 'Angle below', 'Angle below', 'Angle below', 'Angle over', 'Angle below', 'Angle below', 'Angle below', 'Angle OK', 'Angle below'], 
+    # 'angulo_final':  [-0.4,      1665.2,        1691.2,    1632.7,         98.2,           1677.8,         1685.5,     1652.0, 2754.6, 1603.2], 
+    # 'angulo_maximo': [500.0,     1845.2,        1871.2,    1812.7,         60.0,           1857.8,         1865.5,     1832.0, 2800.0, 1783.2],
+    # 'angulo_minimo': [10.0,      1692.0,        1692.0,    1692.0,         10.0,           1692.0,         1692.0,     1692.0, 2500.0, 1692.0],
+    # 'columns': ['ID', 'HERRAMIENTA', 'REGISTRO', 'FECHA', 'CICLO_manager', 'estado_actual', 'perfil_driver', 'fase_driver', 'HM', 'angulo_final', 'torque_final', 'torque_minimo', 'torque_maximo', 'angulo_minimo', 'angulo_maximo', 'angle_trend', 'torque_trend', 'angle_target', 'torque_target', 'result'], 'estado_actual': ['', '', '', '', '', '', '', '', '', ''], 'fase_driver': [4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0], 'perfil_driver': [3.0, 3.0, 3.0, 0.0, 3.0, 0.0, 0.0, 0.0, 3.0, 3.0], 'result': [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0], 
+    # 'torque_final':  [9.57161, 6.02887,         5.0655,    6.02887,        2.85905,        5.9978,         5.9978,     6.09103, 0.0310767, 5.9978], 
+    # 'torque_maximo': [3.0,      4.9,            4.9,       4.9,            17.6,           4.9,            4.9,        4.9, 4.9, 4.9], 
+    # 'torque_minimo': [0.5,      0.0,            0.0,       0.0,            14.4,           0.0,            0.0,        0.0, 0.1, 0.0], 
+    # 'torque_target': [2.9,      0.0,            0.0,       0.0,            16.0,           0.0,            0.0,        0.0, 0.0, 0.0], 
+    # 'torque_trend': ['Torque over', 'Torque over', 'Torque over', 'Torque over', 'Torque below', 'Torque over', 'Torque over', 'Torque over', 'Torque below', 'Torque over']}
+    #                  FASE3     FASE2            FASE2      FASE2           FASE4           FASE2           FASE2      FASE2    FASE1  FASE2
+    #                  
+    #{'CICLO_manager': ["['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']"], 'FECHA': ['Thu, 20 Jun 2024 14:21:09 GMT', 'Thu, 20 Jun 2024 13:55:08 GMT', 'Thu, 20 Jun 2024 13:54:01 GMT', 'Thu, 20 Jun 2024 13:53:36 GMT', 'Thu, 20 Jun 2024 13:23:54 GMT', 'Thu, 20 Jun 2024 13:00:57 GMT', 'Thu, 20 Jun 2024 12:23:51 GMT', 'Thu, 20 Jun 2024 11:28:31 GMT', 'Thu, 20 Jun 2024 09:11:47 GMT', 'Thu, 20 Jun 2024 09:11:27 GMT'], 'HERRAMIENTA': ['tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3'], 'HM': ['HM000000288412', 'HM000000288401', 'HM000000288401', 'HM000000288401', 'HM000000288378', 'HM000000288317', 'HM000000288314', 'HM000000288242', 'HM000000287653', 'HM000000287653'], 'ID': [871494, 871424, 871420, 871416, 871374, 871292, 871248, 871086, 870478, 870474], 'REGISTRO': ['{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 5927.80029296875, "PostSeatingTorque": 6.650405406951904, "RundownSpeed": 0.0, "SeatingTorque": 6.650405406951904, "SetErrorcode": 16448.0, "ToolCount": 57855.0, "TorqueCorrection": 1.0, "angle": 5927.80029296875, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 6.650405406951904, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 5878.10009765625, "PostSeatingTorque": 7.178708553314209, "RundownSpeed": 0.0, "SeatingTorque": 7.178708553314209, "SetErrorcode": 16448.0, "ToolCount": 57839.0, "TorqueCorrection": 1.0, "angle": 5878.10009765625, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 7.178708553314209, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 6088.5, "PostSeatingTorque": 6.836865425109863, "RundownSpeed": 0.0, "SeatingTorque": 6.836865425109863, "SetErrorcode": 16448.0, "ToolCount": 57837.0, "TorqueCorrection": 1.0, "angle": 6088.5, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 6.836865425109863, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 6088.5, "PostSeatingTorque": 7.489475250244141, "RundownSpeed": 0.0, "SeatingTorque": 7.489475250244141, "SetErrorcode": 16448.0, "ToolCount": 57835.0, "TorqueCorrection": 1.0, "angle": 6088.5, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 7.489475250244141, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 5319.5, "PostSeatingTorque": 6.650405406951904, "RundownSpeed": 0.0, "SeatingTorque": 6.650405406951904, "SetErrorcode": 16448.0, "ToolCount": 57827.0, "TorqueCorrection": 1.0, "angle": 5319.5, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 6.650405406951904, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 5785.5, "PostSeatingTorque": 6.89901876449585, "RundownSpeed": 0.0, "SeatingTorque": 6.89901876449585, "SetErrorcode": 16448.0, "ToolCount": 57807.0, "TorqueCorrection": 1.0, "angle": 5785.5, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 6.89901876449585, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 6088.5, "PostSeatingTorque": 7.147632122039795, "RundownSpeed": 0.0, "SeatingTorque": 7.147632122039795, "SetErrorcode": 16448.0, "ToolCount": 57797.0, "TorqueCorrection": 1.0, "angle": 6088.5, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 7.147632122039795, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 5742.2001953125, "PostSeatingTorque": 7.582705020904541, "RundownSpeed": 0.0, "SeatingTorque": 7.582705020904541, "SetErrorcode": 16448.0, "ToolCount": 57759.0, "TorqueCorrection": 1.0, "angle": 5742.2001953125, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 7.582705020904541, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 4012.300048828125, "PostSeatingTorque": 6.743635177612305, "RundownSpeed": 0.0, "SeatingTorque": 6.743635177612305, "SetErrorcode": 16448.0, "ToolCount": 57639.0, "TorqueCorrection": 1.0, "angle": 4012.300048828125, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle OK", "fase": 1.0, "result": 2.0, "torque": 6.743635177612305, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 5648.80029296875, "PostSeatingTorque": 6.99224853515625, "RundownSpeed": 0.0, "SeatingTorque": 6.99224853515625, "SetErrorcode": 16448.0, "ToolCount": 57637.0, "TorqueCorrection": 1.0, "angle": 5648.80029296875, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 6.99224853515625, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}'], 'angle_target': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 'angle_trend': ['Angle over', 'Angle over', 'Angle over', 'Angle over', 'Angle over', 'Angle over', 'Angle over', 'Angle over', 'Angle OK', 'Angle over'], 'angulo_final': [5927.8, 5878.1, 6088.5, 6088.5, 5319.5, 5785.5, 6088.5, 5742.2, 4012.3, 5648.8], 'angulo_maximo': [5000.0, 5000.0, 5000.0, 5000.0, 5000.0, 5000.0, 5000.0, 5000.0, 5000.0, 5000.0], 'angulo_minimo': [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], 'columns': ['ID', 'HERRAMIENTA', 'REGISTRO', 'FECHA', 'CICLO_manager', 'estado_actual', 'perfil_driver', 'fase_driver', 'HM', 'angulo_final', 'torque_final', 'torque_minimo', 'torque_maximo', 'angulo_minimo', 'angulo_maximo', 'angle_trend', 'torque_trend', 'angle_target', 'torque_target', 'result'], 'estado_actual': ['BACKWARD', 'BACKWARD', 'BACKWARD', 'BACKWARD', 'BACKWARD', 'BACKWARD', 'BACKWARD', 'BACKWARD', 'BACKWARD', 'BACKWARD'], 'fase_driver': [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], 'perfil_driver': [17.0, 17.0, 17.0, 17.0, 17.0, 17.0, 17.0, 17.0, 17.0, 17.0], 'result': [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0], 'torque_final': [6.65041, 7.17871, 6.83687, 7.48948, 6.65041, 6.89902, 7.14763, 7.58271, 6.74364, 6.99225], 'torque_maximo': [20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0], 'torque_minimo': [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0], 'torque_target': [18.0, 18.0, 18.0, 18.0, 18.0, 18.0, 18.0, 18.0, 18.0, 18.0], 'torque_trend': ['Torque OK', 'Torque OK', 'Torque OK', 'Torque OK', 'Torque OK', 'Torque OK', 'Torque OK', 'Torque OK', 'Torque OK', 'Torque OK']}
+    #{'CICLO_manager': ["['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']"], 'FECHA': ['Thu, 20 Jun 2024 14:21:09 GMT', 'Thu, 20 Jun 2024 14:20:55 GMT', 'Thu, 20 Jun 2024 13:55:08 GMT', 'Thu, 20 Jun 2024 13:54:18 GMT', 'Thu, 20 Jun 2024 13:54:01 GMT', 'Thu, 20 Jun 2024 13:53:47 GMT', 'Thu, 20 Jun 2024 13:53:36 GMT', 'Thu, 20 Jun 2024 13:53:25 GMT', 'Thu, 20 Jun 2024 13:23:54 GMT', 'Thu, 20 Jun 2024 13:23:44 GMT'], 'HERRAMIENTA': ['tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3'], 'HM': ['HM000000288412', 'HM000000288412', 'HM000000288401', 'HM000000288401', 'HM000000288401', 'HM000000288401', 'HM000000288401', 'HM000000288401', 'HM000000288378', 'HM000000288378'], 'ID': [871494, 871492, 871424, 871422, 871420, 871418, 871416, 871414, 871374, 871372], 'REGISTRO': ['{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 5927.80029296875, "PostSeatingTorque": 6.650405406951904, "RundownSpeed": 0.0, "SeatingTorque": 6.650405406951904, "SetErrorcode": 16448.0, "ToolCount": 57855.0, "TorqueCorrection": 1.0, "angle": 5927.80029296875, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 6.650405406951904, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 3.0, "FinalSpeed": 6.0, "PostSeatingRealTorque": -0.4000000059604645, "PostSeatingTorque": 9.571611404418945, "RundownSpeed": 0.0, "SeatingTorque": 9.571611404418945, "SetErrorcode": 16448.0, "ToolCount": 57854.0, "TorqueCorrection": 1.0, "angle": -0.4000000059604645, "angle_max": 500.0, "angle_min": 10.0, "angle_target": 0.0, "angle_trend": "Angle below", "fase": 4.0, "result": 2.0, "torque": 9.571611404418945, "torque_max": 3.0, "torque_min": 0.5, "torque_target": 2.9000000953674316, "torque_trend": "Torque over"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 5878.10009765625, "PostSeatingTorque": 7.178708553314209, "RundownSpeed": 0.0, "SeatingTorque": 7.178708553314209, "SetErrorcode": 16448.0, "ToolCount": 57839.0, "TorqueCorrection": 1.0, "angle": 5878.10009765625, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 7.178708553314209, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 3.0, "FinalSpeed": 6.0, "PostSeatingRealTorque": 1665.2000732421875, "PostSeatingTorque": 6.028872013092041, "RundownSpeed": 0.0, "SeatingTorque": 6.028872013092041, "SetErrorcode": 16448.0, "ToolCount": 57838.0, "TorqueCorrection": 1.0, "angle": 1665.2000732421875, "angle_max": 1845.2000732421875, "angle_min": 1692.0001220703125, "angle_target": 4.700000286102295, "angle_trend": "Angle below", "fase": 4.0, "result": 2.0, "torque": 6.028872013092041, "torque_max": 4.900000095367432, "torque_min": 0.0, "torque_target": 0.0, "torque_trend": "Torque over"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 6088.5, "PostSeatingTorque": 6.836865425109863, "RundownSpeed": 0.0, "SeatingTorque": 6.836865425109863, "SetErrorcode": 16448.0, "ToolCount": 57837.0, "TorqueCorrection": 1.0, "angle": 6088.5, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 6.836865425109863, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 3.0, "FinalSpeed": 6.0, "PostSeatingRealTorque": 1691.2000732421875, "PostSeatingTorque": 5.065495491027832, "RundownSpeed": 0.0, "SeatingTorque": 5.065495491027832, "SetErrorcode": 16448.0, "ToolCount": 57836.0, "TorqueCorrection": 1.0, "angle": 1691.2000732421875, "angle_max": 1871.2000732421875, "angle_min": 1692.0001220703125, "angle_target": 4.700000286102295, "angle_trend": "Angle below", "fase": 4.0, "result": 2.0, "torque": 5.065495491027832, "torque_max": 4.900000095367432, "torque_min": 0.0, "torque_target": 0.0, "torque_trend": "Torque over"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 6088.5, "PostSeatingTorque": 7.489475250244141, "RundownSpeed": 0.0, "SeatingTorque": 7.489475250244141, "SetErrorcode": 16448.0, "ToolCount": 57835.0, "TorqueCorrection": 1.0, "angle": 6088.5, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 7.489475250244141, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 0.0, "FinalSpeed": 6.0, "PostSeatingRealTorque": 1632.7000732421875, "PostSeatingTorque": 6.028872013092041, "RundownSpeed": 0.0, "SeatingTorque": 6.028872013092041, "SetErrorcode": 16448.0, "ToolCount": 57834.0, "TorqueCorrection": 1.0, "angle": 1632.7000732421875, "angle_max": 1812.7000732421875, "angle_min": 1692.0001220703125, "angle_target": 4.700000286102295, "angle_trend": "Angle below", "fase": 4.0, "result": 2.0, "torque": 6.028872013092041, "torque_max": 4.900000095367432, "torque_min": 0.0, "torque_target": 0.0, "torque_trend": "Torque over"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 5319.5, "PostSeatingTorque": 6.650405406951904, "RundownSpeed": 0.0, "SeatingTorque": 6.650405406951904, "SetErrorcode": 16448.0, "ToolCount": 57827.0, "TorqueCorrection": 1.0, "angle": 5319.5, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 6.650405406951904, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 3.0, "FinalSpeed": 6.0, "PostSeatingRealTorque": 98.20000457763672, "PostSeatingTorque": 2.8590526580810547, "RundownSpeed": 0.0, "SeatingTorque": 2.8590526580810547, "SetErrorcode": 16448.0, "ToolCount": 57826.0, "TorqueCorrection": 1.0, "angle": 98.20000457763672, "angle_max": 60.0, "angle_min": 10.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 4.0, "result": 2.0, "torque": 2.8590526580810547, "torque_max": 17.600000381469727, "torque_min": 14.399999618530273, "torque_target": 16.0, "torque_trend": "Torque below"}'], 'angle_target': [0.0, 0.0, 0.0, 4.7, 0.0, 4.7, 0.0, 4.7, 0.0, 0.0], 'angle_trend': ['Angle over', 'Angle below', 'Angle over', 'Angle below', 'Angle over', 'Angle below', 'Angle over', 'Angle below', 'Angle over', 'Angle over'], 'angulo_final': [5927.8, -0.4, 5878.1, 1665.2, 6088.5, 1691.2, 6088.5, 1632.7, 5319.5, 98.2], 'angulo_maximo': [5000.0, 500.0, 5000.0, 1845.2, 5000.0, 1871.2, 5000.0, 1812.7, 5000.0, 60.0], 'angulo_minimo': [1.0, 10.0, 1.0, 1692.0, 1.0, 1692.0, 1.0, 1692.0, 1.0, 10.0], 'columns': ['ID', 'HERRAMIENTA', 'REGISTRO', 'FECHA', 'CICLO_manager', 'estado_actual', 'perfil_driver', 'fase_driver', 'HM', 'angulo_final', 'torque_final', 'torque_minimo', 'torque_maximo', 'angulo_minimo', 'angulo_maximo', 'angle_trend', 'torque_trend', 'angle_target', 'torque_target', 'result'], 'estado_actual': ['BACKWARD', '', 'BACKWARD', '', 'BACKWARD', '', 'BACKWARD', '', 'BACKWARD', ''], 'fase_driver': [1.0, 4.0, 1.0, 4.0, 1.0, 4.0, 1.0, 4.0, 1.0, 4.0], 'perfil_driver': [17.0, 3.0, 17.0, 3.0, 17.0, 3.0, 17.0, 0.0, 17.0, 3.0], 'result': [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0], 'torque_final': [6.65041, 9.57161, 7.17871, 6.02887, 6.83687, 5.0655, 7.48948, 6.02887, 6.65041, 2.85905], 'torque_maximo': [20.0, 3.0, 20.0, 4.9, 20.0, 4.9, 20.0, 4.9, 20.0, 17.6], 'torque_minimo': [2.0, 0.5, 2.0, 0.0, 2.0, 0.0, 2.0, 0.0, 2.0, 14.4], 'torque_target': [18.0, 2.9, 18.0, 0.0, 18.0, 0.0, 18.0, 0.0, 18.0, 16.0], 'torque_trend': ['Torque OK', 'Torque over', 'Torque OK', 'Torque over', 'Torque OK', 'Torque over', 'Torque OK', 'Torque over', 'Torque OK', 'Torque below']}
