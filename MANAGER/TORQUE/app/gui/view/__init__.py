@@ -1395,29 +1395,91 @@ class Mantenimiento_ui (QMainWindow):
         
         # Ordenar la lista de tuplas por los valores en orden descendente
         sorted_list = sorted(flattened_list, key=lambda x: x[2], reverse=True)
-        
-        cavidad_top1=sorted_list[0][1]
-        #----------------------------------Querys para consulta de torque info de las cavidades
-        #query="SELECT * FROM et_mbi_3.torque_info where CICLO_manager LIKE '"+cavidad_top1+"' order by ID desc LIMIT 2;
-        query="SELECT * FROM et_mbi_3.torque_info where result !=1 AND fase_driver >2 AND CICLO_manager LIKE '%"+cavidad_top1+"%' order by ID desc LIMIT 10;"""
-        endpoint = "http://{}/query/get/{}".format(self.model.server, query)
-        resp_ultimos_torques = requests.get(endpoint).json()
-        print("resp_ultimos_torques",resp_ultimos_torques)
-
-
         fila=0
-        
-        #celda_mejor_tiempo=QTableWidgetItem(f"   {parte_entera} minutos, {segundos} s." )
-        celda_mejor_tiempo=QTableWidgetItem("vams1a celda" )
+        colores=["cyan","silver","violet","salmon","lightgreen"]
+        for cavidad_top in range(5):
+            #sorted_list   [('MFB-P1', 'A46', 2998), ('MFB-P2', 'A20', 2847), ('BATTERY', 'BT', 2783), ('MFB-P2', 'A30', 1640), ('MFB-P2', 'A29', 1626), ('MFB-P2', 'A25', 1478), ('PDC-RMID', 'E1', 1416), ('MFB-P1', 'A41', 1360), ('MFB-P2', 'A21', 1317), ('MFB-P2', 'A26', 1317), ('MFB-P2', 'A24', 1166), ('PDC-P', 'E1', 1018), ('MFB-P2', 'A22', 883), ('PDC-D', 'E1', 817), ('MFB-P1', 'A43', 783), ('MFB-P1', 'A42', 697), ('MFB-P2', 'A23', 582), ('MFB-S', 'A51', 289), ('MFB-S', 'A54', 134), ('BATTERY-2', 'BT', 128), ('MFB-P1', 'A45', 115), ('MFB-E', 'E1', 109), ('MFB-P2', 'A27', 92), ('MFB-E', 'A1', 85), ('PDC-R', 'E1', 78), ('MFB-S', 'A53', 57), ('MFB-E', 'A2', 49), ('MFB-S', 'A52', 47), ('MFB-P1', 'A47', 0), ('MFB-P1', 'A44', 0), ('MFB-S', 'A55', 0), ('MFB-S', 'A56', 0), ('MFB-P2', 'A28', 0), ('PDC-RS', 'E1', 0)]
+            cavidad_top1=sorted_list[cavidad_top][1]
+            #----------------------------------Querys para consulta de torque info de las cavidades
+            #query="SELECT * FROM et_mbi_3.torque_info where CICLO_manager LIKE '"+cavidad_top1+"' order by ID desc LIMIT 2;
+            query="SELECT * FROM et_mbi_2.torque_info where result !=1 AND fase_driver >2 AND CICLO_manager LIKE '%"+cavidad_top1+"%' order by ID desc LIMIT 10;"""
+            endpoint = "http://{}/query/get/{}".format(self.model.server, query)
+            resp_ultimos_torques = requests.get(endpoint).json()
+            print("resp_ultimos_torques",resp_ultimos_torques)
             
-        self.qw_Tabla_errores.ui.tableWidget.setItem(fila,0,celda_mejor_tiempo)
+            color_celdas=colores[cavidad_top]
+            
+            for registro_torque in range(len(resp_ultimos_torques["angulo_final"])):
                 
-        #query="SELECT * FROM et_mbi_3.torque_info where HERRAMIENTA='"+tool+"' order by ID desc LIMIT 2;"""
-        ##query="SELECT INICIO, FIN FROM et_mbi_3.historial WHERE RESULTADO = 1 order by ID desc LIMIT 1;"
-        #endpoint = "http://{}/query/get/{}".format(self.model.server, query)
-        #resp_ultimos_torques = requests.get(endpoint).json()
-        #print("resp_ultimos_torques",resp_ultimos_torques)
-        #
+                #celda_mejor_tiempo=QTableWidgetItem(f"   {parte_entera} minutos, {segundos} s." )
+                cavidad=QTableWidgetItem(cavidad_top1)
+                cavidad.setBackground(QColor(color_celdas))
+                self.qw_Tabla_errores.ui.tableWidget.setItem(fila,0,cavidad)
+                
+
+                fase_calculo=self.fase_torque(resp_ultimos_torques,registro_torque)
+                fase=QTableWidgetItem(fase_calculo)
+                self.qw_Tabla_errores.ui.tableWidget.setItem(fila,1,fase)
+                
+                angulo_final_calculo=str(resp_ultimos_torques["angulo_final"][registro_torque])
+                angulo_final=QTableWidgetItem(angulo_final_calculo)
+                self.qw_Tabla_errores.ui.tableWidget.setItem(fila,2,angulo_final)
+                
+                torque_final_calculo=str(resp_ultimos_torques["torque_final"][registro_torque])
+                torque_final=QTableWidgetItem(torque_final_calculo)
+                self.qw_Tabla_errores.ui.tableWidget.setItem(fila,3,torque_final)
+                
+                angulo_minimo_calculo=str(resp_ultimos_torques["angulo_minimo"][registro_torque])
+                angulo_minimo=QTableWidgetItem(angulo_minimo_calculo)
+                self.qw_Tabla_errores.ui.tableWidget.setItem(fila,4,angulo_minimo)
+                
+                angulo_maximo_calculo=str(resp_ultimos_torques["angulo_maximo"][registro_torque])
+                angulo_maximo=QTableWidgetItem(angulo_maximo_calculo)
+                self.qw_Tabla_errores.ui.tableWidget.setItem(fila,5,angulo_maximo)
+                
+                torque_minimo_calculo=str(resp_ultimos_torques["torque_minimo"][registro_torque])
+                torque_minimo=QTableWidgetItem(torque_minimo_calculo)
+                self.qw_Tabla_errores.ui.tableWidget.setItem(fila,6,torque_minimo)
+
+                torque_maximo_calculo=str(resp_ultimos_torques["torque_maximo"][registro_torque])
+                torque_maximo=QTableWidgetItem(torque_maximo_calculo)
+                self.qw_Tabla_errores.ui.tableWidget.setItem(fila,7,torque_maximo)
+                
+                fila=fila+1
+                    
+            #query="SELECT * FROM et_mbi_3.torque_info where HERRAMIENTA='"+tool+"' order by ID desc LIMIT 2;"""
+            ##query="SELECT INICIO, FIN FROM et_mbi_3.historial WHERE RESULTADO = 1 order by ID desc LIMIT 1;"
+            #endpoint = "http://{}/query/get/{}".format(self.model.server, query)
+            #resp_ultimos_torques = requests.get(endpoint).json()
+            #print("resp_ultimos_torques",resp_ultimos_torques)
+            #
+        self.qw_Tabla_errores.show()
+
+
+    def fase_torque(self,registros_torques={},registro=0):
+        fase=""
+        try:
+            print("registro",registro)
+            registro=registro-1
+            #recopilar info de el torque anterior a la reversa
+            angulo_minimo_torque=registros_torques["angulo_minimo"][registro]
+            angulo_maximo_torque=registros_torques["angulo_maximo"][registro]
+            
+            if angulo_maximo_torque>2200:
+                fase="Fase1"
+            elif angulo_maximo_torque>1500 and angulo_maximo_torque<2200:
+                fase="Fase2"
+            elif angulo_maximo_torque>100 and angulo_maximo_torque<700:
+                fase="Fase3"
+            elif angulo_maximo_torque>1 and angulo_maximo_torque<100: 
+                fase="Fase4"
+            else:
+                fase="Desconocido"
+
+        except Exception as ex:
+            print("error en la deteccion de fase: ", ex)
+            return {"exception error en la deteccion de fase": ex.args}
+        return fase
 
 
 
