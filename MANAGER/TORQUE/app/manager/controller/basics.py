@@ -23,6 +23,38 @@ class Startup(QState):
 
     def onEntry(self, event):
 
+        ################################## CONSULTA A TABLA DE SEGHM_BOX para registros de PDC-D & PDC-P en FET
+
+        #print("_________________________")
+        #print("_________________________")
+        #print("_________________________")
+        #print("\n")
+
+        #hm = "%HM000000296891%"
+        #print("||||||||||||Consulta de HM LIKE HM000000296891 a FAMX2...")
+        #endpoint = "http://{}/seghm/get/SEGHM_BOX/HM/ LIKE /{}/_/_/_".format(self.model.server,hm)
+        #famx2response = requests.get(endpoint).json()
+        #pprint.pprint(famx2response)
+        #print("\n")
+
+        #hm = "%HM000000295296%"
+        #print("||||||||||||Consulta de HM LIKE HM000000295296 a FAMX2...")
+        #endpoint = "http://{}/seghm/get/SEGHM_BOX/HM/ LIKE /{}/_/_/_".format(self.model.server,hm)
+        #famx2response = requests.get(endpoint).json()
+        #pprint.pprint(famx2response)
+        #print("\n")
+
+        #hm = "%295296%"
+        #print("||||||||||||Consulta de HM LIKE 295296 a FAMX2...")
+        #endpoint = "http://{}/seghm/get/SEGHM_BOX/HM/ LIKE /{}/_/_/_".format(self.model.server,hm)
+        #famx2response = requests.get(endpoint).json()
+        #pprint.pprint(famx2response)
+        #print("\n")
+
+        #print("_________________________")
+        #print("_________________________")
+        #print("_________________________")
+
         try:
             #se oculta la GDI automáticamente:
             publish.single("GDI",json.dumps({"Esconder" : "Ocultando GDI..."}),hostname='127.0.0.1', qos = 2)
