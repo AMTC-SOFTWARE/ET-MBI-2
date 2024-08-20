@@ -95,7 +95,7 @@ class Model (object):
 
         #variables para saber el estado de la tapa del nido de sensores inductivos (si no está abajo la tapa se omiten los sensores)
         self.candados_limit_inductivos = {
-            "MFB-P2":False,    
+            "MFB-P2":True,    
             "MFB-P1":False,    
             "MFB-S":False,    
             "MFB-E":False,    
@@ -814,7 +814,7 @@ class Model (object):
         if self.config_data["hora_servidor"]==True:
             try:
                 endpoint = "http://{}/server_famx/hora_servidor".format(self.server) #self.model.server
-                respuesta_hora = requests.get(endpoint).json()
+                respuesta_hora = requests.get(endpoint, timeout=2).json()
                 if "exception" in respuesta_hora:
                     fecha_actuaal = datetime.now() #se toma la hora local de la PC
                     print("////////// fecha_local")
@@ -840,11 +840,11 @@ class Model (object):
         #print("segundos_transcurridos por iteración: ",segundos_transcurridos)
         
         diferencia = fechaActual - self.fechaAnterior #se obtiene el tiempo total que ha transcurrido desde la última actualización de la hora desde el servidor (donde se han ido acumulando los segundos transcurridos de cada iteración y la fecha original obtenida del servidor)
-        # Compara si han pasado más de 3 minutos (180 segundos)
+        # Compara si han pasado más de 10 minutos (600 segundos)
         #print("diferenciaLocalAcumulada: ",diferencia)
 
-        if diferencia > timedelta(minutes=3) or diferencia < timedelta(minutes=0):
-            #print("Han pasado más de 3 minutos. Actualizando hora desde servidor...")
+        if diferencia > timedelta(minutes=10) or diferencia < timedelta(minutes=0):
+            #print("Han pasado más de 10 minutos. Actualizando hora desde servidor...")
             fechaActual = self.get_currentTime() #se actualiza del servidor la fecha
             print("update pedido desde update_fecha_actual")
             self.fechaAnterior = fechaActual #se guarda la última fecha obtenida de la actualización del servidor

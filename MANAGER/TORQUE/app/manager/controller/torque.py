@@ -1354,10 +1354,10 @@ class Check_data_alarm (QState):
 
                 #Primeras tuercas de cada caja
                 #MFB-S:  A51 8mm, A53 6mm
-                #MFB-P1: A41 8mm, A42 6mm,
-                #MFB-P2: A20 8mm, A29 6mm,
+                #MFB-P1: A41 8mm, A42 6mm, | A46 8mm, A43 6mm
+                #MFB-P2: A20 8mm, A29 6mm, | A24 6mm
                 activar_alarma=False
-                if tuerca != "A20" and tuerca != "A29" and tuerca != "A41" and tuerca != "A42" and tuerca != "A51" and tuerca != "A53":
+                if tuerca != "A20" and tuerca != "A29" and tuerca != "A41" and tuerca != "A42" and tuerca != "A51" and tuerca != "A53": #and tuerca != "A43" and tuerca != "A46" and tuerca != "A24":
                     activar_alarma=self.consulta_eval_datos(self.tool)
                 if activar_alarma:
                     fecha_actual = self.model.get_currentTime()
