@@ -1175,7 +1175,7 @@ class Mantenimiento_ui (QMainWindow):
         host = "10.71.82.52"
         user = "dedicado"
         password = "4dm1n_001"
-        db = "et_mbi_3"
+        db = "et_mbi_2"
         #año-mes-dia hora:min:seg
         init_date = "2023-10-17 07:00:00"
         end_date = "2023-10-17 17:00:00"
@@ -1331,7 +1331,7 @@ class Mantenimiento_ui (QMainWindow):
         host = "10.71.82.52"
         user = "dedicado"
         password = "4dm1n_001"
-        db = "et_mbi_3"
+        db = "et_mbi_2"
         #año-mes-dia hora:min:seg
         init_date = "2023-10-17 07:00:00"
         end_date = "2023-10-17 17:00:00"
@@ -1401,7 +1401,7 @@ class Mantenimiento_ui (QMainWindow):
             #sorted_list   [('MFB-P1', 'A46', 2998), ('MFB-P2', 'A20', 2847), ('BATTERY', 'BT', 2783), ('MFB-P2', 'A30', 1640), ('MFB-P2', 'A29', 1626), ('MFB-P2', 'A25', 1478), ('PDC-RMID', 'E1', 1416), ('MFB-P1', 'A41', 1360), ('MFB-P2', 'A21', 1317), ('MFB-P2', 'A26', 1317), ('MFB-P2', 'A24', 1166), ('PDC-P', 'E1', 1018), ('MFB-P2', 'A22', 883), ('PDC-D', 'E1', 817), ('MFB-P1', 'A43', 783), ('MFB-P1', 'A42', 697), ('MFB-P2', 'A23', 582), ('MFB-S', 'A51', 289), ('MFB-S', 'A54', 134), ('BATTERY-2', 'BT', 128), ('MFB-P1', 'A45', 115), ('MFB-E', 'E1', 109), ('MFB-P2', 'A27', 92), ('MFB-E', 'A1', 85), ('PDC-R', 'E1', 78), ('MFB-S', 'A53', 57), ('MFB-E', 'A2', 49), ('MFB-S', 'A52', 47), ('MFB-P1', 'A47', 0), ('MFB-P1', 'A44', 0), ('MFB-S', 'A55', 0), ('MFB-S', 'A56', 0), ('MFB-P2', 'A28', 0), ('PDC-RS', 'E1', 0)]
             cavidad_top1=sorted_list[cavidad_top][1]
             #----------------------------------Querys para consulta de torque info de las cavidades
-            #query="SELECT * FROM et_mbi_3.torque_info where CICLO_manager LIKE '"+cavidad_top1+"' order by ID desc LIMIT 2;
+            #query="SELECT * FROM et_mbi_2.torque_info where CICLO_manager LIKE '"+cavidad_top1+"' order by ID desc LIMIT 2;
             query="SELECT * FROM et_mbi_2.torque_info where result !=1 AND fase_driver >2 AND CICLO_manager LIKE '%"+cavidad_top1+"%' order by ID desc LIMIT 10;"""
             endpoint = "http://{}/query/get/{}".format(self.model.server, query)
             resp_ultimos_torques = requests.get(endpoint).json()
@@ -1447,8 +1447,8 @@ class Mantenimiento_ui (QMainWindow):
                 
                 fila=fila+1
                     
-            #query="SELECT * FROM et_mbi_3.torque_info where HERRAMIENTA='"+tool+"' order by ID desc LIMIT 2;"""
-            ##query="SELECT INICIO, FIN FROM et_mbi_3.historial WHERE RESULTADO = 1 order by ID desc LIMIT 1;"
+            #query="SELECT * FROM et_mbi_2.torque_info where HERRAMIENTA='"+tool+"' order by ID desc LIMIT 2;"""
+            ##query="SELECT INICIO, FIN FROM et_mbi_2.historial WHERE RESULTADO = 1 order by ID desc LIMIT 1;"
             #endpoint = "http://{}/query/get/{}".format(self.model.server, query)
             #resp_ultimos_torques = requests.get(endpoint).json()
             #print("resp_ultimos_torques",resp_ultimos_torques)
