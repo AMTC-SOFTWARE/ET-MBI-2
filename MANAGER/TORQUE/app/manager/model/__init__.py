@@ -169,6 +169,9 @@ class Model (object):
         self.boxPos2 = ["MFB-P2","PDC-D","PDC-P"]
         self.name_FET=""
         self.qr_FET=""
+        
+        #Lista con palabras aceptadas para el funcionamiento de mensajes_clamp(comm.py)
+        self.words_matched = ["clamp_","raffi_"]
         ###############################
         #variable para iniciar el estado de revisión de candados con el palpador
         self.estado_candados = False

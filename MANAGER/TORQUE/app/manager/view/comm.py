@@ -56,7 +56,8 @@ class MqttClient (QObject):
     keyboard_value = False
     mostrar_gdi = True
     
-    nido = ["PDC-P","PDC-D","MFB-P1","MFB-P2","PDC-R","PDC-RMID","BATTERY","BATTERY-2","MFB-S","MFB-E"]
+   
+    #nido = ["PDC-P","PDC-D","MFB-P1","MFB-P2","PDC-R","PDC-RMID","BATTERY","BATTERY-2","MFB-S","MFB-E"]
     nido_pub = ""
     color_nido = "blue"
 
@@ -145,153 +146,157 @@ class MqttClient (QObject):
         #para convertir variable a False después de que el tiempo haya terminado
         self.model.timer_raffi = False
 
-    def mensajes_clamp (self, current_box, payload):
+    def mensajes_clamp (self, payload):
 
-        #convertir diccionario payload a string y guardarlo
-        payload_str = json.dumps(payload)       
-
-        if not("DISABLE_" in payload_str):
-
-            condicion0 = False
-            condicion1 = False
-            condicion2 = False
-            condicion3 = False
-
-            if not("PDC-R" in payload_str):
-                condicion0 = True
-            elif self.model.varianteDominante == "PDC-RMID" and "PDC-RMID" in payload_str:
-                condicion1 = True
-            elif self.model.varianteDominante == "PDC-RS" and "PDC-RMID" in payload_str:
-                condicion2 = True
-            elif self.model.varianteDominante == "PDC-R" and not("PDC-RMID" in payload_str):
-                condicion3 = True
-
-            if condicion0 or condicion1 or condicion2 or condicion3:
-
-                #busca el nombre del nido en el string del payload
-                if current_box in payload_str: 
-
-                    #variable para poner la serie de la caja en las cajas que sea necesario
-                    serie = ""
-
-                    #se asignan serie a las cajas que lo contengan
-                    if "MFB-P2" in current_box:
-                        serie = self.model.mfbp2_serie
-                    if "PDC-R" in current_box:
-                        serie = self.model.pdcr_serie
-
-                    #0, no se solicitan en ciclo
-                    #1, ya se escaneó
-                    #2, aún requiere escanearse
-                    #3, cajas terminadas en el ciclo
-
-                    #"lbl_boxTITLE" : {"text": "", "color": "black"},
-                    #"lbl_boxPDCR" : {"text": "", "color": "black"},
-                    #"lbl_boxPDCP" : {"text": "", "color": "black"},
-                    #"lbl_boxPDCD" : {"text": "", "color": "black"},
-                    #"lbl_boxMFBP1" : {"text": "", "color": "black"},
-                    #"lbl_boxMFBP2" : {"text": "", "color": "black"},
-                    #"lbl_boxMFBE" : {"text": "", "color": "black"},
-                    #"lbl_boxMFBS" : {"text": "", "color": "black"},
-                    #"lbl_boxBATTERY" : {"text": "", "color": "black"},
-                    #"lbl_boxBATTERY2" : {"text": "", "color": "black"},
-
-                    #se hace el replace para current_box_pub, pero current_box sigue valiendo lo mismo
-                    current_box_pub = current_box.replace("-","")
-                    if current_box == "PDC-RMID":
-                        current_box_pub = "PDCR"
-
-                    #cajas que no están en ciclo
-                    if self.model.cajas_habilitadas[current_box] == 0 or self.model.cajas_habilitadas[current_box] == 3:
-
-                        command = {f"lbl_box{current_box_pub}" : {"text": "", "color": "blue"}}
-
-                        if current_box in self.model.boxPos1:
-                            self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
-                        if current_box in self.model.boxPos2:
-                            self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
-
-                    #se busca que la caja esté habilitada por el ciclo
-                    elif self.model.cajas_habilitadas[current_box] == 1 or self.model.cajas_habilitadas[current_box] == 2:
-
-                        raffi_box = "raffi_" + current_box
-                        clamp_box = "clamp_" + current_box
-
-
-                        #RAFFI DESHABILITADO
-                        #los raffi solo se pueden activar cuando la caja ya fue clampeada
-                        if raffi_box in payload:
-
-                            #entonces al detectar un raffi_"" en False, significa que se deshabilita el raffi y la caja vuelve a su estado de clampeada
-                            if payload[raffi_box] == False:
-                                self.nido_pub = f"{current_box}\n{serie}"
-                                self.color_nido = "green"
-
-                        #HABILITAR/DESHABILITAR CAJA
-                        if current_box in payload:
-
-                            print("self.model.cajas_habilitadas[current_box]: ", self.model.cajas_habilitadas[current_box])
-
-                            #al habilitar una caja, se muestra el mensaje de la caja habilitada
-                            if payload[current_box] == True:
-                                self.nido_pub = f"{current_box}\n{serie}"
-                                self.color_nido = "blue"
-
-                            #al deshabilitar una caja, se borra el label
-                            if payload[current_box] == False:
-                                self.nido_pub = ""
-                                self.color_nido = "blue"
-
-                                #si la caja está deshabilitada pero aún no se ha clampeado (se requiere volver a escanear porque el tiempo para escanearla se terminó)
-                                if self.model.cajas_habilitadas[current_box] == 2:
-                                    self.nido_pub = f"{current_box}\n{serie}"
-                                    self.color_nido = "blue"
-
-
-                        # CAJA CLAMPEADA
-                        if clamp_box in payload:
-                            if payload[clamp_box] == True:
-                                self.nido_pub = f"{current_box}\n{serie}"
-                                self.color_nido = "green"
-
-                            #al deshabilitar una caja, se borra el label
-                            if payload[clamp_box] == False:
-                                self.nido_pub = ""
-                                self.color_nido = "blue"
-
-                                #si la caja está deshabilitada pero aún no se ha clampeado (se requiere volver a escanear porque el tiempo para escanearla se terminó)
-                                if self.model.cajas_habilitadas[current_box] == 2:
-                                    self.nido_pub = f"{current_box}\n{serie}"
-                                    self.color_nido = "blue"
-                        
-                        #RAFFI HABILITADO
-                        if raffi_box in payload:
-                            if payload[raffi_box] == True:
-                                self.nido_pub = f"{current_box}\n{serie}"
-                                self.color_nido = "orange"
-            
-
-                        #cuando es SMALL se habilita el nido en MID, entonces si la bandera es true, cambiar mensaje
-                        if self.model.smallflag == True:
-                            self.nido_pub = self.nido_pub.replace("PDC-RMID","PDC-RSMALL")
-
-
-
-                        #como la función mensajes clamp se hace cada que llega un mensaje del PLC,
-                        #si este mensaje contiene la palabra encoder (así como la current_box en su mensaje)
-                        if "encoder" in payload_str:
-                            pass
-                        #de lo contrario es un mensaje de el funcionamiento de las cajas , y hace un publish en la correspondiente gui
-                        else:
-                            command = {f"lbl_box{current_box_pub}" : {"text": f"{self.nido_pub}", "color": f"{self.color_nido}"}}
+        #print("MODDDDDDDDDDDDDDDD",self.model.input_data["database"]["modularity"])
+        for key in payload.keys():
+            for box in self.model.input_data["database"]["modularity"]:
+          
+                if not("DISABLE_" in key):
                     
-                            for i in self.model.boxPos1:
-                                if current_box == i:
-                                    self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                    condicion0 = False
+                    condicion1 = False
+                    condicion2 = False
+                    condicion3 = False
+                    
+                    if not("PDC-R" in key):
+                        condicion0 = True
+                    elif self.model.varianteDominante == "PDC-RMID" and "PDC-RMID" in key:
+                        condicion1 = True
+                    elif self.model.varianteDominante == "PDC-RS" and "PDC-RMID" in key:
+                        condicion2 = True
+                    elif self.model.varianteDominante == "PDC-R" and not("PDC-RMID" in key):
+                        condicion3 = True
+                        
+                    if condicion0 or condicion1 or condicion2 or condicion3:
+                        
+                        if box in key:
+                            print(f"Esta presente {box} pero aun no sabemos su match...")
+                            
+                            #variable para poner la serie de la caja en las cajas que sea necesario
+                            serie = ""
+                            
+                            #se asignan serie a las cajas que lo contengan
+                            if "MFB-P2" in box:
+                                serie = self.model.mfbp2_serie
+                            if "PDC-R" in box:
+                                serie = self.model.pdcr_serie
+                                
+                            #0, no se solicitan en ciclo
+                            #1, ya se escaneó
+                            #2, aún requiere escanearse
+                            #3, cajas terminadas en el ciclo
+                            
+                            #"lbl_boxTITLE" : {"text": "", "color": "black"},
+                            #"lbl_boxPDCR" : {"text": "", "color": "black"},
+                            #"lbl_boxPDCP" : {"text": "", "color": "black"},
+                            #"lbl_boxPDCD" : {"text": "", "color": "black"},
+                            #"lbl_boxMFBP1" : {"text": "", "color": "black"},
+                            #"lbl_boxMFBP2" : {"text": "", "color": "black"},
+                            #"lbl_boxMFBE" : {"text": "", "color": "black"},
+                            #"lbl_boxMFBS" : {"text": "", "color": "black"},
+                            #"lbl_boxBATTERY" : {"text": "", "color": "black"},
+                            #"lbl_boxBATTERY2" : {"text": "", "color": "black"},
 
-                            for i in self.model.boxPos2:
-                                if current_box == i:
+                            #se hace el replace para current_box_pub, pero current_box sigue valiendo lo mismo
+                            current_box_pub = box.replace("-","")
+
+                            #cajas que no están en ciclo
+                            if self.model.cajas_habilitadas[box] == 0 or self.model.cajas_habilitadas[box] == 3:
+
+                                command = {f"lbl_box{current_box_pub}" : {"text": "", "color": "blue"}}
+                    
+                                if box in self.model.boxPos1:
+                                    self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                if box in self.model.boxPos2:
                                     self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+
+                            #se busca que la caja esté habilitada por el ciclo
+                            elif self.model.cajas_habilitadas[box] == 1 or self.model.cajas_habilitadas[box] == 2:
+                                
+                                if key == box:
+                                    
+                                    if payload[box] == True:
+                                        self.nido_pub = f"{box}\n{serie}"
+                                        self.color_nido = "blue"
+                        
+                                    elif payload[box] == False:
+                                        self.nido_pub = f""
+                                        self.color_nido = "blue"
+                                else:
+                                    self.nido_pub = f"Error"
+                                    self.color_nido = f""
+
+                                for word in self.model.words_matched:
+                                    if key == (word + box):
+                                        print(f"Se encontro match {word} en {key}")
+         
+                                        if "raffi_" in word:
+                                    
+                                            raffi_box = "raffi_" + box
+
+                                            if payload[raffi_box] == True:
+                                                self.nido_pub = f"{box}\n{serie}"
+                                                self.color_nido = "orange"
+
+                                            #entonces al detectar un raffi_"" en False, significa que se deshabilita el raffi y la caja vuelve a su estado de clampeada
+                                            if payload[raffi_box] == False:
+                                                self.nido_pub = f"{box}\n{serie}"
+                                                self.color_nido = "green"
+                                        
+                                        if "clamp_" in word:
+
+                                            clamp_box = "clamp_" + box
+
+                                            if payload[clamp_box] == True:
+                                                self.nido_pub = f"{box}\n{serie}"
+                                                self.color_nido = "green"
+
+                                            #al deshabilitar una caja, se borra el label
+                                            if payload[clamp_box] == False:
+                                                
+                                                print("clamps",self.model.input_data["plc"]["clamps"])
+                                                
+                                                if box in self.model.input_data["plc"]["clamps"]:
+                                                    self.nido_pub = f"{box}\n{serie}"
+                                                    self.color_nido = "gray"
+                                                else:
+                                                    self.nido_pub = ""
+                                                    self.color_nido = ""
+
+                                        #si la caja está deshabilitada pero aún no se ha clampeado (se requiere volver a escanear porque el tiempo para escanearla se terminó)
+                                        if self.model.cajas_habilitadas[box] == 2:
+                                            self.nido_pub = f"{box}\n{serie}"
+                                            self.color_nido = "blue"
+
+                                            
+                                #cuando es SMALL se habilita el nido en MID, entonces si la bandera es true, cambiar mensaje
+                                if self.model.smallflag == True:
+                                    self.nido_pub = self.nido_pub.replace("PDC-RMID","PDC-RSMALL") 
+                                    
+
+                                #como la función mensajes clamp se hace cada que llega un mensaje del PLC,
+                                #si este mensaje contiene la palabra encoder (así como la current_box en su mensaje)
+                                if "encoder" in key:
+                                    pass
+                                #de lo contrario es un mensaje de el funcionamiento de las cajas , y hace un publish en la correspondiente gui
+                                else:
+                                    if self.nido_pub != "Error":
+                                        command = {f"lbl_box{current_box_pub}" : {"text": f"{self.nido_pub}", "color": f"{self.color_nido}"}}
+                
+                                        for i in self.model.boxPos1:
+                                            if box == i:
+                                                self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+
+                                        for i in self.model.boxPos2:
+                                            if box == i:
+                                                self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                   
+                else:
+                    print("No entra") 
+
+
+        
 
     def on_connect(self, client, userdata, flags, rc):
         try:
@@ -1061,9 +1066,7 @@ class MqttClient (QObject):
                         self.retry_btn.emit()
 
                 #se habilita la función mensajes_clamp cada que llega un mensaje del PLC
-                for i in self.nido:
-                    self.mensajes_clamp(i,payload)
-
+                self.mensajes_clamp(payload)
 
             if message.topic == self.model.sub_topics["torque_1"]:
 
