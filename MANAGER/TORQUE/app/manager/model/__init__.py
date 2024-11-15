@@ -96,9 +96,9 @@ class Model (object):
         #variables para saber el estado de la tapa del nido de sensores inductivos (si no está abajo la tapa se omiten los sensores)
         self.candados_limit_inductivos = {
             "MFB-P2":True,    
-            "MFB-P1":False,    
-            "MFB-S":False,    
-            "MFB-E":False,    
+            "MFB-P1":True,    
+            "MFB-S":True,    
+            "MFB-E":True,    
         }
 
 
