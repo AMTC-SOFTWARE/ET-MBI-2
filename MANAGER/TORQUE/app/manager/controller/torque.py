@@ -807,6 +807,18 @@ class CheckZone (QState):
                         condicion_tool2 = False
                         condicion_tool3 = False
 
+                        if self.model.qrAlturasTool1==True:
+                            print("BYPASS ALTURAS T1 ok")
+                            self.model.altura_zone["tool1"] = True
+                        if self.model.qrAlturasTool2==True:
+                            print("BYPASS ALTURAS T2 ok")
+                            self.model.altura_zone["tool2"] = True
+                        if self.model.qrAlturasTool2==True:
+                            print("BYPASS ALTURAS T3 ok")
+                            self.model.altura_zone["tool3"] = True
+                        
+
+
                         if (self.tool == "tool1") and (self.model.altura_zone[self.tool] == False) and (current_trq[0] != "PDC-P") and (current_trq[0] != "PDC-D"):
                             condicion_tool1 = True
                         if (self.tool == "tool2") and (self.model.altura_zone[self.tool] == False) and (current_trq[0] != "BATTERY") and (current_trq[0] != "BATTERY-2"):
@@ -1207,6 +1219,19 @@ class CheckResponse (QState):
 
                     #se reinicia variable de posición OK en zona de altura para esta herramienta, después de un Torque OK
                     self.model.altura_zone[self.tool] = False
+                    
+
+                    if self.model.qrAlturasTool1==True:
+                        print("BYPASS ALTURAS T1 off")
+                        self.model.altura_zone["tool1"] = False
+                        
+                    if self.model.qrAlturasTool2==True:
+                        print("BYPASS ALTURAS T2 off")
+                        self.model.altura_zone["tool2"] = False
+                        
+                    if self.model.qrAlturasTool2==True:
+                        print("BYPASS ALTURAS T3 off")
+                        self.model.altura_zone["tool3"] = False
 
                     print("Torque OK!!!!!!!!!!!!")
                     #tiempo para mostrar en pantalla que se torqueó correctamente (se regresa al estado zone y si no hay más tareas para la herramienta se finaliza con un ok.emit() el estado zone)

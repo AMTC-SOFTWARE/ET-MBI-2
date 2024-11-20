@@ -87,6 +87,10 @@ class Model (object):
             "trazabilidad": True
         }
 
+        self.qrAlturasTool1=False
+        self.qrAlturasTool2=False
+        self.qrAlturasTool3=False
+        
         self.alarma_activada=False
         self.alarma_emergencia=False
         self.paro_emergia=False

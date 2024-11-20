@@ -93,6 +93,18 @@ class Controller (QObject):
     @pyqtSlot(str)
     def chkQrBoxes(self, qr_box):
         try:
+            if "QRALTURASTOOL1" in qr_box:
+                print("qrAlturasTool1 ok")
+                self.model.qrAlturasTool1=True
+                return
+            if "QRALTURASTOOL2" in qr_box:
+                print("qrAlturasTool2 ok")
+                self.model.qrAlturasTool2=True
+                return
+            if "QRALTURASTOOL3" in qr_box:
+                print("qrAlturasTool3 ok ")
+                self.model.qrAlturasTool3=True
+                return
             #Busca entre las cajas "P" D O R y te DEJA ESCANEAR, si no es alguna de estas verifica si esta en modo candado si esta en modo candado no te deja escanear ...
             permite_escanear=False
             master_qr_boxes = json.loads(self.model.input_data["database"]["pedido"]["QR_BOXES"])

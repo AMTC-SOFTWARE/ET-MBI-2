@@ -262,6 +262,10 @@ class StartCycle (QState):
             "tool2":"",
             "tool3":""
             }
+        
+        self.model.qrAlturasTool1=False
+        self.model.qrAlturasTool2=False
+        self.model.qrAlturasTool3=False
 
         tool_desbloqueada = "tool1_desbloqueada"
         publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}),hostname='127.0.0.1', qos = 2)
