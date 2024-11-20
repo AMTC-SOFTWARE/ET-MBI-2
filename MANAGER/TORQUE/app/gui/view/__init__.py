@@ -16,7 +16,7 @@ from time import strftime, sleep
 from copy import copy
 import requests
 import pandas as pd
-from gui.view import resources_rc, main, login, scanner, img_popout, Tabla_horas, mtto1, Tabla_errores
+from gui.view import resources_rc, main, login, scanner, img_popout, Tabla_horas, mtto1, Tabla_errores, message_pop
 from gui.view.comm import MqttClient
 from gui.model import Model
 import math
@@ -41,6 +41,7 @@ class MainWindow (QMainWindow):
         self.pop_out = PopOut(self)
         self.qw_Tabla_horas = Tabla_hora_w(parent = self)
         self.uiManteniemiento= Mantenimiento_ui(parent=self)
+        self.qw_message_pop= Message_pop(parent = self)
         
         self.client = MqttClient(self.model, self)
         self.client.subscribe.connect(self.input)
@@ -124,12 +125,27 @@ class MainWindow (QMainWindow):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.status)
         #self.timer.start(200)
-
+        self.qw_message_pop.ui.btn_ok.clicked.connect(self.key_process)
+        self.qw_message_pop.ui.btn_cancel.clicked.connect(self.cancel_key_process)
+        
         self.allow_close        = True
         self.cycle_started      = False
         self.shutdown           = False
 
         self.login_show         = True
+
+
+    def cancel_key_process(self):
+        print("key no emit")
+        
+        self.output.emit({"keyboard_cancel":"true"})
+        print("vamos a cancelar")
+        self.qw_message_pop.close()
+    def key_process(self):
+        
+        self.output.emit({"keyboard_ok":"true"})
+        print("va a hacer algo con la llave")
+        
     def horaxhora(self):
         #self.qw_Tabla_horas.show()
         print("vamos a calcular los hora por hora")
@@ -397,6 +413,10 @@ class MainWindow (QMainWindow):
             if self.qw_login.isVisible() != self.model.status["visible"]["login"]:
                 self.model.status["visible"]["login"] = self.qw_login.isVisible()
                 self.output.emit({"visible": {"login": self.qw_login.isVisible()}})
+                
+            if self.qw_message_pop.isVisible() != self.model.status["visible"]["message_pop"]:
+                self.model.status["visible"]["message_pop"] = self.qw_message_pop.isVisible()
+                self.output.emit({"visible": {"message_pop": self.qw_message_pop.isVisible()}})
 
             if self.qw_scanner.isVisible() != self.model.status["visible"]["scanner"]:
                 self.model.status["visible"]["scanner"] = self.qw_scanner.isVisible()
@@ -586,6 +606,16 @@ class MainWindow (QMainWindow):
                     self.ui.lineEdit.setVisible(True)
                 if message["lineEdit"] == False:
                     self.ui.lineEdit.setVisible(False)
+            if "message_pop" in message:
+                
+                if "Visible" in message["message_pop"]:
+                    self.qw_message_pop.setVisible(message["message_pop"]["Visible"])
+                if "text" in message["message_pop"]:
+                    self.qw_message_pop.ui.lbl_message_pop.setText(message["message_pop"]["text"])
+
+                if "close" in message["message_pop"] and self.qw_message_pop.isVisible: 
+                    self.qw_message_pop.ui.btn_cancel.click()
+                    #self.pop_out.button(QMessageBox.Ok).click()
             ######### Modificación para etiqueta PDC-R #########
             if "lbl_boxPDCR" in message:
                 self.ui.lbl_boxPDCR.setText(message["lbl_boxPDCR"]["text"])
@@ -822,6 +852,8 @@ class MainWindow (QMainWindow):
             if "login" in show:
                 self.qw_login.ui.lineEdit.setPlaceholderText("Escanea o escribe tu codigo")
                 self.qw_login.setVisible(show["login"])
+            if "message_pop" in show:
+                self.qw_message_pop.setVisible(show["message_pop"])
             if "scanner" in show:
                 self.qw_scanner.ui.lineEdit.setPlaceholderText("Escanea el Código Qr")
                 self.qw_scanner.setVisible(show["scanner"])
@@ -1991,7 +2023,21 @@ class PopOut (QMessageBox):
         if event.key() == Qt.Key_Escape:
             print("Escape key was pressed for PopOut")
 
+class Message_pop (QDialog):
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        self.ui = message_pop.Ui_message_pop()
+        self.ui.setupUi(self)
+        self.ui.btn_ok.setFocusPolicy(Qt.NoFocus)
+        self.ui.btn_cancel.setFocusPolicy(Qt.NoFocus)
+        #self.ui.lineEdit.setFocus()
 
+    def closeEvent(self, event):
+        event.ignore() 
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            print("Escape key was pressed")
 
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication

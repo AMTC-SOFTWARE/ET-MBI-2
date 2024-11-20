@@ -424,12 +424,12 @@ class MqttClient (QObject):
                 if self.model.llave == True:
 
                     if self.keyboard_key == "keyboard_esc":
-                        command = {"popOut":"close"}
+                        command = {"message_pop":{"Visible":False}}
                         self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                         print("key no emit")
                         self.model.llave = False
                     elif self.keyboard_key == "click_derecho":
-                        command = {"popOut":"close"}
+                        command = {"message_pop":{"Visible":False}}
                         self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                         self.key.emit()
                         print("key emit")
@@ -1366,6 +1366,19 @@ class MqttClient (QObject):
                         self.client.publish(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : False}), qos = 2)
 
             if message.topic == self.model.sub_topics["gui"]:
+                 
+                if self.model.llave == True:
+                   if "keyboard_cancel" in payload:
+                       command = {"message_pop":{"Visible":False}}
+                       self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                       print("key no emit")
+                       self.model.llave = False
+                   if "keyboard_ok" in payload:
+                       command = {"message_pop":{"Visible":False}}
+                       self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                       self.key.emit()
+                       print("key emit")
+                       self.model.llave = False
                 if "Mantenimiento" in payload:
                     print("la gui trae mantenimiento y llega al comm")
                     fecha_actual = self.model.get_currentTime()
@@ -1582,7 +1595,8 @@ class MqttClient (QObject):
                             self.key_process.emit()
                         # si la variable es False, quiere decir que estás en otra parte del proceso y la llave reiniciará el ciclo
                         elif self.model.reintento_torque == False:
-                            command = {"popOut":"¿Seguro que desea dar llave?\n Presione Esc. para salir, Click Derecho para continuar..."}
+                            command = {"message_pop":{"text":"¿Seguro que desea dar llave?\n  Presione Esc. para salir, Click Derecho para continuar...",
+                                               "Visible":True},}
                             self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                             self.model.llave = True
 
