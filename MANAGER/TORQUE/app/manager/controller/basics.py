@@ -411,7 +411,8 @@ class StartCycle (QState):
             "img_center" : "logo.jpg",
             "allow_close": False,
             "cycle_started": False,
-            "statusBar": "clear"
+            "statusBar": "clear",
+            "lbl_boxEmergente1" : {"text": ""},
             }
         if self.model.shutdown == True:
             Timer(0.05, self.logout, args = (copy(self.model.local_data["user"]),)).start()

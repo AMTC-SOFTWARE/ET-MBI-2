@@ -690,6 +690,19 @@ class Ui_main(object):
         self.lcdcronometro.setGeometry(1450,800, 150 , 80)
         self.lbl_cant3.setGeometry(1450,750, 150 , 80)
 
+        self.lbl_boxEmergente1 = QtWidgets.QLabel(main)
+        self.lbl_boxEmergente1.setGeometry(QtCore.QRect(560, 760, 800, 100)) #posx, posy, ancho, alto
+        self.lbl_boxEmergente1.setStyleSheet("""
+                                                                             
+                                        font-size:50px;                                     
+                                        background-color: rgba(255, 40, 0, 210);
+                                        border-top-left-radius: 15px;
+                                        border-top-right-radius: 15px;
+                                        border-bottom-left-radius: 15px;
+                                        border-bottom-right-radius: 15px;
+                                        color: black;
+                                    """)
+        self.lbl_boxEmergente1.setAlignment(QtCore.Qt.AlignCenter) # Centrar el texto
         #se crean después del menuMenu para que aparezcan sobre este y no debajo
         
         ######################################################################
@@ -763,7 +776,7 @@ class Ui_main(object):
         self.menuMenu.setTitle(_translate("main", "Menu"))
         self.lbl_cant2.setText(_translate("main", "Tiempo Ciclo\n Promedio"))
         self.lbl_cant3.setText(_translate("main", "Cronómetro"))
-
+        self.lbl_boxEmergente1.setText(_translate("main", ""))
 
 if __name__ == "__main__":
     #import resources_rc

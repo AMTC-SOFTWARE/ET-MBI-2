@@ -97,7 +97,7 @@ class MainWindow (QMainWindow):
         self.ui.lbl_cant.setVisible(True)
         self.ui.lcdNumber.setVisible(True)
         self.ui.lineEditKey.setEchoMode(QLineEdit.Password)
-
+        self.ui.lbl_boxEmergente1.setVisible(False)
 
         menu = self.ui.menuMenu
         actionLogin = QAction("Login",self)
@@ -835,6 +835,17 @@ class MainWindow (QMainWindow):
                 self.model.paro_emergencia=message["Paro_Emergencia"]
             if "alarma_emergencia" in message:
                 self.model.alarma_emergencia=message["alarma_emergencia"]
+            if "lbl_boxEmergente1" in message:
+
+                
+                print(message["lbl_boxEmergente1"])
+
+                if message["lbl_boxEmergente1"]["text"] == "" or message["lbl_boxEmergente1"]["text"] == False:
+                    self.ui.lbl_boxEmergente1.setVisible(False)
+                else:
+                    self.ui.lbl_boxEmergente1.setVisible(True)
+                
+                self.ui.lbl_boxEmergente1.setText(message["lbl_boxEmergente1"]["text"])
                 
             if "statusBar" in message:
                 if type(message["statusBar"]) == str:

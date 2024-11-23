@@ -86,6 +86,8 @@ class Model (object):
             },
             "trazabilidad": True
         }
+        self.tapaAbiertaMFBS=False
+        self.tapaAbiertaMFP1=False
 
         self.qrAlturasTool1=False
         self.qrAlturasTool2=False

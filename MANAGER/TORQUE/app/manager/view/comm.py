@@ -665,39 +665,83 @@ class MqttClient (QObject):
                         self.model.candados_limit_inductivos["MFB-P2"] = True
                         if self.model.en_ciclo:
                             command = {
-                            "lbl_steps" : {"text": "TAPA MFB-P2 detectada ", "color": "green"},
-                            "lbl_result" : {"text": "Continue con el Torque", "color": "green"},
-                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                            #"lbl_boxEmergente1" : {"text": "TAPA MFB-P2 detectada \n Continue con el Torque", "color": "green"},
+                            "lbl_boxEmergente1" : {"text": "", "color": "green"},
                             }
                         self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
                     else:
                         self.model.candados_limit_inductivos["MFB-P2"] = False
+                        if self.model.en_ciclo and (len(self.model.torque_data["tool1"]["queue"])>0 or len(self.model.torque_data["tool3"]["queue"])>0):
+                            if 'MFB-P2' in str(self.model.torque_data["tool1"]["queue"]) or 'MFB-P2' in str(self.model.torque_data["tool3"]["queue"]):
+                            
+                                command = {
+                                    "lbl_boxEmergente1" : {"text": "TAPA MFB-P2 detectada", "color": "green"},
+                                    
+                                    }
+                                self.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
 
                 if "MFBP1_candado_limit" in payload:
-                    if payload["MFBP1_candado_limit"] == True:
+                    print("self.model.torque_data[self.tool][queue] =",self.model.torque_data["tool2"]["queue"])
+                    if payload["MFBP1_candado_limit"] == True :
                         self.model.candados_limit_inductivos["MFB-P1"] = True
-                        if self.model.en_ciclo:
+                        self.model.tapaAbiertaMFBP1=False
+                        if self.model.en_ciclo and  self.model.tapaAbiertaMFBS==False:
                             command = {
-                            "lbl_steps" : {"text": "TAPA MFB-P1 detectada ", "color": "green"},
-                            "lbl_result" : {"text": "Continue con el Torque", "color": "green"},
-                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                            
+                            "lbl_boxEmergente1" : {"text": ""},
                             }
-                        self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                            self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                        elif self.model.en_ciclo and self.model.tapaAbiertaMFBS==True:
+                            if 'MFB-S' in str(self.model.torque_data["tool2"]["queue"]) or 'MFB-S' in str(self.model.torque_data["tool3"]["queue"]):
+                             
+                                command = {
+                                "lbl_boxEmergente1" : {"text": "TAPA MFBS detectada"},
+                                
+                                }
+                                self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                    
                     else:
                         self.model.candados_limit_inductivos["MFB-P1"] = False
+                        
+                        if self.model.en_ciclo and (len(self.model.torque_data["tool2"]["queue"])>0 or len(self.model.torque_data["tool3"]["queue"])>0):
+                            if 'MFB-P1' in str(self.model.torque_data["tool2"]["queue"]) or 'MFB-P1' in str(self.model.torque_data["tool3"]["queue"]):
+                                self.model.tapaAbiertaMFBP1=True
+                                command = {
+                                    "lbl_boxEmergente1" : {"text": "TAPA MFB-P1 detectada"},
+                                    
+                                    }
+                                self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
 
                 if "MFBS_candado_limit" in payload:
                     if payload["MFBS_candado_limit"] == True:
+                        self.model.tapaAbiertaMFBS=False
                         self.model.candados_limit_inductivos["MFB-S"] = True
-                        if self.model.en_ciclo:
+                        if self.model.en_ciclo and  self.model.tapaAbiertaMFBP1==False:
                             command = {
-                            "lbl_steps" : {"text": "TAPA MFB-S detectada ", "color": "green"},
-                            "lbl_result" : {"text": "Continue con el Torque", "color": "green"},
-                            "lbl_boxNEW" : {"text":"", "color": "green"},
+                            #"lbl_boxEmergente1" : {"text": "TAPA MFB-S detectada \n Continue con el Torque ", "color": "green"},
+                            "lbl_boxEmergente1" : {"text": "", "color": "green"},
+                            
                             }
-                        self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                            self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                        elif self.model.en_ciclo and self.model.tapaAbiertaMFBP1==True:
+                            if 'MFB-P1' in str(self.model.torque_data["tool2"]["queue"]) or 'MFB-P1' in str(self.model.torque_data["tool3"]["queue"]):
+                            
+                                command = {
+                                "lbl_boxEmergente1" : {"text": "TAPA MFBP1 detectada"},
+                                
+                                }
+                                self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                     else:
                         self.model.candados_limit_inductivos["MFB-S"] = False
+                        
+                        if self.model.en_ciclo and (len(self.model.torque_data["tool2"]["queue"])>0 or len(self.model.torque_data["tool3"]["queue"])>0):
+                            if 'MFB-S' in str(self.model.torque_data["tool2"]["queue"]) or 'MFB-S' in str(self.model.torque_data["tool3"]["queue"]):
+                                self.model.tapaAbiertaMFBS=True
+                                command = {
+                                    "lbl_boxEmergente1" : {"text": "TAPA MFB-S", "color": "green"},
+                                    
+                                    }
+                                self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
 
                 if "MFBE_candado_limit" in payload:
                     if payload["MFBE_candado_limit"] == True:
@@ -830,8 +874,8 @@ class MqttClient (QObject):
                                         elif tuerca == tuerca_inductivo and self.model.candados_limit_inductivos[caja] == False:
                                             print("Cerrar Tapa para nido: ",caja)
                                             command = {
-                                                "lbl_steps" : {"text": f"Candado de caja {caja} abierto", "color": "red"},
-                                                "lbl_result" : {"text": "Cerrar Nido para continuar", "color": "black"},
+                                                "lbl_boxEmergente1" : {"text": f"Candado de caja {caja} abierto \n Cerrar Nido para continuar", "color": "black"},
+                                                
                                                 }
                                             self.client.publish(self.model.torque_data[inductivo_tool]["gui"],json.dumps(command), qos = 2)
                                             
