@@ -133,8 +133,7 @@ class MainWindow (QMainWindow):
         self.shutdown           = False
 
         self.login_show         = True
-
-
+        
     def cancel_key_process(self):
         print("key no emit")
         
@@ -145,7 +144,6 @@ class MainWindow (QMainWindow):
         
         self.output.emit({"keyboard_ok":"true"})
         print("va a hacer algo con la llave")
-        
     def horaxhora(self):
         #self.qw_Tabla_horas.show()
         print("vamos a calcular los hora por hora")
@@ -354,8 +352,7 @@ class MainWindow (QMainWindow):
         
     def menuProcess(self, q):
         try:
-            case = q.text()
-            
+            case = q.text()               
             #if case == "Login":
             #    self.qw_login.setVisible(self.login_show) #se muestra u oculta login al presionar el botón
             #    self.qw_login.ui.lineEdit.setText("")
@@ -417,7 +414,7 @@ class MainWindow (QMainWindow):
             if self.qw_message_pop.isVisible() != self.model.status["visible"]["message_pop"]:
                 self.model.status["visible"]["message_pop"] = self.qw_message_pop.isVisible()
                 self.output.emit({"visible": {"message_pop": self.qw_message_pop.isVisible()}})
-
+                
             if self.qw_scanner.isVisible() != self.model.status["visible"]["scanner"]:
                 self.model.status["visible"]["scanner"] = self.qw_scanner.isVisible()
                 self.output.emit({"visible": {"scanner": self.qw_scanner.isVisible()}})
@@ -846,7 +843,6 @@ class MainWindow (QMainWindow):
                     self.ui.lbl_boxEmergente1.setVisible(True)
                 
                 self.ui.lbl_boxEmergente1.setText(message["lbl_boxEmergente1"]["text"])
-                
             if "statusBar" in message:
                 if type(message["statusBar"]) == str:
                     if message["statusBar"] == "clear":
@@ -1004,6 +1000,7 @@ class Tabla_errores_c (QDialog):
     def closeEvent(self, event):
         #event.ignore() 
         print("close event")
+        
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             print("Escape key was pressed")
@@ -1215,7 +1212,8 @@ class Mantenimiento_ui (QMainWindow):
     def graficas_reintentos(self):
         print("grafica de reintentos")
         # Configuración de la conexión ----------------------------------
-        host = "10.71.82.52"
+        host = "127.0.0.1"
+        #host = "10.71.82.11"
         user = "dedicado"
         password = "4dm1n_001"
         db = "et_mbi_2"
@@ -1236,19 +1234,115 @@ class Mantenimiento_ui (QMainWindow):
         
         try:
             ##############
-            query = "SELECT INTENTOS_T FROM "+ db +".historial WHERE INICIO >= '" + init_date + "' AND INICIO <= '" + end_date + "' AND INTENTOS_T != '{}'"
+            query = "SELECT INTENTOS_T, INICIO FROM "+ db +".historial WHERE INICIO >= '" + init_date + "' AND INICIO <= '" + end_date + "' AND INTENTOS_T != '{}'"
             response = self.get_response(host, user, password, db, query)
             ##############
 
             #print("tipo: ",type(response))
-            #print("RESPONSE: ",response["INTENTOS_T"])
-
+            #print("RESPONSE grafica reintentos: ",response)
+            
             cantidad_reintentos = len(response["INTENTOS_T"])
 
             lista_resultados = response["INTENTOS_T"]
+            lista_fechasxarnes=response["INICIO"]
+            total_rows = len(response["INICIO"])
             fusibles_reintentados = 0 #para contar el total de fusibles reintentados, excepto RELX
             total_reintentos={}
+            
+            #Calculo de historico de Reintentos
+            # Iterar sobre los registros
+            data = []
+            for i, intentos_str in enumerate(response['INTENTOS_T']):
+                # Deserializar el string a un diccionario
+                intentos_t = json.loads(intentos_str)
+                inicio = response['INICIO'][i]
+                
+                # Iterar sobre el diccionario de intentos
+                for caja, cavidades in intentos_t.items():
+                    for cavidad, intentos in cavidades.items():
+                        data.append({
+                            "caja": caja,
+                            "cavidad": cavidad,
+                            "intentos": intentos,
+                            "fecha": inicio
+                        })
 
+            # Crear el DataFrame
+            df = pd.DataFrame(data)
+            
+            
+
+            # Mostrar el DataFrame
+            #print("df",df)
+
+            # Determinar el rango de fechas
+            min_date = df['fecha'].min()
+            max_date = df['fecha'].max()
+            date_range = max_date - min_date
+            
+            df['caja_cavidad'] = df['cavidad'] + "_" + df['caja']
+            # Agrupar por cavidad y fecha
+            df_cavity_grouped = df.groupby(['caja_cavidad', 'fecha'], as_index=False)['intentos'].sum()
+            
+            # Agrupar por cavidad para encontrar el total de intentos
+            df_total_intentos = df.groupby('caja_cavidad')['intentos'].sum().reset_index()
+            
+            
+
+            # Encontrar las 10 cavidades con más intentos
+            top_10_cavidades = df_total_intentos.nlargest(10, 'intentos')['caja_cavidad']
+            
+            # Filtrar el DataFrame para incluir solo las top 10 cavidades
+            df_top_10 = df[df['caja_cavidad'].isin(top_10_cavidades)]
+            
+            # Agrupar por cavidad y fecha para las top 10 cavidades
+            df_top_10_grouped = df_top_10.groupby(['caja_cavidad', 'fecha'], as_index=False)['intentos'].sum()
+            
+            # Ordenar el DataFrame por la columna 'reintentos' de mayor a menor
+            df_top_10_grouped = df_top_10_grouped.sort_values(by='intentos', ascending=False).reset_index(drop=True)
+            
+            # Pivotar los datos para que las cavidades sean las columnas y las fechas sean las filas
+            df_top_10_pivot = df_top_10_grouped.pivot(index='fecha', columns='caja_cavidad', values='intentos').fillna(0)
+            
+            # Configuración de la gráfica
+            plt.figure(figsize=(14, 8))
+            
+            # Verificar si el rango de fechas es mayor a un día
+            if date_range > timedelta(days=1) and date_range< timedelta(weeks=2):
+                # Graficar por días
+                df_top_10_pivot.resample('D').sum().plot(kind='line', marker='o')
+                plt.xlabel('Fecha')
+                plt.ylabel('Cantidad de Intentos')
+                plt.title('Top 10 de Intentos por Cavidad por Día')
+            elif date_range > timedelta(weeks=2):
+                # Graficar por días
+                df_top_10_pivot.resample('W').sum().plot(kind='line', marker='o')
+                plt.xlabel('Fecha')
+                plt.ylabel('Cantidad de Intentos')
+                plt.title('Top 10 de Intentos por Cavidad por semana')
+            else:
+                # Graficar por horas
+                df_top_10_pivot.resample('H').sum().plot(kind='line', marker='o')
+                plt.xlabel('Hora')
+                plt.ylabel('Cantidad de Intentos')
+                plt.title('Top 10 de Intentos por Cavidad por Hora')
+            
+
+            plt.legend(title=f'Cantidad total de filas: {total_rows}')
+            # Leyenda basada en el mayor valor de reintentos
+            #mayor_caja_cavidad = dforden.loc[0, 'caja_cavidad']  # El primer valor después de ordenar
+            #plt.legend([f"Mayor: {mayor_caja_cavidad}"], loc="upper right")
+            #leyenda = [f"{caja_cavidad} ({intentos})" for caja_cavidad, intentos in zip(df_top_10_pivot['caja_cavidad'], df_top_10_pivot['intentos'])]
+            #plt.legend(leyenda, title="Caja_Cavidad (intentos)", loc="upper right")
+
+            # Configurar la gráfica
+            plt.xticks(rotation=45)  # Rotar las etiquetas de fecha para mejor visualización
+            plt.grid(True)
+            plt.tight_layout()  # Ajustar el diseño para que no se corten las etiquetas
+            #plt.legend(title='Cavidad')
+            plt.show()
+            ####Calculos de Reintentos acumulados
+            print("ok55")
             for i in range(len(lista_resultados)):
 
                 arnes = json.loads(lista_resultados[i]) #cada elemento de la lista es un string, aquí se convierte a diccionario
@@ -1345,7 +1439,7 @@ class Mantenimiento_ui (QMainWindow):
             with connection.cursor() as cursor:
                 items = cursor.execute(query)
                 result = cursor.fetchall()
-
+                
                 if len(result) == 1:
                     response = result[0]
                 elif len(result) > 1:
@@ -1368,10 +1462,14 @@ class Mantenimiento_ui (QMainWindow):
 
     def Tabla_fallas(self):
         print("tablas de fallas")
-        self.qw_Tabla_errores.show()
+        #self.qw_Tabla_errores.ui.tableWidget.setRowCount(0) #se setean a 0 renglones
+        self.qw_Tabla_errores.ui.tableWidget.clearContents() #se manda a llamar clear para limpiar el contenido
+        
         
         # Configuración de la conexión ----------------------------------
+        host = "127.0.0.1"
         host = "10.71.82.52"
+        
         user = "dedicado"
         password = "4dm1n_001"
         db = "et_mbi_2"
@@ -1390,12 +1488,12 @@ class Mantenimiento_ui (QMainWindow):
         print("datet_text",end_date)
         try:
             ##############
-            query = "SELECT INTENTOS_T FROM "+ db +".historial WHERE INICIO >= '" + init_date + "' AND INICIO <= '" + end_date + "' AND INTENTOS_T != '{}'"
+            query = "SELECT INTENTOS_T, INICIO FROM "+ db +".historial WHERE INICIO >= '" + init_date + "' AND INICIO <= '" + end_date + "' AND INTENTOS_T != '{}'"
             response = self.get_response(host, user, password, db, query)
             ##############
 
             #print("tipo: ",type(response))
-            #print("RESPONSE: ",response["INTENTOS_T"])
+            print("RESPONSE: ",response["INTENTOS_T"])
 
             cantidad_reintentos = len(response["INTENTOS_T"])
 
@@ -1523,10 +1621,6 @@ class Mantenimiento_ui (QMainWindow):
             print("error en la deteccion de fase: ", ex)
             return {"exception error en la deteccion de fase": ex.args}
         return fase
-
-
-
-        
     def closeEvent(self, event):
         #event.ignore()
         
@@ -1541,7 +1635,7 @@ class Mantenimiento_ui (QMainWindow):
             
     @pyqtSlot(dict)
     def input(self, message):
-        #print(message)
+        print(message)
         if "login_mtto" in message:
             self.qw_login_mtto.setVisible(message["login_mtto"])
                 
@@ -1550,475 +1644,57 @@ class Mantenimiento_ui (QMainWindow):
                 self.ui.centralwidgetok.setEnabled(True)
             else:
                 self.ui.centralwidgetok.setEnabled(False)
-        if "A41" in message:
-            if message["A41"] == True:
-                self.ui.label_12.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_12.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "A42" in message:
-            if message["A42"] == True:
-                self.ui.label_15.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_15.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "A43" in message:
-            if message["A43"] == True:
-                self.ui.label_17.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_17.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-                
-        if "A44" in message:
-            if message["A44"] == True:
-                self.ui.label_19.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_19.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "A45" in message:
-            if message["A45"] == True:
-                self.ui.label_21.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_21.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "A46" in message:
-            if message["A46"] == True:
-                self.ui.label_23.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_23.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            
-        if "A47" in message:
-            if message["A47"] == True:
-                self.ui.label_25.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_25.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "A20" in message:
-            if message["A20"] == True:
-                self.ui.label_28.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_28.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "A21" in message:
-            if message["A21"] == True:
-                self.ui.label_30.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_30.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "A22" in message:
-            if message["A22"] == True:
-                self.ui.label_32.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_32.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "A23" in message:
-            if message["A23"] == True:
-                self.ui.label_34.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_34.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "A24" in message:
-            if message["A24"] == True:
-                self.ui.label_36.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_36.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "A25" in message:
-            if message["A25"] == True:
-                self.ui.label_38.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_38.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "A26" in message:
-            if message["A26"] == True:
-                self.ui.label_40.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_40.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "A27" in message:
-            if message["A27"] == True:
-                self.ui.label_42.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_42.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "A28" in message:
-            if message["A28"] == True:
-                self.ui.label_44.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_44.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "A29" in message:
-            if message["A29"] == True:
-                self.ui.label_48.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_48.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "A30" in message:
-            if message["A30"] == True:
-                self.ui.label_46.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_46.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "A51" in message:
-            if message["A51"] == True:
-                self.ui.label_51.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_51.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "A52" in message:
-            if message["A52"] == True:
-                self.ui.label_53.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_53.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "A53" in message:
-            if message["A53"] == True:
-                self.ui.label_55.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_55.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "A54" in message:
-            if message["A54"] == True:
-                self.ui.label_57.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_57.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "A55" in message:
-            if message["A55"] == True:
-                self.ui.label_59.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_59.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "A56" in message:
-            if message["A56"] == True:
-                self.ui.label_61.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_61.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
 
-        if "A1" in message:
-            if message["A1"] == True:
-                self.ui.label_64.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_64.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "A2" in message:
-            if message["A2"] == True:
-                self.ui.label_66.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_66.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "E1" in message:
-            if message["E1"] == True:
-                self.ui.label_68.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_68.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-                
-        if "MFBP1_candado_limit" in message:
-            if message["MFBP1_candado_limit"] == True:
-                self.ui.label_71.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_71.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "MFBP2_candado_limit" in message:
-            if message["MFBP2_candado_limit"] == True:
-                self.ui.label_73.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_73.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "MFBS_candado_limit" in message:
-            if message["MFBS_candado_limit"] == True:
-                self.ui.label_75.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_75.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-        if "MFBE_candado_limit" in message:
-            if message["MFBE_candado_limit"] == True:
-                self.ui.label_77.setStyleSheet("background-color: " + "lime" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
-            else:
-                self.ui.label_77.setStyleSheet("background-color: " + "gray" + ";" 
-                    + "border :3px solid black;\n"
-                      "border-top-left-radius :8px;\n"
-                      "border-top-right-radius : 8px;\n"
-                      "border-bottom-left-radius :8px;\n"
-                      "border-bottom-right-radius : 8px;")
+        base_style = (
+            "border: 3px solid black;\n"
+            "border-top-left-radius: 8px;\n"
+            "border-top-right-radius: 8px;\n"
+            "border-bottom-left-radius: 8px;\n"
+            "border-bottom-right-radius: 8px;"
+        )
+        mapping = {
+            "A41": "label_12",
+            "A42": "label_15",
+            "A43": "label_17",
+            "A44": "label_19",
+            "A45": "label_21",
+            "A46": "label_23",
+            "A47": "label_25",
+            "A20": "label_28",
+            "A21": "label_30",
+            "A22": "label_32",
+            "A23": "label_34",
+            "A24": "label_36",
+            "A25": "label_38",
+            "A26": "label_40",
+            "A27": "label_42",
+            "A28": "label_44",
+            "A29": "label_48",
+            "A30": "label_46",
+            "A51": "label_51",
+            "A52": "label_53",
+            "A53": "label_55",
+            "A54": "label_57",
+            "A55": "label_59",
+            "A56": "label_61",
+            "A1": "label_64",
+            "A2": "label_66",
+            "E1": "label_68",
+            "MFBP1_candado_limit": "label_71",
+            "MFBP2_candado_limit": "label_73",
+            "MFBS_candado_limit":  "label_75",
+            "MFBE_candado_limit":  "label_77",
+        }
+        # Iterar sobre el diccionario para actualizar los estilos
+        for key, label_name in mapping.items():
+            
+            if key in message:
+                print("key si en message")
+                color = "lime" if message[key] else "gray"
+                style = f"background-color: {color}; {base_style}"
+                getattr(self.ui, label_name).setStyleSheet(style)
+                return
+        
 class PopOut (QMessageBox):
     def __init__(self, parent = None):
         self.model = Model()
@@ -2076,3 +1752,78 @@ if __name__ == "__main__":
     #                  
     #{'CICLO_manager': ["['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']"], 'FECHA': ['Thu, 20 Jun 2024 14:21:09 GMT', 'Thu, 20 Jun 2024 13:55:08 GMT', 'Thu, 20 Jun 2024 13:54:01 GMT', 'Thu, 20 Jun 2024 13:53:36 GMT', 'Thu, 20 Jun 2024 13:23:54 GMT', 'Thu, 20 Jun 2024 13:00:57 GMT', 'Thu, 20 Jun 2024 12:23:51 GMT', 'Thu, 20 Jun 2024 11:28:31 GMT', 'Thu, 20 Jun 2024 09:11:47 GMT', 'Thu, 20 Jun 2024 09:11:27 GMT'], 'HERRAMIENTA': ['tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3'], 'HM': ['HM000000288412', 'HM000000288401', 'HM000000288401', 'HM000000288401', 'HM000000288378', 'HM000000288317', 'HM000000288314', 'HM000000288242', 'HM000000287653', 'HM000000287653'], 'ID': [871494, 871424, 871420, 871416, 871374, 871292, 871248, 871086, 870478, 870474], 'REGISTRO': ['{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 5927.80029296875, "PostSeatingTorque": 6.650405406951904, "RundownSpeed": 0.0, "SeatingTorque": 6.650405406951904, "SetErrorcode": 16448.0, "ToolCount": 57855.0, "TorqueCorrection": 1.0, "angle": 5927.80029296875, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 6.650405406951904, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 5878.10009765625, "PostSeatingTorque": 7.178708553314209, "RundownSpeed": 0.0, "SeatingTorque": 7.178708553314209, "SetErrorcode": 16448.0, "ToolCount": 57839.0, "TorqueCorrection": 1.0, "angle": 5878.10009765625, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 7.178708553314209, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 6088.5, "PostSeatingTorque": 6.836865425109863, "RundownSpeed": 0.0, "SeatingTorque": 6.836865425109863, "SetErrorcode": 16448.0, "ToolCount": 57837.0, "TorqueCorrection": 1.0, "angle": 6088.5, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 6.836865425109863, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 6088.5, "PostSeatingTorque": 7.489475250244141, "RundownSpeed": 0.0, "SeatingTorque": 7.489475250244141, "SetErrorcode": 16448.0, "ToolCount": 57835.0, "TorqueCorrection": 1.0, "angle": 6088.5, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 7.489475250244141, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 5319.5, "PostSeatingTorque": 6.650405406951904, "RundownSpeed": 0.0, "SeatingTorque": 6.650405406951904, "SetErrorcode": 16448.0, "ToolCount": 57827.0, "TorqueCorrection": 1.0, "angle": 5319.5, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 6.650405406951904, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 5785.5, "PostSeatingTorque": 6.89901876449585, "RundownSpeed": 0.0, "SeatingTorque": 6.89901876449585, "SetErrorcode": 16448.0, "ToolCount": 57807.0, "TorqueCorrection": 1.0, "angle": 5785.5, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 6.89901876449585, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 6088.5, "PostSeatingTorque": 7.147632122039795, "RundownSpeed": 0.0, "SeatingTorque": 7.147632122039795, "SetErrorcode": 16448.0, "ToolCount": 57797.0, "TorqueCorrection": 1.0, "angle": 6088.5, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 7.147632122039795, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 5742.2001953125, "PostSeatingTorque": 7.582705020904541, "RundownSpeed": 0.0, "SeatingTorque": 7.582705020904541, "SetErrorcode": 16448.0, "ToolCount": 57759.0, "TorqueCorrection": 1.0, "angle": 5742.2001953125, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 7.582705020904541, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 4012.300048828125, "PostSeatingTorque": 6.743635177612305, "RundownSpeed": 0.0, "SeatingTorque": 6.743635177612305, "SetErrorcode": 16448.0, "ToolCount": 57639.0, "TorqueCorrection": 1.0, "angle": 4012.300048828125, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle OK", "fase": 1.0, "result": 2.0, "torque": 6.743635177612305, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 5648.80029296875, "PostSeatingTorque": 6.99224853515625, "RundownSpeed": 0.0, "SeatingTorque": 6.99224853515625, "SetErrorcode": 16448.0, "ToolCount": 57637.0, "TorqueCorrection": 1.0, "angle": 5648.80029296875, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 6.99224853515625, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}'], 'angle_target': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 'angle_trend': ['Angle over', 'Angle over', 'Angle over', 'Angle over', 'Angle over', 'Angle over', 'Angle over', 'Angle over', 'Angle OK', 'Angle over'], 'angulo_final': [5927.8, 5878.1, 6088.5, 6088.5, 5319.5, 5785.5, 6088.5, 5742.2, 4012.3, 5648.8], 'angulo_maximo': [5000.0, 5000.0, 5000.0, 5000.0, 5000.0, 5000.0, 5000.0, 5000.0, 5000.0, 5000.0], 'angulo_minimo': [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], 'columns': ['ID', 'HERRAMIENTA', 'REGISTRO', 'FECHA', 'CICLO_manager', 'estado_actual', 'perfil_driver', 'fase_driver', 'HM', 'angulo_final', 'torque_final', 'torque_minimo', 'torque_maximo', 'angulo_minimo', 'angulo_maximo', 'angle_trend', 'torque_trend', 'angle_target', 'torque_target', 'result'], 'estado_actual': ['BACKWARD', 'BACKWARD', 'BACKWARD', 'BACKWARD', 'BACKWARD', 'BACKWARD', 'BACKWARD', 'BACKWARD', 'BACKWARD', 'BACKWARD'], 'fase_driver': [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], 'perfil_driver': [17.0, 17.0, 17.0, 17.0, 17.0, 17.0, 17.0, 17.0, 17.0, 17.0], 'result': [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0], 'torque_final': [6.65041, 7.17871, 6.83687, 7.48948, 6.65041, 6.89902, 7.14763, 7.58271, 6.74364, 6.99225], 'torque_maximo': [20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0], 'torque_minimo': [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0], 'torque_target': [18.0, 18.0, 18.0, 18.0, 18.0, 18.0, 18.0, 18.0, 18.0, 18.0], 'torque_trend': ['Torque OK', 'Torque OK', 'Torque OK', 'Torque OK', 'Torque OK', 'Torque OK', 'Torque OK', 'Torque OK', 'Torque OK', 'Torque OK']}
     #{'CICLO_manager': ["['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']", "['MFB-P2', 'A25', 3, '8mm Nut']"], 'FECHA': ['Thu, 20 Jun 2024 14:21:09 GMT', 'Thu, 20 Jun 2024 14:20:55 GMT', 'Thu, 20 Jun 2024 13:55:08 GMT', 'Thu, 20 Jun 2024 13:54:18 GMT', 'Thu, 20 Jun 2024 13:54:01 GMT', 'Thu, 20 Jun 2024 13:53:47 GMT', 'Thu, 20 Jun 2024 13:53:36 GMT', 'Thu, 20 Jun 2024 13:53:25 GMT', 'Thu, 20 Jun 2024 13:23:54 GMT', 'Thu, 20 Jun 2024 13:23:44 GMT'], 'HERRAMIENTA': ['tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3', 'tool3'], 'HM': ['HM000000288412', 'HM000000288412', 'HM000000288401', 'HM000000288401', 'HM000000288401', 'HM000000288401', 'HM000000288401', 'HM000000288401', 'HM000000288378', 'HM000000288378'], 'ID': [871494, 871492, 871424, 871422, 871420, 871418, 871416, 871414, 871374, 871372], 'REGISTRO': ['{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 5927.80029296875, "PostSeatingTorque": 6.650405406951904, "RundownSpeed": 0.0, "SeatingTorque": 6.650405406951904, "SetErrorcode": 16448.0, "ToolCount": 57855.0, "TorqueCorrection": 1.0, "angle": 5927.80029296875, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 6.650405406951904, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 3.0, "FinalSpeed": 6.0, "PostSeatingRealTorque": -0.4000000059604645, "PostSeatingTorque": 9.571611404418945, "RundownSpeed": 0.0, "SeatingTorque": 9.571611404418945, "SetErrorcode": 16448.0, "ToolCount": 57854.0, "TorqueCorrection": 1.0, "angle": -0.4000000059604645, "angle_max": 500.0, "angle_min": 10.0, "angle_target": 0.0, "angle_trend": "Angle below", "fase": 4.0, "result": 2.0, "torque": 9.571611404418945, "torque_max": 3.0, "torque_min": 0.5, "torque_target": 2.9000000953674316, "torque_trend": "Torque over"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 5878.10009765625, "PostSeatingTorque": 7.178708553314209, "RundownSpeed": 0.0, "SeatingTorque": 7.178708553314209, "SetErrorcode": 16448.0, "ToolCount": 57839.0, "TorqueCorrection": 1.0, "angle": 5878.10009765625, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 7.178708553314209, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 3.0, "FinalSpeed": 6.0, "PostSeatingRealTorque": 1665.2000732421875, "PostSeatingTorque": 6.028872013092041, "RundownSpeed": 0.0, "SeatingTorque": 6.028872013092041, "SetErrorcode": 16448.0, "ToolCount": 57838.0, "TorqueCorrection": 1.0, "angle": 1665.2000732421875, "angle_max": 1845.2000732421875, "angle_min": 1692.0001220703125, "angle_target": 4.700000286102295, "angle_trend": "Angle below", "fase": 4.0, "result": 2.0, "torque": 6.028872013092041, "torque_max": 4.900000095367432, "torque_min": 0.0, "torque_target": 0.0, "torque_trend": "Torque over"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 6088.5, "PostSeatingTorque": 6.836865425109863, "RundownSpeed": 0.0, "SeatingTorque": 6.836865425109863, "SetErrorcode": 16448.0, "ToolCount": 57837.0, "TorqueCorrection": 1.0, "angle": 6088.5, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 6.836865425109863, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 3.0, "FinalSpeed": 6.0, "PostSeatingRealTorque": 1691.2000732421875, "PostSeatingTorque": 5.065495491027832, "RundownSpeed": 0.0, "SeatingTorque": 5.065495491027832, "SetErrorcode": 16448.0, "ToolCount": 57836.0, "TorqueCorrection": 1.0, "angle": 1691.2000732421875, "angle_max": 1871.2000732421875, "angle_min": 1692.0001220703125, "angle_target": 4.700000286102295, "angle_trend": "Angle below", "fase": 4.0, "result": 2.0, "torque": 5.065495491027832, "torque_max": 4.900000095367432, "torque_min": 0.0, "torque_target": 0.0, "torque_trend": "Torque over"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 6088.5, "PostSeatingTorque": 7.489475250244141, "RundownSpeed": 0.0, "SeatingTorque": 7.489475250244141, "SetErrorcode": 16448.0, "ToolCount": 57835.0, "TorqueCorrection": 1.0, "angle": 6088.5, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 7.489475250244141, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 0.0, "FinalSpeed": 6.0, "PostSeatingRealTorque": 1632.7000732421875, "PostSeatingTorque": 6.028872013092041, "RundownSpeed": 0.0, "SeatingTorque": 6.028872013092041, "SetErrorcode": 16448.0, "ToolCount": 57834.0, "TorqueCorrection": 1.0, "angle": 1632.7000732421875, "angle_max": 1812.7000732421875, "angle_min": 1692.0001220703125, "angle_target": 4.700000286102295, "angle_trend": "Angle below", "fase": 4.0, "result": 2.0, "torque": 6.028872013092041, "torque_max": 4.900000095367432, "torque_min": 0.0, "torque_target": 0.0, "torque_trend": "Torque over"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 17.0, "FinalSpeed": 258.0, "PostSeatingRealTorque": 5319.5, "PostSeatingTorque": 6.650405406951904, "RundownSpeed": 0.0, "SeatingTorque": 6.650405406951904, "SetErrorcode": 16448.0, "ToolCount": 57827.0, "TorqueCorrection": 1.0, "angle": 5319.5, "angle_max": 5000.0, "angle_min": 1.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 1.0, "result": 2.0, "torque": 6.650405406951904, "torque_max": 20.0, "torque_min": 2.0, "torque_target": 18.0, "torque_trend": "Torque OK"}', '{"AngularThreshold": 0.0, "CurrentMonitor": 0.0, "CycleSelected": 3.0, "FinalSpeed": 6.0, "PostSeatingRealTorque": 98.20000457763672, "PostSeatingTorque": 2.8590526580810547, "RundownSpeed": 0.0, "SeatingTorque": 2.8590526580810547, "SetErrorcode": 16448.0, "ToolCount": 57826.0, "TorqueCorrection": 1.0, "angle": 98.20000457763672, "angle_max": 60.0, "angle_min": 10.0, "angle_target": 0.0, "angle_trend": "Angle over", "fase": 4.0, "result": 2.0, "torque": 2.8590526580810547, "torque_max": 17.600000381469727, "torque_min": 14.399999618530273, "torque_target": 16.0, "torque_trend": "Torque below"}'], 'angle_target': [0.0, 0.0, 0.0, 4.7, 0.0, 4.7, 0.0, 4.7, 0.0, 0.0], 'angle_trend': ['Angle over', 'Angle below', 'Angle over', 'Angle below', 'Angle over', 'Angle below', 'Angle over', 'Angle below', 'Angle over', 'Angle over'], 'angulo_final': [5927.8, -0.4, 5878.1, 1665.2, 6088.5, 1691.2, 6088.5, 1632.7, 5319.5, 98.2], 'angulo_maximo': [5000.0, 500.0, 5000.0, 1845.2, 5000.0, 1871.2, 5000.0, 1812.7, 5000.0, 60.0], 'angulo_minimo': [1.0, 10.0, 1.0, 1692.0, 1.0, 1692.0, 1.0, 1692.0, 1.0, 10.0], 'columns': ['ID', 'HERRAMIENTA', 'REGISTRO', 'FECHA', 'CICLO_manager', 'estado_actual', 'perfil_driver', 'fase_driver', 'HM', 'angulo_final', 'torque_final', 'torque_minimo', 'torque_maximo', 'angulo_minimo', 'angulo_maximo', 'angle_trend', 'torque_trend', 'angle_target', 'torque_target', 'result'], 'estado_actual': ['BACKWARD', '', 'BACKWARD', '', 'BACKWARD', '', 'BACKWARD', '', 'BACKWARD', ''], 'fase_driver': [1.0, 4.0, 1.0, 4.0, 1.0, 4.0, 1.0, 4.0, 1.0, 4.0], 'perfil_driver': [17.0, 3.0, 17.0, 3.0, 17.0, 3.0, 17.0, 0.0, 17.0, 3.0], 'result': [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0], 'torque_final': [6.65041, 9.57161, 7.17871, 6.02887, 6.83687, 5.0655, 7.48948, 6.02887, 6.65041, 2.85905], 'torque_maximo': [20.0, 3.0, 20.0, 4.9, 20.0, 4.9, 20.0, 4.9, 20.0, 17.6], 'torque_minimo': [2.0, 0.5, 2.0, 0.0, 2.0, 0.0, 2.0, 0.0, 2.0, 14.4], 'torque_target': [18.0, 2.9, 18.0, 0.0, 18.0, 0.0, 18.0, 0.0, 18.0, 16.0], 'torque_trend': ['Torque OK', 'Torque over', 'Torque OK', 'Torque over', 'Torque OK', 'Torque over', 'Torque OK', 'Torque over', 'Torque OK', 'Torque below']}
+
+
+
+#    {'INTENTOS_T': ['{"PDC-P": {"E1": 0}, 
+#                    "PDC-D": {"E1": 0}, 
+#                    "BATTERY": {"BT": 0}, 
+#                    "BATTERY-2": {"BT": 0}, 
+#                    "MFB-P1": {"A47": 0, "A46": 0, "A45": 0, "A44": 0, "A43": 0, "A41": 0, "A42": 0}, 
+#                    "MFB-S": {"A51": 0, "A52": 0, "A53": 0, "A54": 0, "A55": 0, "A56": 0}, 
+#                    "MFB-E": {"E1": 0, "A1": 0, "A2": 0}, 
+#                    "MFB-P2": {"A20": 0, "A21": 0, "A22": 0, "A23": 0, "A24": 0, "A25": 0, "A26": 0, "A27": 0, "A28": 0, "A29": 0, "A30": 0}, 
+#                    "PDC-R": {"E1": 0}, "PDC-RS": {"E1": 0}, 
+#                    "PDC-RMID": {"E1": 0}}', 
+#                    
+#
+#                    '{"PDC-P": {"E1": 0}, 
+#                    "PDC-D": {"E1": 1}, 
+#                    "BATTERY": {"BT": 0}, 
+#                    "BATTERY-2": {"BT": 0}, 
+#                    "MFB-P1": {"A47": 0, "A46": 0, "A45": 0, "A44": 0, "A43": 0, "A41": 0, "A42": 0}, 
+#                    "MFB-S": {"A51": 0, "A52": 0, "A53": 0, "A54": 0, "A55": 0, "A56": 0}, 
+#                    "MFB-E": {"E1": 0, "A1": 0, "A2": 0}, 
+#                    "MFB-P2": {"A20": 0, "A21": 0, "A22": 0, "A23": 0, "A24": 0, "A25": 0, "A26": 0, "A27": 0, "A28": 0, "A29": 0, "A30": 0}, 
+#                    "PDC-R": {"E1": 0},
+#                   "PDC-RS": {"E1": 0}, 
+#                   "PDC-RMID": {"E1": 0}}'
+#                    ],
+#    
+#                   
+#                   
+#    'INICIO': [datetime.datetime(2024, 9, 2, 9, 11, 49),
+#              datetime.datetime(2024, 9, 2, 9, 24, 33)]}
+#                               datetime.datetime(2024, 9, 2, 9, 35, 35), 
+#                               datetime.datetime(2024, 9, 2, 10, 2, 19), 
+#                               datetime.datetime(2024, 9, 2, 10, 14, 3), 
+#                               datetime.datetime(2024, 9, 2, 10, 22, 35), 
+#                               datetime.datetime(2024, 9, 2, 10, 30, 20), 
+#                               datetime.datetime(2024, 9, 2, 10, 39, 39), 
+#                               datetime.datetime(2024, 9, 2, 10, 45, 46), 
+#                               datetime.datetime(2024, 9, 2, 11, 1, 44), 
+#                               datetime.datetime(2024, 9, 2, 11, 9, 9),
+#                              datetime.datetime(2024, 9, 2, 11, 18, 40), 
+#                              datetime.datetime(2024, 9, 2, 11, 26, 52), 
+#                              datetime.datetime(2024, 9, 2, 11, 38, 55), 
+#                              datetime.datetime(2024, 9, 2, 11, 49, 18), 
+#                              datetime.datetime(2024, 9, 2, 11, 55, 46), 
+#                              datetime.datetime(2024, 9, 2, 12, 36, 5), 
+#                              datetime.datetime(2024, 9, 2, 12, 48, 52), 
+#                              datetime.datetime(2024, 9, 2, 12, 59, 15), 
+#                              datetime.datetime(2024, 9, 2, 13, 11, 42), 
+#                              datetime.datetime(2024, 9, 2, 13, 20, 2), 
+#                              datetime.datetime(2024, 9, 2, 13, 27, 49), 
+#                              datetime.datetime(2024, 9, 2, 13, 37, 39), 
+#                              datetime.datetime(2024, 9, 2, 13, 46, 1), 
+#                              datetime.datetime(2024, 9, 2, 13, 55, 31), 
+#                              datetime.datetime(2024, 9, 2, 14, 4, 42), 
+#                              datetime.datetime(2024, 9, 2, 14, 27, 37), 
+#                              datetime.datetime(2024, 9, 2, 14, 35, 34), 
+#                              datetime.datetime(2024, 9, 2, 14, 42, 18), 
+#                              datetime.datetime(2024, 9, 2, 14, 50, 47), 
+#                              datetime.datetime(2024, 9, 2, 14, 57, 15), 
+#                              datetime.datetime(2024, 9, 2, 15, 5, 11), 
+#                              datetime.datetime(2024, 9, 2, 15, 14, 17), 
+#                              datetime.datetime(2024, 9, 2, 15, 21, 50), 
+#                              datetime.datetime(2024, 9, 2, 15, 34, 8), 
+#                              datetime.datetime(2024, 9, 2, 15, 41, 14), 
+#                              datetime.datetime(2024, 9, 2, 15, 51, 53), 
+#                              datetime.datetime(2024, 9, 2, 16, 1, 26), 
+#                              datetime.datetime(2024, 9, 2, 16, 15, 29),
+#                             datetime.datetime(2024, 9, 2, 16, 25, 40),
+#                            datetime.datetime(2024, 9, 2, 16, 36, 20),
+#                           datetime.datetime(2024, 9, 2, 16, 44, 12),
+#                          datetime.datetime(2024, 9, 3, 7, 7, 21),
+#                         datetime.datetime(2024, 9, 3, 7, 15, 21), datetime.datetime(2024, 9, 3, 7, 22, 54), datetime.datetime(2024, 9, 3, 7, 29, 52), datetime.datetime(2024, 9, 3, 7, 35, 49), datetime.datetime(2024, 9, 3, 7, 46, 30), datetime.datetime(2024, 9, 3, 7, 56, 36), datetime.datetime(2024, 9, 3, 8, 8, 7), datetime.datetime(2024, 9, 3, 8, 17, 37), datetime.datetime(2024, 9, 3, 8, 26, 36)]}
+#
