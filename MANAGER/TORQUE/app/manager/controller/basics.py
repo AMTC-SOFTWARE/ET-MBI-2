@@ -1,3 +1,4 @@
+from optparse import Option
 from PyQt5.QtCore import QState, pyqtSignal, QTimer
 from paho.mqtt import publish
 from datetime import datetime
@@ -124,7 +125,7 @@ class Startup(QState):
             print("Error en el conteo ", ex)
 
         QTimer.singleShot(10, self.stopTorque)
-        QTimer.singleShot(15, self.kioskMode)
+        #QTimer.singleShot(15, self.kioskMode)
         self.ok.emit()
 
     def stopTorque (self):
@@ -889,6 +890,9 @@ class CheckQr (QState):
             for key in eventos["eventos"].keys():
                 print("++++++++++++++Evento Actual++++++++++++++++:\n ",key)
                 print("Valor Activo del Evento actual: ",eventos["eventos"][key][1])
+                
+                self.model.conduccion = key.split("_")[-1]
+
                 if eventos["eventos"][key][1] == 1:
                     endpoint = "http://{}/api/get/{}/pedidos/PEDIDO/=/{}/ACTIVE/=/1".format(self.model.server, key, self.model.qr_codes["REF"])
                     response = requests.get(endpoint).json()
@@ -1008,7 +1012,6 @@ class CheckQr (QState):
                         command["lbl_result"] =  {"text": "Modo Desapriete", "color": "green"}
                     if self.model.config_data["flexible_mode"]:
                         command["lbl_result"] =  {"text": "Modo Flexible OK", "color": "green"}
-
                     publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                     publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                     Timer(0.05, self.build_contenido_torques).start()
@@ -1539,23 +1542,42 @@ class CheckQr (QState):
             modules = json.loads(self.model.pedido["MODULOS_TORQUE"])
             modules = modules[list(modules)[0]]
 
+            print("Conduccion", self.model.conduccion)
             print("Evento de este Arnés: ",self.model.dbEvent) #puede agregarse un if "aj23_2_pro3" in self.model.dbEvent para limitar a que solamente se cambie en un evento
-            QR_BOXES = json.loads(self.model.pedido["QR_BOXES"])
+            qrBox = self.leer_configuracion()
+            # QR_BOXES = json.loads(self.model.pedido["QR_BOXES"])
+            QR_BOXES = qrBox['regular'][self.model.conduccion]
+
+            opciones = list(qrBox.keys())
+            print(type(opciones))
+            opciones.remove("regular")
+            for opcion in opciones:
+                print('oPCION',opcion)
+                if opcion in self.model.dbEvent:
+                    print("Ay no un ", opcion,"hay que cambiar los QRs mugrosos")
+                    print("primero, veamos cuales tendremos que cambiar")
+                    for optionBox in qrBox[opcion].keys():
+                        print("Aqui hay un ", optionBox)
+                        if optionBox in list(QR_BOXES.keys()):
+                            print("Cambiando ", QR_BOXES[optionBox], ' a ', qrBox[opcion][optionBox] )
+                            QR_BOXES[optionBox] = qrBox[opcion][optionBox]
+                            
+                        print(optionBox)
+            self.model.pedido['QR_BOXES'] = QR_BOXES
             #Se agrega la evaluacion para evaluar si los dats traen los nuevos modulos cambien a la nueva caja
-            self.leer_configuracion()
-            print("self.model.pedido[QR_BOXES]",self.model.pedido["QR_BOXES"])
-            if self.model.parametros["CAJA_VIEJA_SIEMPRE"]=="False":
-                for modulo in modules:
-                    #para caja MFBP2 izquierda
-                    if "A2975407930" in modulo:
-                        print("contiene el modulo A2975407930")
-                        #si se encuentra el módulo dentro del arnés, se cambia el QR de la caja del generado por la api: 12975407316 al 12975407930
-                        pedido["QR_BOXES"] = pedido["QR_BOXES"].replace("12975407316","12975407930")
-                    #para caja MFBP2 derechaA2975407830
-                    if "A2975407830" in modulo:
-                        print("contiene el modulo A2975407830")
-                        #si se encuentra el módulo dentro del arnés, se cambia el QR de la caja del generado por la api: 12975407316 al 12975407930
-                        pedido["QR_BOXES"] = pedido["QR_BOXES"].replace("12975407216","12975407830")
+            # print("self.model.pedido[QR_BOXES]",self.model.pedido["QR_BOXES"])
+            # if self.model.parametros["CAJA_VIEJA_SIEMPRE"]=="False":
+            #     for modulo in modules:
+            #         #para caja MFBP2 izquierda
+            #         if "A2975407930" in modulo:
+            #             print("contiene el modulo A2975407930")
+            #             #si se encuentra el módulo dentro del arnés, se cambia el QR de la caja del generado por la api: 12975407316 al 12975407930
+            #             pedido["QR_BOXES"] = pedido["QR_BOXES"].replace("12975407316","12975407930")
+            #         #para caja MFBP2 derechaA2975407830
+            #         if "A2975407830" in modulo:
+            #             print("contiene el modulo A2975407830")
+            #             #si se encuentra el módulo dentro del arnés, se cambia el QR de la caja del generado por la api: 12975407316 al 12975407930
+            #             pedido["QR_BOXES"] = pedido["QR_BOXES"].replace("12975407216","12975407830")
             #if self.model.parametros["CAJA_VIEJA_SIEMPRE"]=="True":
             #    for modulo in modules:
             #        #para caja MFBP2 izquierda
@@ -1591,23 +1613,26 @@ class CheckQr (QState):
             #"MFB-S": ["12235403215", true], 
             #"MFB-E": ["12975403015", true], 
             #"MFB-P2": ["12975407316", true]}
-
+            self.conduccion = self.model.conduccion
             #VARIABLES PARA MOSTRAR QR's ESPERADOS A ESCANEAR
 
             if self.model.varianteDominante == "PDC-R":
-                self.model.pdcr_serie = QR_BOXES["PDC-R"][0]
+                self.model.pdcr_serie = QR_BOXES["PDC-R"]
             if self.model.varianteDominante == "PDC-RMID":
-                self.model.pdcr_serie = QR_BOXES["PDC-RMID"][0]
+                self.model.pdcr_serie = QR_BOXES["PDC-RMID"]
             if self.model.varianteDominante == "PDC-RS":
-                self.model.pdcr_serie = QR_BOXES["PDC-RS"][0]
+                self.model.pdcr_serie = QR_BOXES["PDC-RS"]
 
-            if flag_mfbp2_der == True and flag_mfbp2_izq == False:
-                self.model.mfbp2_serie = QR_BOXES["MFB-P2"][0]
-            if flag_mfbp2_der == False and flag_mfbp2_izq == True:
-                self.model.mfbp2_serie = QR_BOXES["MFB-P2"][0]
-            if flag_mfbp2_der == False and flag_mfbp2_izq == False:
-                self.model.mfbp2_serie = "Sin especificar"
+            # if flag_mfbp2_der == True and flag_mfbp2_izq == False:
+            self.model.mfbp2_serie = QR_BOXES["MFB-P2"]
+            # if flag_mfbp2_der == False and flag_mfbp2_izq == True:
+            #     self.model.mfbp2_serie = QR_BOXES["MFB-P2"]
+            # if flag_mfbp2_der == False and flag_mfbp2_izq == False:
+            #     self.model.mfbp2_serie = "Sin especificar"
+            ##"hay que buscar una matriz donde varie el qr para escanear"
 
+
+            
             ############################################################# PUBLISH DE CAJAS EN LABELS ##################################### 
 
             print("\ncajas de modularity: ")
@@ -1629,11 +1654,13 @@ class CheckQr (QState):
                     self.model.cajas_habilitadas[caja] = 2
 
                 serie = ""
-                if caja == "MFB-P2":
-                    serie = self.model.mfbp2_serie
-                if "PDC-R" in caja:
-                    serie = self.model.pdcr_serie
+                # if caja == "MFB-P2":
+                #     serie = self.model.mfbp2_serie
+                # if "PDC-R" in caja:
+                #     serie = self.model.pdcr_serie
 
+                if  caja in self.model.pedido['QR_BOXES']:
+                    serie = self.model.pedido['QR_BOXES'][caja]
                 #copia de la caja actual, para utilizar en publish
                 pub_i = caja
 
@@ -1750,17 +1777,30 @@ class CheckQr (QState):
         ruta_configuracion=join(self.model.ruta_principal, "configuracion.txt")
         if exists(ruta_configuracion):
             with open(ruta_configuracion) as configuracion:
+                json_data = ""
                 for linea in configuracion:
-                    if not linea.startswith("#"):
+                    if not linea.startswith("#") and not linea.startswith("\n"):
                         linea.strip()
-                        comando_configuracion=linea.split(":")
+
+                        if linea.startswith("{"):
+                            json_data += linea
+                        elif json_data:
+                            json_data += linea
+                            if linea.endswith("}"):
+                                break
+
+                        else:
+                            comando_configuracion=linea.split(":")
                         self.model.parametros[comando_configuracion[0]]=comando_configuracion[1]
+                qr_textBoxes =  json.loads(json_data)
+                print("QR TEXT BOXES",qr_textBoxes)
+                return qr_textBoxes
         print("self.model.parametros",self.model.parametros)
                 
 
     def torqueClamp (self):
         command = {}
-        master_qr_boxes = json.loads(self.model.input_data["database"]["pedido"]["QR_BOXES"])
+        master_qr_boxes = self.model.input_data["database"]["pedido"]["QR_BOXES"]
         print(f"\t\tQR_BOXES:\n{master_qr_boxes}\n")
         for i in self.model.torque_cycles:
             command[i] = False
