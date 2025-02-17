@@ -125,7 +125,7 @@ class Startup(QState):
             print("Error en el conteo ", ex)
 
         QTimer.singleShot(10, self.stopTorque)
-        #QTimer.singleShot(15, self.kioskMode)
+        QTimer.singleShot(15, self.kioskMode)
         self.ok.emit()
 
     def stopTorque (self):
