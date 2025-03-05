@@ -171,6 +171,7 @@ class Model (object):
         self.smallflag = False
         self.pdcr_serie = ""
         self.mfbp2_serie = ""
+        self.mfbp1_serie = ""
         self.boxPos1 = ["PDC-R","PDC-RMID","PDC-RS","MFB-P1","MFB-S","MFB-E","BATTERY","BATTERY-2"]
         self.boxPos2 = ["MFB-P2","PDC-D","PDC-P"]
         self.name_FET=""

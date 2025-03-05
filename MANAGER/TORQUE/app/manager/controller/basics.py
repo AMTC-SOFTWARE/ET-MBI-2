@@ -125,7 +125,7 @@ class Startup(QState):
             print("Error en el conteo ", ex)
 
         QTimer.singleShot(10, self.stopTorque)
-        QTimer.singleShot(15, self.kioskMode)
+        #QTimer.singleShot(15, self.kioskMode)
         self.ok.emit()
 
     def stopTorque (self):
@@ -1514,9 +1514,6 @@ class CheckQr (QState):
  
             flag_mfbp2_der = False
             flag_mfbp2_izq = False
-            mfbp2_serie = ""
-            mfbeBox = ""
-            battery2Box = ""
             flag_294 = False
             flag_296 = False
 
@@ -1564,6 +1561,38 @@ class CheckQr (QState):
                             
                         print(optionBox)
             self.model.pedido['QR_BOXES'] = QR_BOXES
+
+            self.leer_configuracion()
+            print("Evento de este Arnés: ",self.model.dbEvent)
+            
+            print("Revisando archivo: C:BIN\configuracion.txt")
+            if "MFB-P1" in QR_BOXES:
+                print("\t\t\t\t--arnés contiene caja MFB-P1")
+                if "MFB_S2_ENABLE" in self.model.parametros:
+                    print("\t\t\t\t--MFB_S2_ENABLE existe dentro de self.model.parametros")
+                    if "TRUE" in self.model.parametros["MFB_S2_ENABLE"].upper():
+                        print("\t\t\t\t--MFB_S2_ENABLE = TRUE")
+                        if "QR_VALOR" in self.model.parametros:
+                            print("\t\t\t\t--QR_VALOR existe dentro de self.model.parametros")
+                            if self.model.parametros["QR_VALOR"] != "":
+                                print("\t\t\t\t--QR_VALOR es diferente de string vacío")
+                                if "eventos" in self.model.parametros:
+                                    print("\t\t\t\t--eventos existe dentro de self.model.parametros")
+                                    if self.model.parametros["eventos"] != "":
+                                        print("\t\t\t\t--eventos es diferente de string vacío")
+                                        lista_eventos = self.model.parametros["eventos"].split(",")
+                                        for evento in lista_eventos:
+                                            print("\t\t\t\t\t--evento: ",evento)
+                                            if evento != "":
+                                                if evento in self.model.dbEvent:
+                                                    print("\t\t\t\t\t--" + str(evento) + " encontrado dentro de actual dbEvent: " + str(self.model.dbEvent))
+                                                    print("\t\t\t\t\t-- CAMBIANDO QR DE MFB-P1 al de QR_VALOR: ",self.model.parametros["QR_VALOR"])
+                                                    QR_BOXES["MFB-P1"][0] = self.model.parametros["QR_VALOR"]
+                                                    break
+
+            ##cambiar directamente el nombre de QR que se necesita para habilitar la caja MFB-P1
+            ##QR_BOXES["MFB-P1"][0] = "12315443252345"
+
             #Se agrega la evaluacion para evaluar si los dats traen los nuevos modulos cambien a la nueva caja
             # print("self.model.pedido[QR_BOXES]",self.model.pedido["QR_BOXES"])
             # if self.model.parametros["CAJA_VIEJA_SIEMPRE"]=="False":
@@ -1617,14 +1646,30 @@ class CheckQr (QState):
             #VARIABLES PARA MOSTRAR QR's ESPERADOS A ESCANEAR
 
             if self.model.varianteDominante == "PDC-R":
-                self.model.pdcr_serie = QR_BOXES["PDC-R"]
+                if "PDC-R" in QR_BOXES:
+                    self.model.pdcr_serie = QR_BOXES["PDC-R"][0]
             if self.model.varianteDominante == "PDC-RMID":
-                self.model.pdcr_serie = QR_BOXES["PDC-RMID"]
+                if "PDC-RMID" in QR_BOXES:
+                    self.model.pdcr_serie = QR_BOXES["PDC-RMID"][0]
             if self.model.varianteDominante == "PDC-RS":
-                self.model.pdcr_serie = QR_BOXES["PDC-RS"]
+                if "PDC-RS" in QR_BOXES:
+                    self.model.pdcr_serie = QR_BOXES["PDC-RS"][0]
+            if "MFB-P1" in QR_BOXES:
+                self.model.mfbp1_serie = QR_BOXES["MFB-P1"][0]
+                
+            if flag_mfbp2_der == True and flag_mfbp2_izq == False:
+                self.model.mfbp2_serie = QR_BOXES["MFB-P2"][0]
+                if "MFB-P2" in QR_BOXES:
+                    self.model.mfbp2_serie = QR_BOXES["MFB-P2"][0]
+            if flag_mfbp2_der == False and flag_mfbp2_izq == True:
+                self.model.mfbp2_serie = QR_BOXES["MFB-P2"][0]
+                if "MFB-P2" in QR_BOXES:
+                    self.model.mfbp2_serie = QR_BOXES["MFB-P2"][0]
+            if flag_mfbp2_der == False and flag_mfbp2_izq == False:
+                self.model.mfbp2_serie = "Sin especificar"
 
-            # if flag_mfbp2_der == True and flag_mfbp2_izq == False:
-            self.model.mfbp2_serie = QR_BOXES["MFB-P2"]
+            #if flag_mfbp2_der == True and flag_mfbp2_izq == False:
+            #self.model.mfbp2_serie = QR_BOXES["MFB-P2"]
             # if flag_mfbp2_der == False and flag_mfbp2_izq == True:
             #     self.model.mfbp2_serie = QR_BOXES["MFB-P2"]
             # if flag_mfbp2_der == False and flag_mfbp2_izq == False:
@@ -1634,6 +1679,15 @@ class CheckQr (QState):
 
             
             ############################################################# PUBLISH DE CAJAS EN LABELS ##################################### 
+            print("\nQRS DE CAJAS: ")
+            pprint.pprint(QR_BOXES)
+
+            #Después de modificar el diccionario, se vuelve a convertir a json y se guarda en la variable original
+            self.model.pedido["QR_BOXES"] = json.dumps(QR_BOXES)
+            
+            ########################################################### FIN DE MODIFICACIONES EN QRS ######################################
+            ###############################################################################################################################
+            ############################################################# PUBLISH DE CAJAS EN LABELS ######################################
 
             print("\ncajas de modularity: ")
             print(self.model.input_data["database"]["modularity"].keys())
@@ -1654,12 +1708,21 @@ class CheckQr (QState):
                     self.model.cajas_habilitadas[caja] = 2
 
                 serie = ""
-                # if caja == "MFB-P2":
-                #     serie = self.model.mfbp2_serie
-                # if "PDC-R" in caja:
-                #     serie = self.model.pdcr_serie
-
-                if  caja in self.model.pedido['QR_BOXES']:
+                if caja == "MFB-P2":
+                    serie = self.model.mfbp2_serie
+                if caja == "MFB-P1":
+                    serie = self.model.mfbp1_serie
+                if "PDC-R" in caja:
+                    serie = self.model.pdcr_serie
+                
+                """
+                if caja == "MFB-P2":
+                     serie = self.model.mfbp2_serie
+                if "PDC-R" in caja:
+                     serie = self.model.pdcr_serie
+                """
+                     
+                if caja in self.model.pedido['QR_BOXES']:
                     serie = self.model.pedido['QR_BOXES'][caja]
                 #copia de la caja actual, para utilizar en publish
                 pub_i = caja
@@ -1768,12 +1831,15 @@ class CheckQr (QState):
 
 
     def leer_configuracion(self):
+        print("self.leer_configuracion()")
+        
         """
-        lee un txt en C:BIN/ llamado configuracion, cada renglon debe tener la forma: 
-        condicion:True
-        almacena todos los parametros en el diccionario parametros en el modelo
+            lee un txt en C:BIN/ llamado configuracion.txt, cada renglón debe tener la forma: 
+            condición:True
+            almacena todos los parametros en el diccionario parametros en el modelo (como strings),
+            se usa # para ignorar las líneas (para agregar comentarios en el txt)
+        """
 
-        """
         ruta_configuracion=join(self.model.ruta_principal, "configuracion.txt")
         if exists(ruta_configuracion):
             with open(ruta_configuracion) as configuracion:
@@ -1788,9 +1854,11 @@ class CheckQr (QState):
                             json_data += linea
                             if linea.endswith("}"):
                                 break
-
+                        if ":" in linea:
+                            comando_configuracion=linea.split(":")
                         else:
                             comando_configuracion=linea.split(":")
+                            
                         self.model.parametros[comando_configuracion[0]]=comando_configuracion[1]
                 qr_textBoxes =  json.loads(json_data)
                 print("QR TEXT BOXES",qr_textBoxes)
@@ -1993,6 +2061,7 @@ class Finish (QState):
         self.model.smallflag = False
         self.model.pdcr_serie = ""
         self.model.mfbp2_serie = ""
+        self.model.mfbp1_serie = ""
 
         lblbox_clean = {
             "lbl_boxTITLE" : {"text": f"último ciclo: \n{int(minutos)} min {int(segundos)} segundos" , "color": color},
@@ -2268,6 +2337,7 @@ class Reset (QState):
         self.model.smallflag = False
         self.model.pdcr_serie = ""
         self.model.mfbp2_serie = ""
+        self.model.mfbp1_serie = ""
 
         command = {
             "lbl_result" : {"text": "Se giró la llave de reset", "color": "green"},
