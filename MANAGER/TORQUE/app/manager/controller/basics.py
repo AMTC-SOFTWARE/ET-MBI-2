@@ -86,6 +86,7 @@ class Startup(QState):
             "lbl_boxMFBS" : {"text": "", "color": "black"},
             "lbl_boxBATTERY" : {"text": "", "color": "black"},
             "lbl_boxBATTERY2" : {"text": "", "color": "black"},
+            "lbl_boxBATTERY3" : {"text": "", "color": "black"},
             "lbl_boxNEW" : {"text": "", "color": "black"},
             "lbl_result" : {"text": "Se requiere un login para continuar", "color": "green"},
             "lbl_steps" : {"text": "Ingresa tu código de acceso", "color": "black"},
@@ -362,6 +363,7 @@ class StartCycle (QState):
             "DISABLE_MFB-E":False,
             "DISABLE_BATTERY":False,
             "DISABLE_BATTERY-2":False,
+            "DISABLE_BATTERY-3":False,
             "tool1_desbloqueada":False, #Varibles para desbloquear las herramientas que den un ciclo de error
             "tool2_desbloqueada":False,
             "tool3_desbloqueada":False
@@ -1588,6 +1590,9 @@ class CheckQr (QState):
                                                     print("\t\t\t\t\t--" + str(evento) + " encontrado dentro de actual dbEvent: " + str(self.model.dbEvent))
                                                     print("\t\t\t\t\t-- CAMBIANDO QR DE MFB-P1 al de QR_VALOR: ",self.model.parametros["QR_VALOR"])
                                                     QR_BOXES["MFB-P1"][0] = self.model.parametros["QR_VALOR"]
+
+                                                    print("\t\t\t\t\t--  self.model.battery_3 = True")
+                                                    self.model.battery_3 = True
                                                     break
 
             ##cambiar directamente el nombre de QR que se necesita para habilitar la caja MFB-P1
@@ -1688,6 +1693,14 @@ class CheckQr (QState):
             ########################################################### FIN DE MODIFICACIONES EN QRS ######################################
             ###############################################################################################################################
             ############################################################# PUBLISH DE CAJAS EN LABELS ######################################
+            
+            ########################### BATTERY-3 REEPLACE ########################
+            if self.model.battery_3 == True:
+                print("Reemplazando Battery2 por Battery3...")
+                if "BATTERY-2" in self.model.input_data["database"]["modularity"]:
+                    self.model.input_data["database"]["modularity"]["BATTERY-3"] = self.model.input_data["database"]["modularity"].pop("BATTERY-2")  # Renombrar clave sin perder contenido
+                    print(self.model.input_data["database"]["modularity"])
+            #######################################################################
 
             print("\ncajas de modularity: ")
             print(self.model.input_data["database"]["modularity"].keys())
@@ -1728,7 +1741,8 @@ class CheckQr (QState):
                 pub_i = caja
 
                 #cajas que no requieren escanearse (se inician en blue)
-                if caja == "BATTERY" or caja == "BATTERY-2":
+                #if caja == "BATTERY" or caja == "BATTERY-2":
+                if caja == "BATTERY" or caja == "BATTERY-2" or caja == "BATTERY-3":
                     command = {f"lbl_box{lbl_current_boxx}" : {"text": f"{pub_i}", "color": "blue"}}
 
                 #cajas que requieren escanearse (se inician en purple) #ESTO ES PARA SABER QUE LA LLEVA EL ARNÉS, PERO AÚN NO ESTÁN HABILITADAS POR EL PLC (por eso se requieren estos publish a los gui)
@@ -2032,7 +2046,8 @@ class Finish (QState):
             "DISABLE_PDC-D":False,
             "DISABLE_MFB-E":False,
             "DISABLE_BATTERY":False,
-            "DISABLE_BATTERY-2":False
+            "DISABLE_BATTERY-2":False,
+            "DISABLE_BATTERY-3":False
             }
         publish.single(self.model.pub_topics["plc"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         # Fragmento de código para guardar solamente los RE-intentos
@@ -2051,8 +2066,9 @@ class Finish (QState):
         #para funcionamiento normal de llave
         self.model.reintento_torque = False
 
-        self.model.cajas_habilitadas = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
-        self.model.raffi = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
+        self.model.cajas_habilitadas = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0, "BATTERY-3": 0, "MFB-S": 0,"MFB-E": 0}
+        self.model.raffi = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0, "BATTERY-3": 0, "MFB-S": 0,"MFB-E": 0}
+        
         for i in self.model.raffi:
             raffi_clear = {f"raffi_{i}":False}
             publish.single(self.model.pub_topics["plc"],json.dumps(raffi_clear),hostname='127.0.0.1', qos = 2)
@@ -2074,6 +2090,7 @@ class Finish (QState):
             "lbl_boxMFBS" : {"text": "", "color": "black"},
             "lbl_boxBATTERY" : {"text": "", "color": "black"},
             "lbl_boxBATTERY2" : {"text": "", "color": "black"},
+            "lbl_boxBATTERY3" : {"text": "", "color": "black"},
             "lbl_boxNEW" : {"text": "", "color": "black"},
             }
         publish.single(self.model.pub_topics["gui"],json.dumps(lblbox_clean),hostname='127.0.0.1', qos = 2)
@@ -2327,8 +2344,9 @@ class Reset (QState):
         #para funcionamiento normal de llave
         self.model.reintento_torque = False
 
-        self.model.cajas_habilitadas = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
-        self.model.raffi = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
+        self.model.cajas_habilitadas = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0, "BATTERY-3": 0, "MFB-S": 0,"MFB-E": 0}
+        self.model.raffi = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0, "BATTERY-3": 0, "MFB-S": 0,"MFB-E": 0}
+        
         for i in self.model.raffi:
             raffi_clear = {f"raffi_{i}":False, f"DISABLE_{i}":False, i:False}
             publish.single(self.model.pub_topics["plc"],json.dumps(raffi_clear),hostname='127.0.0.1', qos = 2)
@@ -2351,6 +2369,7 @@ class Reset (QState):
             "lbl_boxMFBS" : {"text": "", "color": "black"},
             "lbl_boxBATTERY" : {"text": "", "color": "black"},
             "lbl_boxBATTERY2" : {"text": "", "color": "black"},
+            "lbl_boxBATTERY3" : {"text": "", "color": "black"},
             "lbl_boxNEW" : {"text": "", "color": "black"},
             }
         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)

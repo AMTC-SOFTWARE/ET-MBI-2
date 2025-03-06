@@ -56,7 +56,7 @@ class MqttClient (QObject):
     keyboard_value = False
     mostrar_gdi = True
     
-    nido = ["PDC-P","PDC-D","MFB-P1","MFB-P2","PDC-R","PDC-RMID","BATTERY","BATTERY-2","MFB-S","MFB-E"]
+    nido = ["PDC-P","PDC-D","MFB-P1","MFB-P2","PDC-R","PDC-RMID","BATTERY","BATTERY-2","BATTERY-3","MFB-S","MFB-E"]
     nido_pub = ""
     color_nido = "blue"
 
@@ -439,6 +439,7 @@ class MqttClient (QObject):
                     #    self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                     #    print("AQUI HAY REMOVER EL MENSAJE PARA EVITAR QUE ESTE TODO EL TIEMPO")
                         
+                self.raffi_check("BATTERY-3", "keyboard_F10")
                 self.raffi_check("PDC-R", "keyboard_F9")
                 self.raffi_check("PDC-RMID", "keyboard_F9")
                 self.raffi_check("MFB-P2", "keyboard_F8")
@@ -646,7 +647,7 @@ class MqttClient (QObject):
                         print("caja: ",caja)
                         print("tuerca: ",tuerca)
 
-                        if caja == "BATTERY" or caja == "BATTERY-2":
+                        if caja == "BATTERY" or caja == "BATTERY-2" or caja == "BATTERY-3":
                             pass
                         else:
                             if payload["TOOL2_ALTURA"] == True:

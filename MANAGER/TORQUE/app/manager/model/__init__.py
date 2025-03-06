@@ -163,8 +163,8 @@ class Model (object):
         self.llave = False
         ###############################
         #3: cajas terminadas en ciclo, 2:cajas que requieren QR, 1:cajas que no requieren QR, 0:cajas que no solicita el ciclo
-        self.cajas_habilitadas = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
-        self.raffi = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
+        self.cajas_habilitadas = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"BATTERY-3": 0,"MFB-S": 0,"MFB-E": 0}
+        self.raffi = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"BATTERY-3": 0,"MFB-S": 0,"MFB-E": 0}
         self.reintento_torque = False
         self.largeflag = False
         self.mediumflag = False
@@ -172,7 +172,8 @@ class Model (object):
         self.pdcr_serie = ""
         self.mfbp2_serie = ""
         self.mfbp1_serie = ""
-        self.boxPos1 = ["PDC-R","PDC-RMID","PDC-RS","MFB-P1","MFB-S","MFB-E","BATTERY","BATTERY-2"]
+        #self.boxPos1 = ["PDC-R","PDC-RMID","PDC-RS","MFB-P1","MFB-S","MFB-E","BATTERY","BATTERY-2"]
+        self.boxPos1 = ["PDC-R","PDC-RMID","PDC-RS","MFB-P1","MFB-S","MFB-E","BATTERY","BATTERY-2","BATTERY-3"]
         self.boxPos2 = ["MFB-P2","PDC-D","PDC-P"]
         self.name_FET=""
         self.qr_FET=""
@@ -190,6 +191,8 @@ class Model (object):
         self.en_ciclo=False
 
         self.bypass_pdcr = ""
+        
+        self.battery_3 = False
 
         self.contador_focus=0
         self.qr_box_actual=""
@@ -318,7 +321,7 @@ class Model (object):
         self.keyboard_raffi_pressed = ""
 
         #Variable para bloquear la activación de los raffis según la caja
-        self.active_lock = {"PDC-P": False,"PDC-D": False,"MFB-P1": False,"MFB-P2": False,"PDC-R": False,"PDC-RMID": False,"BATTERY": False,"BATTERY-2": False,"MFB-S": False,"MFB-E": False}
+        self.active_lock = {"PDC-P": False,"PDC-D": False,"MFB-P1": False,"MFB-P2": False,"PDC-R": False,"PDC-RMID": False,"BATTERY": False,"BATTERY-2": False,"BATTERY-3": False,"MFB-S": False,"MFB-E": False}
         #variable para bloequear la activación de los raffi según la herramienta activa
         self.active_lock_tool = {"tool1": False,"tool2": False,"tool3": False}
         #variable para habilitar la llave normal o la del proceso
@@ -372,8 +375,8 @@ class Model (object):
             'PDC-R': {'E1': [(408, 330), (443, 358)],"s1":[(178, 415), (269, 377)],"s2":[(269, 377), (349, 413)],"s3":[(142, 322), (177, 413)],"s4":[(361, 411), (404, 324)],"s5":[(141, 238), (182, 322)],"s6":[(193, 274), (264, 318)],"s7":[(268, 275), (337, 318)],"s8":[(358, 324), (405, 233)],"s9":[(180, 221), (264, 264)],"s10":[(262, 222), (347, 263)]}, 
             'PDC-RMID': {'E1': [(408, 330), (443, 358)]}, 
             'PDC-RS': {'E1': [(408, 330), (443, 358)]}, 
-            'BATTERY': {'BT': [(85, 285), (155, 355)]}, 
-            'BATTERY-2': {'BT': [(335, 210), (420, 275)]}  
+            'BATTERY-2': {'BT': [(335, 210), (420, 275)]},  
+            'BATTERY-3': {'BT': [(85, 285), (155, 355)]} 
             }
         #with open("data/BB/BB", "rb") as f:
         #    self.BB= load(f)
@@ -385,7 +388,7 @@ class Model (object):
                 "E1": None},
             "BATTERY": {
                 "BT": None},
-            "BATTERY-2": {
+            "BATTERY-3": {
                 "BT": None},
             "MFB-P1": {
                 "A47": None,
@@ -433,7 +436,7 @@ class Model (object):
                 "E1": None},
             "BATTERY": {
                 "BT": None},
-            "BATTERY-2": {
+            "BATTERY-3": {
                 "BT": None},
             "MFB-P1": {
                 "A47": None,
@@ -483,6 +486,8 @@ class Model (object):
                 "BT": 0},
             "BATTERY-2": {
                 "BT": 0},
+            "BATTERY-3": {
+                "BT": None},
             "MFB-P1": {
                 "A47": 0,
                 "A46": 0,
@@ -554,6 +559,8 @@ class Model (object):
                 "BT": ["tool2",9,"Battery Nut"]},
             "BATTERY-2": {
                 "BT": ["tool2",10,"Battery Nut"]},
+            "BATTERY-3": {
+                "BT": ["tool2",9,"Battery Nut"]},    
             "MFB-P1": {
                 "A47": ["tool3",10,"8mm Nut"],
                 "A46": ["tool3",5,"8mm Nut"],
@@ -724,6 +731,9 @@ class Model (object):
             }
 
     def reset (self):
+        #se regresa a False variables
+        self.battery_3 = False
+
         self.current_task_candado = None 
         self.datetime = None
         for i in self.result:

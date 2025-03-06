@@ -800,6 +800,7 @@ class CheckZone (QState):
 
                         #if caja == "PDC-P" or caja == "PDC-D":
                         #if caja == "BATTERY" or caja == "BATTERY-2":
+                        #if caja == "BATTERY" or caja == "BATTERY-2" or caja == "BATTERY-3":
                         #if (self.model.altura_zone[self.tool] == False) and (self.tool == "tool3") and (current_trq[0] == "MFB-P2"):
                         #if (self.model.altura_zone[self.tool] == False) and (self.tool == "tool3"):
 
@@ -821,7 +822,7 @@ class CheckZone (QState):
 
                         if (self.tool == "tool1") and (self.model.altura_zone[self.tool] == False) and (current_trq[0] != "PDC-P") and (current_trq[0] != "PDC-D"):
                             condicion_tool1 = True
-                        if (self.tool == "tool2") and (self.model.altura_zone[self.tool] == False) and (current_trq[0] != "BATTERY") and (current_trq[0] != "BATTERY-2"):
+                        if (self.tool == "tool2") and (self.model.altura_zone[self.tool] == False) and (current_trq[0] != "BATTERY") and (current_trq[0] != "BATTERY-2") and (current_trq[0] != "BATTERY-3"):
                             condicion_tool2 = True
                         if (self.tool == "tool3") and (self.model.altura_zone[self.tool] == False) and (current_trq[0] != "PDC-R") and (current_trq[0] != "PDC-RMID") and (current_trq[0] != "PDC-RS"):
                             condicion_tool3 = True
@@ -1153,7 +1154,8 @@ class CheckResponse (QState):
                     tolerancia = 8
                     if self.tool == "tool3":
                         tolerancia = 16.0
-                    if box == "BATTERY" or box == "BATTERY-2":
+                    #if box == "BATTERY" or box == "BATTERY-2":
+                    if box == "BATTERY" or box == "BATTERY-2" or box == "BATTERY-3":
                         tolerancia = 6.5
                     tol_min = tolerancia - (10*tolerancia)/100
                     tol_max = tolerancia + (10*tolerancia)/100
@@ -1641,7 +1643,8 @@ class QualityIntervention (QState):
             "DISABLE_PDC-D":True,
             "DISABLE_MFB-E":True,
             "DISABLE_BATTERY":True,
-            "DISABLE_BATTERY-2":True
+            "DISABLE_BATTERY-2":True,
+            "DISABLE_BATTERY-3":True
             }
         for i in clamps:
             print("i",i)
@@ -1761,7 +1764,8 @@ class gafetQuality (QState):
             "DISABLE_PDC-D":False,
             "DISABLE_MFB-E":False,
             "DISABLE_BATTERY":False,
-            "DISABLE_BATTERY-2":False
+            "DISABLE_BATTERY-2":False,
+            "DISABLE_BATTERY-3":False,
             }
         print("Command Final: ",command)
         publish.single(self.model.pub_topics["plc"],json.dumps(command), qos = 2)
@@ -1926,6 +1930,7 @@ class ToolsManager (QState):
             "lbl_boxMFBS" : {"text": "", "color": "black"},
             "lbl_boxBATTERY" : {"text": "", "color": "black"},
             "lbl_boxBATTERY2" : {"text": "", "color": "black"},
+            "lbl_boxBATTERY3" : {"text": "", "color": "black"},
             "lbl_boxNEW" : {"text": "", "color": "black"},
             "lbl_result" : {"text": "Cajas Terminadas", "color": "green"},
             "lbl_steps" : {"text": "Esperando Posición 2", "color": "black"},
@@ -1953,6 +1958,7 @@ class ToolsManager (QState):
             "lbl_boxMFBS" : {"text": "", "color": "black"},
             "lbl_boxBATTERY" : {"text": "", "color": "black"},
             "lbl_boxBATTERY2" : {"text": "", "color": "black"},
+            "lbl_boxBATTERY3" : {"text": "", "color": "black"},
             "lbl_boxNEW" : {"text": "", "color": "black"},
             "lbl_result" : {"text": "Cajas Terminadas", "color": "green"},
             "lbl_steps" : {"text": "Esperando Posición 1", "color": "black"},

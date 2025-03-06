@@ -71,6 +71,8 @@ class MainWindow (QMainWindow):
         ######### Modificación para etiqueta MFB-E #########
         ######### Modificación para etiqueta BATTERY-2 #########
         self.ui.lbl_boxBATTERY2.setText("")
+        ######### Modificación para etiqueta BATTERY-3 #########
+        self.ui.lbl_boxBATTERY3.setText("")
         ######### Modificación para etiqueta BATTERY-2 #########
         ######### Modificación para etiqueta NEW #########
         self.ui.lbl_boxNEW.setText("")
@@ -92,7 +94,6 @@ class MainWindow (QMainWindow):
         self.ui.lineEditKey.setPlaceholderText("QR Key")
         self.ui.lineEditKey.setFocus(True)
         self.ui.lineEditKey.setVisible(False)
-
 
         self.ui.lbl_cant.setVisible(True)
         self.ui.lcdNumber.setVisible(True)
@@ -635,6 +636,19 @@ class MainWindow (QMainWindow):
                 self.ui.lbl_boxMFBS.setText(message["lbl_boxMFBS"]["text"])
                 if "color" in message["lbl_boxMFBS"]:
                     self.ui.lbl_boxMFBS.setStyleSheet("color: " + message["lbl_boxMFBS"]["color"])
+                    
+            ######### Modificación para etiqueta BATTERY-2 #########
+            if "lbl_boxBATTERY2" in message:
+                self.ui.lbl_boxBATTERY2.setText(message["lbl_boxBATTERY2"]["text"])
+                if "color" in message["lbl_boxBATTERY2"]:
+                    self.ui.lbl_boxBATTERY2.setStyleSheet("color: " + message["lbl_boxBATTERY2"]["color"])
+                    
+            ######### Modificación para etiqueta BATTERY-3 #########
+            if "lbl_boxBATTERY3" in message:
+                self.ui.lbl_boxBATTERY3.setText(message["lbl_boxBATTERY3"]["text"])
+                if "color" in message["lbl_boxBATTERY3"]:
+                    self.ui.lbl_boxBATTERY3.setStyleSheet("color: " + message["lbl_boxBATTERY3"]["color"])
+
             if "lbl_boxBATTERY" in message:
                 self.ui.lbl_boxBATTERY.setText(message["lbl_boxBATTERY"]["text"])
                 if "color" in message["lbl_boxBATTERY"]:
@@ -653,11 +667,6 @@ class MainWindow (QMainWindow):
                 if "color" in message["lbl_boxMFBE"]:
                     self.ui.lbl_boxMFBE.setStyleSheet("color: " + message["lbl_boxMFBE"]["color"])
             ######### Modificación para etiqueta MFB-E #########
-            ######### Modificación para etiqueta BATTERY-2 #########
-            if "lbl_boxBATTERY2" in message:
-                self.ui.lbl_boxBATTERY2.setText(message["lbl_boxBATTERY2"]["text"])
-                if "color" in message["lbl_boxBATTERY2"]:
-                    self.ui.lbl_boxBATTERY2.setStyleSheet("color: " + message["lbl_boxBATTERY2"]["color"])
              ######### Modificación para etiqueta BOX-NEW #########
             if "lbl_boxNEW" in message:
                 self.ui.lbl_boxNEW.setText(message["lbl_boxNEW"]["text"])
