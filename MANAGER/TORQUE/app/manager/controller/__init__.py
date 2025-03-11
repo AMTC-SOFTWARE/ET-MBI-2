@@ -107,7 +107,7 @@ class Controller (QObject):
                 return
             #Busca entre las cajas "P" D O R y te DEJA ESCANEAR, si no es alguna de estas verifica si esta en modo candado si esta en modo candado no te deja escanear ...
             permite_escanear=False
-            master_qr_boxes = self.model.input_data["database"]["pedido"]["QR_BOXES"]
+            master_qr_boxes = json.loads(self.model.input_data["database"]["pedido"]["QR_BOXES"])
             for box in master_qr_boxes:
             #    #si se trata de la caja MFB-P2, inicia esta bandera en False, solo se activa si es una caja nueva de derecha
             #    bandera_mfbp2_derecha_nueva = False
@@ -125,7 +125,7 @@ class Controller (QObject):
             #                print("qrbox2",qr_box)
                             
                 # i para buscar en todas las cajas master_qr_boxes[i][0](seriales maestros),  si ahí existe algo similar a lo que escaneaste "qr_box"(serial) y aparte este es "true" entonces...
-                if master_qr_boxes[box] in qr_box and master_qr_boxes[box][1]:
+                if master_qr_boxes[box][0] in qr_box and master_qr_boxes[box][1]:
                     # si la caja i (PDCR por ejemplo) NO está en plc clamps y existe en el contenido de database modularity (si ya se torqueó ya no estará aquí)
                     if not(box in self.model.input_data["plc"]["clamps"]) and box in self.model.input_data["database"]["modularity"]:
                         if box =="PDC-D" or box=="PDC-P":
@@ -151,7 +151,7 @@ class Controller (QObject):
             #si hay tareas en el pedido y no está en el estado de candados...
             if len(self.model.input_data["database"]["pedido"]) and permite_escanear==True:
 
-                master_qr_boxes = self.model.input_data["database"]["pedido"]["QR_BOXES"]
+                master_qr_boxes = json.loads(self.model.input_data["database"]["pedido"]["QR_BOXES"])
                 rework_qr_boxes = self.model.input_data["database"]["qr_retrabajo"]
                 ok = False
                 ok_rework = False
@@ -218,7 +218,7 @@ class Controller (QObject):
                             #        qr_box = qr_box.replace("12975407830","12975407216")
 
                         # i para buscar en todas las cajas master_qr_boxes[i][0],  si ahí existe lo que escaneaste "qr_box" y aparte este es "true" entonces...
-                        if master_qr_boxes[i] in qr_box and master_qr_boxes[i]:
+                        if master_qr_boxes[i][0] in qr_box and master_qr_boxes[i][1]:
                             # si la caja i (PDCR por ejemplo) está en plc clamps y en database modularity
                             if not(i in self.model.input_data["plc"]["clamps"]) and i in self.model.input_data["database"]["modularity"]:
                                 ok = True
