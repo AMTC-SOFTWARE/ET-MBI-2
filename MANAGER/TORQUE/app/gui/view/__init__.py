@@ -1635,7 +1635,7 @@ class Mantenimiento_ui (QMainWindow):
             
     @pyqtSlot(dict)
     def input(self, message):
-        print(message)
+        #print(message)
         if "login_mtto" in message:
             self.qw_login_mtto.setVisible(message["login_mtto"])
                 
