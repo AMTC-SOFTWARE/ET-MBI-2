@@ -1595,6 +1595,33 @@ class CheckQr (QState):
                                                     self.model.battery_3 = True
                                                     break
 
+            if "MFB-P2" in QR_BOXES:
+                print("\t\t\t\t--arnés contiene caja MFB-P2")
+                if "MFB_P2_ENABLE" in self.model.parametros:
+                    print("\t\t\t\t--MFB_P2_ENABLE existe dentro de self.model.parametros")
+                    if "TRUE" in self.model.parametros["MFB_P2_ENABLE"].upper():
+                        print("\t\t\t\t--MFB_P2_ENABLE = TRUE")
+                        if "QR_VALOR_2" in self.model.parametros:
+                            print("\t\t\t\t--QR_VALOR_2 existe dentro de self.model.parametros")
+                            if self.model.parametros["QR_VALOR_2"] != "":
+                                print("\t\t\t\t--QR_VALOR2 es diferente de string vacío")
+                                if "eventos" in self.model.parametros:
+                                    print("\t\t\t\t--eventos existe dentro de self.model.parametros")
+                                    if self.model.parametros["eventos"] != "":
+                                        print("\t\t\t\t--eventos es diferente de string vacío")
+                                        lista_eventos = self.model.parametros["eventos"].split(",")
+                                        for evento in lista_eventos:
+                                            print("\t\t\t\t\t--evento: ",evento)
+                                            if evento != "":
+                                                if evento in self.model.dbEvent:
+                                                    print("\t\t\t\t\t--" + str(evento) + " encontrado dentro de actual dbEvent: " + str(self.model.dbEvent))
+                                                    print("\t\t\t\t\t-- CAMBIANDO QR DE MFB-P2 al de QR_VALOR_2: ",self.model.parametros["QR_VALOR_2"])
+                                                    QR_BOXES["MFB-P2"][0] = self.model.parametros["QR_VALOR_2"]
+
+                                                    # print("\t\t\t\t\t--  self.model.battery_3 = True")
+                                                    # self.model.battery_3 = True
+                                                    break
+
             ##cambiar directamente el nombre de QR que se necesita para habilitar la caja MFB-P1
             ##QR_BOXES["MFB-P1"][0] = "12315443252345"
 

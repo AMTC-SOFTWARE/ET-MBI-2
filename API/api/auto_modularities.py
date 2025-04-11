@@ -41,6 +41,12 @@ fuses_color = {
     "60":   "azul"
     }
 
+torques_value = {
+  "BATTERY-2": {"BT": ""},
+  "BATTERY-3": {"BT": ""}
+}
+
+
 ##################################### Modules management #################################
 def makeModules(data):
     global modules, modules_t
@@ -64,7 +70,7 @@ def makeModules(data):
                 for sheet in sheets:
                     if "Acomodos Modularidades" in sheet or "X294 Izquierda F96" in sheet:
                         continue
-                    if "MFB" in sheet:
+                    if "MFB" in sheet or "BATTERY" in sheet:
                         currentSheet = file[sheet]
                         for column in range(11, currentSheet.max_column + 1):
                             module = currentSheet.cell(row = 3, column = column).value
@@ -101,13 +107,13 @@ def makeModules(data):
                                     fuse = currentSheet.cell(row = row, column = 2).value
                                     if box == "TBLU":
                                         fuse = fuse.replace("A", "")
-                                    if box == "PDC-S":
+                                    if "PDC-S" in box:
                                         fuse = str(fuse)
                                         #print("Tipo del Fuse Ya convertido: ",type(fuse))
-                                    if box == "F96":
+                                    if "F96" in box:
                                         print("Caja F96 AQUI",module)
-                                        box = "PDC-RMID"
-                                        print("CAJA F96 TRANSFORMADA A PDC-RMID")
+                                        # box = "PDC-RMID"
+                                        # print("CAJA F96 TRANSFORMADA A PDC-RMID")
                                     if box == "PDC-R":
                                         if module in pdcrVariantes["large"]:
                                             box = "PDC-R"
@@ -138,7 +144,15 @@ def makeModules(data):
             "CAJA_5": {},
             "CAJA_6": {},
             "CAJA_7": {},
-            "CAJA_8": {}
+            "CAJA_8": {},
+            "CAJA_9": {},
+            "CAJA_10": {},
+            "CAJA_11": {},
+            "CAJA_12": {},
+            "CAJA_13": {},
+            "CAJA_14": {},
+            "CAJA_15": {},
+            "CAJA_16": {}
             }
 
         temp["MODULO"] = module
@@ -199,7 +213,14 @@ def makeModules(data):
             "CAJA_6": {},
             "CAJA_7": {},
             "CAJA_8": {},
-            "CAJA_9": {}
+            "CAJA_9": {},
+            "CAJA_10": {},
+            "CAJA_11": {},
+            "CAJA_12": {},
+            "CAJA_13": {},
+            "CAJA_14": {},
+            "CAJA_15": {},
+            "CAJA_16": {}
             }
 
         temp["MODULO"] = module
