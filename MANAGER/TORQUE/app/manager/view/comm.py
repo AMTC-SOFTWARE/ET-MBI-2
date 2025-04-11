@@ -4,6 +4,7 @@ from paho.mqtt.client import Client
 from threading import Timer
 from time import sleep              # Para usar la función sleep(segundos)
 from copy import copy
+import time
 import json
 from datetime import datetime
 import requests
@@ -66,6 +67,8 @@ class MqttClient (QObject):
         self.model = model
         self.client = Client()
         QTimer.singleShot(5000, self.setup)
+        self.Battery3clamp = False #Variable para enviar True o False a BATT3 en la GDI con F12
+        self.last_f12_time = 0  # Variable para registrar el último tiempo de presionado de F12
 
     def setup(self):
         try:
@@ -420,6 +423,43 @@ class MqttClient (QObject):
                     command = {"popOut":"close"}
                     self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                     print("key no emit")
+
+                if self.keyboard_key == "keyboard_F12":
+                    current_time = time.time()
+
+                    # Si han pasado menos de 2 segundos desde la última vez que se presionó, se ignora
+                    if current_time - self.last_f12_time < 2:
+                        print("Esperando antes de volver a permitir F12...")
+                    else:
+                        self.last_f12_time = current_time  # Actualiza el tiempo de la última pulsación
+
+                        if "BATTERY" in self.model.input_data["database"]["modularity"]:
+                            print("BATTERY aún está en modularity, no se puede activar BATTERY-3")
+
+                        else:
+                            print("Tecla F12 presionada, enviando señal de clamp de BATTERY-3")
+                            if "BATTERY-3" in self.model.input_data["database"]["modularity"]:
+                                # Alternar el estado
+                                self.Battery3clamp = not self.Battery3clamp
+
+                                if self.Battery3clamp:
+                                    print("enviando BATT3 = True a GDI, también se requiere BATTERY-3=True y BATTERY=False")
+                                    self.client.publish(self.model.pub_topics["plc"], json.dumps({"BATT3": True}), qos=2)
+                                    command = {
+                                        "lbl_result" : {"text": "BATTERY3 Habilitada", "color": "green"},
+                                        "lbl_steps" : {"text": "Mover Herramienta para Continuar", "color": "black"},
+                                        }
+                                    self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                else:
+                                    print("enviando BATT3 = False a GDI")
+                                    self.client.publish(self.model.pub_topics["plc"], json.dumps({"BATT3": False}), qos=2)
+                                    command = {
+                                        "lbl_result" : {"text": "BATTERY3 Deshabilitada", "color": "red"},
+                                        "lbl_steps" : {"text": "Mover Herramienta para continuar", "color": "black"},
+                                        }
+                                    self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                            else:
+                                print("BATTERY-3 no encontrada en modularity")
 
                 if self.model.llave == True:
 

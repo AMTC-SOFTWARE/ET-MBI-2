@@ -364,6 +364,7 @@ class StartCycle (QState):
             "DISABLE_BATTERY":False,
             "DISABLE_BATTERY-2":False,
             "DISABLE_BATTERY-3":False,
+            "BATT3":False,
             "tool1_desbloqueada":False, #Varibles para desbloquear las herramientas que den un ciclo de error
             "tool2_desbloqueada":False,
             "tool3_desbloqueada":False

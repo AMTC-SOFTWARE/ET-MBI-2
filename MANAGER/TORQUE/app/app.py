@@ -23,6 +23,8 @@ if __name__ == "__main__":
     from time import sleep
     import sys
 
+    #Este ajuste de sys.stdout asegura que los print() se vuelquen inmediatamente al archivo de salida, resolviendo el problema del búfer al correr la aplicación con un BAT para poder acceder a la información de los print() y poder guardar la información de consola.
+    sys.stdout.reconfigure(line_buffering=True)
 
     #os.startfile('C:\\WINDOWS\\system32\\cmd.exe')
 
