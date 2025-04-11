@@ -1897,6 +1897,30 @@ class ToolsManager (QState):
         Pos2Finished = False
         #es la colección de todo el arnés
         modularity = self.model.input_data["database"]["modularity"]
+
+        agregarbatt3 = False
+        agregarbatt2 = False
+
+        for cajas in modularity:
+            if "MFB-P1" in cajas:
+                if "G1/21" in modularity["MFB-P1"]:  # Verifica si el valor está en la lista
+                    print("G1/21 en MFB-P1 quitando de la lista y agregando BATTERY")
+                    modularity["MFB-P1"].remove("G1/21")  # Elimina el valor de la lista
+                    
+                    if self.model.battery_3 == True:
+                        print("Battery3...")
+                        agregarbatt3 = True
+                    else:
+                        agregarbatt2 = True
+                        print("Battery2...")
+
+        if agregarbatt3 == True:
+            modularity["BATTERY-3"] = []
+            modularity["BATTERY-3"].append("BT")
+        if agregarbatt2 == True:
+            modularity["BATTERY-2"] = []
+            modularity["BATTERY-2"].append("BT")
+
         #Al clampear una caja esta se agrega a la variable self.model.input_data["plc"]["clamps"], después se manda la señal que te lleva a este estado ToolsManager
         #la variable contiene todas las cajas que se han clampeado hasta ese momento
         clamps = self.model.input_data["plc"]["clamps"]
