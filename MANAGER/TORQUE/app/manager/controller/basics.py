@@ -125,7 +125,7 @@ class Startup(QState):
             print("Error en el conteo ", ex)
 
         QTimer.singleShot(10, self.stopTorque)
-        #QTimer.singleShot(15, self.kioskMode)
+        QTimer.singleShot(15, self.kioskMode)
         self.ok.emit()
 
     def stopTorque (self):
@@ -891,8 +891,7 @@ class CheckQr (QState):
                 print("++++++++++++++Evento Actual++++++++++++++++:\n ",key)
                 print("Valor Activo del Evento actual: ",eventos["eventos"][key][1])
                 
-                self.model.conduccion = key.split("_")[-1]
-
+                
                 if eventos["eventos"][key][1] == 1:
                     endpoint = "http://{}/api/get/{}/pedidos/PEDIDO/=/{}/ACTIVE/=/1".format(self.model.server, key, self.model.qr_codes["REF"])
                     response = requests.get(endpoint).json()
@@ -901,6 +900,7 @@ class CheckQr (QState):
                         self.model.dbEvent = key
                         coincidencias += 1
                         print("EN ESTE EVENTO SE ENCUENTRA LA MODULADIDAD-PEDIDO-REFERNCIA-DAT-ARNES \n")
+                        self.model.conduccion = key.split("_")[-1]
                         self.model.pedido = response
             
             #se muentran los resultados
@@ -1553,16 +1553,16 @@ class CheckQr (QState):
             opciones = list(qrBox.keys())
             #opciones.remove("regular")         
             for opcion in opciones:
+                minuscula = opcion.lower()
                 #Si la opcion, ej.mopf coincide con el nombre del evento y ademas la conduccion (izq o derecha) esta en la lista"
-                if opcion in self.model.dbEvent and self.model.conduccion in QR_BOXES[opcion]:
+                if minuscula in self.model.dbEvent and self.model.conduccion in QR_BOXES[opcion]:
                     print("Se requiere cambio de QR's... \n")
                        
                     qr_update = QR_BOXES[opcion][self.model.conduccion]            
                     QR_BOXES['regular'][self.model.conduccion] = qr_update
                         
             self.model.pedido['QR_BOXES'] = QR_BOXES['regular'][self.model.conduccion]
-            
-            # print("self.model.pedido[QR_BOXES]",self.model.pedido["QR_BOXES"])
+            print("self.model.pedido[QR_BOXES]",self.model.pedido["QR_BOXES"])
             # if self.model.parametros["CAJA_VIEJA_SIEMPRE"]=="False":
             #     for modulo in modules:
             #         #para caja MFBP2 izquierda
@@ -1602,7 +1602,7 @@ class CheckQr (QState):
             pprint.pprint(QR_BOXES)
 
 
-            print(self.model.pedido['QR_BOXES'])
+            print("\nPEDIDOOOOOOOOOO:",self.model.pedido['QR_BOXES'])
 
             #FORMATO DE DONDE SE OBTIENE QR DE CAJA
             #pedidos["QR_BOXES"] = {
@@ -1619,15 +1619,11 @@ class CheckQr (QState):
             self.conduccion = self.model.conduccion
             
             #VARIABLES PARA MOSTRAR QR's ESPERADOS A ESCANEAR
-        
-            if self.model.varianteDominante == "PDC-R":
-                self.model.pdcr_serie = QR_BOXES['regular'][self.conduccion]["PDC-R"]
-                self.model.pdcr_serie = QR_BOXES["PDC-R"]
-            if self.model.varianteDominante == "PDC-RMID":
-                self.model.pdcr_serie = QR_BOXES['regular'][self.conduccion]["PDC-RMID"]
-            if self.model.varianteDominante == "PDC-RS":
-                self.model.pdcr_serie = QR_BOXES['regular'][self.conduccion]["PDC-RS"]
-                self.model.pdcr_serie = QR_BOXES["PDC-RS"]
+            print(QR_BOXES)
+
+            #Condicion para visualizar que caja es la que se requiere en el proceso de produccion
+            if 'PDC-R' in self.model.varianteDominante and 'PDC-R' in QR_BOXES['regular'][self.conduccion]:
+                self.model.pdcr_serie = QR_BOXES['regular'][self.conduccion][self.model.varianteDominante]
 
             # if flag_mfbp2_der == True and flag_mfbp2_izq == False:
             self.model.mfbp2_serie = QR_BOXES['regular'][self.conduccion]["MFB-P2"]    
