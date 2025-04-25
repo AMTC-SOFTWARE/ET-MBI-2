@@ -3,7 +3,7 @@
 ###############################################################################
 command to exe generation_
         pyinstaller --noconsole --icon=icon.ico --add-data data;data api.py
-        pyinstaller --icon=icon.ico --add-data data;data api.py
+        pyinstaller --onedir --icon=icon.ico --contents-directory "." --add-data 'data;data' api.py
 ###############################################################################
 
  TEST:

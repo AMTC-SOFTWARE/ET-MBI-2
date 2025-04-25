@@ -86,6 +86,7 @@ class Startup(QState):
             "lbl_boxMFBS" : {"text": "", "color": "black"},
             "lbl_boxBATTERY" : {"text": "", "color": "black"},
             "lbl_boxBATTERY2" : {"text": "", "color": "black"},
+            "lbl_boxBATTERY3" : {"text": "", "color": "black"},
             "lbl_boxNEW" : {"text": "", "color": "black"},
             "lbl_result" : {"text": "Se requiere un login para continuar", "color": "green"},
             "lbl_steps" : {"text": "Ingresa tu código de acceso", "color": "black"},
@@ -125,7 +126,7 @@ class Startup(QState):
             print("Error en el conteo ", ex)
 
         QTimer.singleShot(10, self.stopTorque)
-        QTimer.singleShot(15, self.kioskMode)
+        #QTimer.singleShot(15, self.kioskMode)
         self.ok.emit()
 
     def stopTorque (self):
@@ -362,6 +363,8 @@ class StartCycle (QState):
             "DISABLE_MFB-E":False,
             "DISABLE_BATTERY":False,
             "DISABLE_BATTERY-2":False,
+            "DISABLE_BATTERY-3":False,
+            "BATT3":False,
             "tool1_desbloqueada":False, #Varibles para desbloquear las herramientas que den un ciclo de error
             "tool2_desbloqueada":False,
             "tool3_desbloqueada":False
@@ -1515,9 +1518,6 @@ class CheckQr (QState):
  
             flag_mfbp2_der = False
             flag_mfbp2_izq = False
-            mfbp2_serie = ""
-            mfbeBox = ""
-            battery2Box = ""
             flag_294 = False
             flag_296 = False
 
@@ -1634,6 +1634,23 @@ class CheckQr (QState):
             #     self.model.mfbp2_serie = "Sin especificar"
 
             ############################################################# PUBLISH DE CAJAS EN LABELS ##################################### 
+            print("\nQRS DE CAJAS: ")
+            pprint.pprint(QR_BOXES)
+
+            #Después de modificar el diccionario, se vuelve a convertir a json y se guarda en la variable original
+            self.model.pedido["QR_BOXES"] = json.dumps(QR_BOXES)
+            
+            ########################################################### FIN DE MODIFICACIONES EN QRS ######################################
+            ###############################################################################################################################
+            ############################################################# PUBLISH DE CAJAS EN LABELS ######################################
+            
+            ########################### BATTERY-3 REEPLACE ########################
+            if self.model.battery_3 == True:
+                print("Reemplazando Battery2 por Battery3...")
+                if "BATTERY-2" in self.model.input_data["database"]["modularity"]:
+                    self.model.input_data["database"]["modularity"]["BATTERY-3"] = self.model.input_data["database"]["modularity"].pop("BATTERY-2")  # Renombrar clave sin perder contenido
+                    print(self.model.input_data["database"]["modularity"])
+            #######################################################################
 
             print("\ncajas de modularity: ")
             print(self.model.input_data["database"]["modularity"].keys())
@@ -1654,19 +1671,29 @@ class CheckQr (QState):
                     self.model.cajas_habilitadas[caja] = 2
 
                 serie = ""
-                # if caja == "MFB-P2":
-                #     serie = self.model.mfbp2_serie
-                # if "PDC-R" in caja:
-                #     serie = self.model.pdcr_serie
-
-                if  caja in self.model.pedido['QR_BOXES']:
+                if caja == "MFB-P2":
+                    serie = self.model.mfbp2_serie
+                if caja == "MFB-P1":
+                    serie = self.model.mfbp1_serie
+                if "PDC-R" in caja:
+                    serie = self.model.pdcr_serie
+                
+                """
+                if caja == "MFB-P2":
+                     serie = self.model.mfbp2_serie
+                if "PDC-R" in caja:
+                     serie = self.model.pdcr_serie
+                """
+                     
+                if caja in self.model.pedido['QR_BOXES']:
                     serie = self.model.pedido['QR_BOXES'][caja]
 
                 #copia de la caja actual, para utilizar en publish
                 pub_i = caja
 
                 #cajas que no requieren escanearse (se inician en blue)
-                if caja == "BATTERY" or caja == "BATTERY-2":
+                #if caja == "BATTERY" or caja == "BATTERY-2":
+                if caja == "BATTERY" or caja == "BATTERY-2" or caja == "BATTERY-3":
                     command = {f"lbl_box{lbl_current_boxx}" : {"text": f"{pub_i}", "color": "blue"}}
 
                 #cajas que requieren escanearse (se inician en purple) #ESTO ES PARA SABER QUE LA LLEVA EL ARNÉS, PERO AÚN NO ESTÁN HABILITADAS POR EL PLC (por eso se requieren estos publish a los gui)
@@ -1769,12 +1796,15 @@ class CheckQr (QState):
 
 
     def leer_configuracion(self):
+        print("self.leer_configuracion()")
+        
         """
-        lee un txt en C:BIN/ llamado configuracion, cada renglon debe tener la forma: 
-        condicion:True
-        almacena todos los parametros en el diccionario parametros en el modelo
+            lee un txt en C:BIN/ llamado configuracion.txt, cada renglón debe tener la forma: 
+            condición:True
+            almacena todos los parametros en el diccionario parametros en el modelo (como strings),
+            se usa # para ignorar las líneas (para agregar comentarios en el txt)
+        """
 
-        """
         ruta_configuracion=join(self.model.ruta_principal, "configuracion.txt")
         if exists(ruta_configuracion):
             with open(ruta_configuracion) as configuracion:
@@ -1789,7 +1819,8 @@ class CheckQr (QState):
                             json_data += linea
                             if linea.endswith("}"):
                                 break
-
+                        if ":" in linea:
+                            comando_configuracion=linea.split(":")
                         else:
                             comando_configuracion=linea.split(":")
 
@@ -1968,7 +1999,8 @@ class Finish (QState):
             "DISABLE_PDC-D":False,
             "DISABLE_MFB-E":False,
             "DISABLE_BATTERY":False,
-            "DISABLE_BATTERY-2":False
+            "DISABLE_BATTERY-2":False,
+            "DISABLE_BATTERY-3":False
             }
         publish.single(self.model.pub_topics["plc"],json.dumps(command),hostname='127.0.0.1', qos = 2)
         # Fragmento de código para guardar solamente los RE-intentos
@@ -1987,8 +2019,9 @@ class Finish (QState):
         #para funcionamiento normal de llave
         self.model.reintento_torque = False
 
-        self.model.cajas_habilitadas = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
-        self.model.raffi = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
+        self.model.cajas_habilitadas = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0, "BATTERY-3": 0, "MFB-S": 0,"MFB-E": 0}
+        self.model.raffi = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0, "BATTERY-3": 0, "MFB-S": 0,"MFB-E": 0}
+        
         for i in self.model.raffi:
             raffi_clear = {f"raffi_{i}":False}
             publish.single(self.model.pub_topics["plc"],json.dumps(raffi_clear),hostname='127.0.0.1', qos = 2)
@@ -1997,6 +2030,7 @@ class Finish (QState):
         self.model.smallflag = False
         self.model.pdcr_serie = ""
         self.model.mfbp2_serie = ""
+        self.model.mfbp1_serie = ""
 
         lblbox_clean = {
             "lbl_boxTITLE" : {"text": f"último ciclo: \n{int(minutos)} min {int(segundos)} segundos" , "color": color},
@@ -2009,6 +2043,7 @@ class Finish (QState):
             "lbl_boxMFBS" : {"text": "", "color": "black"},
             "lbl_boxBATTERY" : {"text": "", "color": "black"},
             "lbl_boxBATTERY2" : {"text": "", "color": "black"},
+            "lbl_boxBATTERY3" : {"text": "", "color": "black"},
             "lbl_boxNEW" : {"text": "", "color": "black"},
             }
         publish.single(self.model.pub_topics["gui"],json.dumps(lblbox_clean),hostname='127.0.0.1', qos = 2)
@@ -2262,8 +2297,9 @@ class Reset (QState):
         #para funcionamiento normal de llave
         self.model.reintento_torque = False
 
-        self.model.cajas_habilitadas = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
-        self.model.raffi = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
+        self.model.cajas_habilitadas = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0, "BATTERY-3": 0, "MFB-S": 0,"MFB-E": 0}
+        self.model.raffi = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0, "BATTERY-3": 0, "MFB-S": 0,"MFB-E": 0}
+        
         for i in self.model.raffi:
             raffi_clear = {f"raffi_{i}":False, f"DISABLE_{i}":False, i:False}
             publish.single(self.model.pub_topics["plc"],json.dumps(raffi_clear),hostname='127.0.0.1', qos = 2)
@@ -2272,6 +2308,7 @@ class Reset (QState):
         self.model.smallflag = False
         self.model.pdcr_serie = ""
         self.model.mfbp2_serie = ""
+        self.model.mfbp1_serie = ""
 
         command = {
             "lbl_result" : {"text": "Se giró la llave de reset", "color": "green"},
@@ -2285,6 +2322,7 @@ class Reset (QState):
             "lbl_boxMFBS" : {"text": "", "color": "black"},
             "lbl_boxBATTERY" : {"text": "", "color": "black"},
             "lbl_boxBATTERY2" : {"text": "", "color": "black"},
+            "lbl_boxBATTERY3" : {"text": "", "color": "black"},
             "lbl_boxNEW" : {"text": "", "color": "black"},
             }
         publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
