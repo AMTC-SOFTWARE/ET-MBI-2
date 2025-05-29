@@ -20,6 +20,7 @@ import requests
 import openpyxl
 import json
 import os
+import gc
 
 datos_conexion=model()
 host,user,password,database,serverp2,dbp2,userp2,passwordp2=datos_conexion.datos_acceso()
@@ -130,6 +131,8 @@ def makeModules(data):
                                     if not(box in modules[module]):
                                         modules[module][box] = {}
                                     modules[module][box][fuse] = amp[:-1]
+                del file
+                gc.collect()
                 os.remove(root+'\\'+ file_name)
 
     structured_data = []
@@ -560,6 +563,8 @@ def makeDeterminantes(data,usuario):
                                     determinantes[variante].append(module)
                                     #print("Modulo: ", module)
                 print("Arreglo final de determinantes: ",determinantes)
+                del file
+                gc.collect()
                 os.remove(root+'\\'+ file_name)
 
     structured_data = []

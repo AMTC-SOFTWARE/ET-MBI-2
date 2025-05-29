@@ -126,7 +126,7 @@ class Startup(QState):
             print("Error en el conteo ", ex)
 
         QTimer.singleShot(10, self.stopTorque)
-        #QTimer.singleShot(15, self.kioskMode)
+        QTimer.singleShot(15, self.kioskMode)
         self.ok.emit()
 
     def stopTorque (self):
@@ -1112,6 +1112,9 @@ class CheckQr (QState):
                             if len(temp[caja]) == 0:
                                 continue
                             #si la caja si tiene contenido...
+                            # Metodo para bypassear la caja PDC-p
+                            if caja == "PDC-P" and self.model.config_data["sinTorquePDCP"] == True:
+                                continue
                             else:
                                 #se recorren las tuercas de la caja: MFB-P2": {"A22": true,"A23": true}
                                 for tuerca in temp[caja]:
@@ -1560,7 +1563,7 @@ class CheckQr (QState):
                        
                     qr_update = QR_BOXES[opcion][self.model.conduccion]            
                     QR_BOXES['regular'][self.model.conduccion] = qr_update
-                        
+    
             self.model.pedido['QR_BOXES'] = QR_BOXES['regular'][self.model.conduccion]
             print("self.model.pedido[QR_BOXES]",self.model.pedido["QR_BOXES"])
             # if self.model.parametros["CAJA_VIEJA_SIEMPRE"]=="False":
@@ -1638,7 +1641,7 @@ class CheckQr (QState):
             pprint.pprint(QR_BOXES)
 
             #Después de modificar el diccionario, se vuelve a convertir a json y se guarda en la variable original
-            self.model.pedido["QR_BOXES"] = json.dumps(QR_BOXES)
+            #self.model.pedido["QR_BOXES"] = json.dumps(QR_BOXES)
             
             ########################################################### FIN DE MODIFICACIONES EN QRS ######################################
             ###############################################################################################################################
@@ -1671,29 +1674,15 @@ class CheckQr (QState):
                     self.model.cajas_habilitadas[caja] = 2
 
                 serie = ""
-                if caja == "MFB-P2":
-                    serie = self.model.mfbp2_serie
-                if caja == "MFB-P1":
-                    serie = self.model.mfbp1_serie
-                if "PDC-R" in caja:
-                    serie = self.model.pdcr_serie
-                
-                """
-                if caja == "MFB-P2":
-                     serie = self.model.mfbp2_serie
-                if "PDC-R" in caja:
-                     serie = self.model.pdcr_serie
-                """
-                     
                 if caja in self.model.pedido['QR_BOXES']:
                     serie = self.model.pedido['QR_BOXES'][caja]
-
+                    
                 #copia de la caja actual, para utilizar en publish
                 pub_i = caja
 
                 #cajas que no requieren escanearse (se inician en blue)
-                #if caja == "BATTERY" or caja == "BATTERY-2":
-                if caja == "BATTERY" or caja == "BATTERY-2" or caja == "BATTERY-3":
+                #or caja == "BATTERY-3"
+                if caja == "BATTERY" or caja == "BATTERY-2":
                     command = {f"lbl_box{lbl_current_boxx}" : {"text": f"{pub_i}", "color": "blue"}}
 
                 #cajas que requieren escanearse (se inician en purple) #ESTO ES PARA SABER QUE LA LLEVA EL ARNÉS, PERO AÚN NO ESTÁN HABILITADAS POR EL PLC (por eso se requieren estos publish a los gui)
@@ -1797,14 +1786,12 @@ class CheckQr (QState):
 
     def leer_configuracion(self):
         print("self.leer_configuracion()")
-        
         """
-            lee un txt en C:BIN/ llamado configuracion.txt, cada renglón debe tener la forma: 
-            condición:True
-            almacena todos los parametros en el diccionario parametros en el modelo (como strings),
-            se usa # para ignorar las líneas (para agregar comentarios en el txt)
+        lee un txt en C:BIN/ llamado configuracion.txt, cada renglón debe tener la forma: 
+        condición:True
+        almacena todos los parametros en el diccionario parametros en el modelo (como strings),
+        se usa # para ignorar las líneas (para agregar comentarios en el txt)
         """
-
         ruta_configuracion=join(self.model.ruta_principal, "configuracion.txt")
         if exists(ruta_configuracion):
             with open(ruta_configuracion) as configuracion:
@@ -1812,15 +1799,12 @@ class CheckQr (QState):
                 for linea in configuracion:
                     if not linea.startswith("#") and not linea.startswith("\n"):
                         linea.strip()
-                        
                         if linea.startswith("{"):
                             json_data += linea
                         elif json_data:
                             json_data += linea
                             if linea.endswith("}"):
                                 break
-                        if ":" in linea:
-                            comando_configuracion=linea.split(":")
                         else:
                             comando_configuracion=linea.split(":")
 
@@ -2107,6 +2091,12 @@ class Finish (QState):
                     if self.model.config_data["sinTorquePDCR"]:
                         #print("fecha actual mayor que " + str(fechha_inicio) + " y menor que " + str(fechha_fin))
                         print("self.model.config_data[sinTorquePDCR]: ", self.model.config_data["sinTorquePDCR"])
+                        print("salTrazabilidad[FABRICACION_ESPECIAL] = si")
+                        salTrazabilidad["FABRICACION_ESPECIAL"] = "si"
+
+                    if self.model.config_data["sinTorquePDCP"]:
+                        #print("fecha actual mayor que " + str(fechha_inicio) + " y menor que " + str(fechha_fin))
+                        print("self.model.config_data[sinTorquePDCP]: ", self.model.config_data["sinTorquePDCP"])
                         print("salTrazabilidad[FABRICACION_ESPECIAL] = si")
                         salTrazabilidad["FABRICACION_ESPECIAL"] = "si"
 

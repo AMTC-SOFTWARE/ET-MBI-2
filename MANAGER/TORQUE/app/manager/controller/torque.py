@@ -920,9 +920,9 @@ class CheckZone (QState):
         Timer(self.delay1, self.profilePub, args = (profile,)).start()
 
     def draw(self, BB):
+        
         box = self.model.torque_data[self.tool]["current_trq"][0]
-        self.model.imgs[box] = self.model.drawBB(
-            img = self.model.imgs[box], BB = BB, color = (31, 186, 226))
+        self.model.imgs[box] = self.model.drawBB(img = self.model.imgs[box], BB = BB, color = (31, 186, 226))
         imwrite(self.model.imgs_path + self.tool + ".jpg", self.model.imgs[box])
 
     def check_lock_raffi_function(self, current_box):
