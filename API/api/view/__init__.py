@@ -3,11 +3,11 @@ from flask import Flask, request,  send_file, make_response
 from openpyxl import Workbook
 from openpyxl.chart.label import DataLabel, DataLabelList
 from openpyxl.chart.series import SeriesLabel
-from openpyxl.styles import Alignment, Font, PatternFill, NamedStyle
+from openpyxl.styles import Alignment, Font, PatternFill, NamedStyle,Fill
 from openpyxl.chart import BarChart, Reference
 from openpyxl.worksheet.table import Table, TableStyleInfo
 from openpyxl.utils import get_column_letter
-
+import openpyxl
 from datetime import datetime, timedelta, date, time
 from flask_cors import CORS
 from time import strftime
@@ -24,14 +24,17 @@ import requests
 from paho.mqtt import publish
 import pyodbc
 import auto_modularities
+from auto_modularities import torques_value
 from model import model
 
 datos_conexion=model()
-host,user,password,database,serverp2,dbp2,userp2,passwordp2=datos_conexion.datos_acceso()
+host,user,password,database,serverp2,dbp2,userp2,passwordp2,printerhost =datos_conexion.datos_acceso()
 
 app = Flask(__name__)
 CORS(app)
 app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), '..\\')
+
+
 @app.route("/server_famx/hora_servidor",methods=["GET"])
 def servidorHora():
     try:
@@ -138,7 +141,7 @@ def etiqueta():
     #print("_RESULT_: Fusibles y torques OK")
     try:
         #192.168.1.103 IP Maquina Vision
-        publish.single("Printer/5", json.dumps(label), hostname='192.168.1.103', qos = 2)
+        publish.single("Printer/5", json.dumps(label), hostname= printerhost, qos = 2)
         response["items"] = 1
     except Exception as ex:
         print("ETIQUETA MANUAL Exception: ",ex)
@@ -604,6 +607,11 @@ def preview(ILX):
             'PDC-RMID': {},
             'PDC-RS': {},
             'PDC-S': {}, 
+            'PDC-S17': {}, 
+            'PDC-S20': {}, 
+            'PDC-S21': {}, 
+            'PDC-S9': {}, 
+            'PDC-S19': {}, 
             'TBLU': {}
         },
         'torque': {
@@ -1022,13 +1030,21 @@ def previewEvent(ILX,db):
             'PDC-RMID': {},
             'PDC-RS': {},
             'PDC-S': {}, 
-            'TBLU': {}
+            'PDC-S17': {}, 
+            'PDC-S20': {}, 
+            'PDC-S21': {}, 
+            'PDC-S9': {}, 
+            'PDC-S19': {}, 
+            'TBLU': {},
+            'F96': {},
+            'F96-1': {}
         },
         'torque': {
             'PDC-P':{},
             'PDC-D':{},
             'MFB-P1':{},
             'MFB-S':{},
+            'MFB-S2':{},
             'MFB-E':{},
             'MFB-P2':{},
             'PDC-R':{},
@@ -1219,6 +1235,61 @@ def value_of_a_tableEvent(table,column_of_table_1,operation_1,val_1,column_of_ta
         response=dic
     return response
 ################################################## Update Fijikura Server  ####################################################
+#Servicio para verificar evento de refencia
+@app.route("/nivel/get/<table>/<column_1>/<operation_1>/<value_1>/<column_2>/<operation_2>/<value_2>",methods=["GET"])
+def nivelGET(table, column_1, operation_1, value_1, column_2, operation_2, value_2):
+    #para llamar microservicio desde manager:
+    #endpoint = ("http://{}/nivel/get/[agrucomb_prod].[dbo].[JP_estructura_combinacion_1er_nivel]/codigo_com_1er_nivel/=/ILX29420231008400/_/_/_".format(self.model.server))
+    #endpoint = ("http://{}/nivel/get/[agrucomb_prod].[dbo].[JP_estructura_combinacion_1er_nivel]/all/_/_/_/_/_".format(self.model.server))
+    #response = requests.get(endpoint).json()
+
+
+    #petitión a la base de datos dependiendo de las variables que se den de entrada para el servicio
+    if column_1=='all':
+        query='SELECT * FROM ' +table+';'
+    else:
+        if value_2=='_':
+            query = "SELECT * FROM " + table + " WHERE " + column_1 + operation_1 + "'{}';".format(value_1)
+        else:
+            query = "SELECT * FROM " + table + " WHERE " + column_1 + operation_1 + "'{}'".format(value_1)
+            query += " AND " + column_2 + operation_2 + "'{}';".format(value_2)
+    try:
+        connection = pyodbc.connect('DRIVER={SQL server}; SERVER='+serverp2+';DATABASE='+dbp2+';UID='+userp2+';PWD='+passwordp2)
+        print("Conexión Éxitosa")
+    except Exception as ex:
+        print("Conexión a P2 - Exception: ", ex)
+        return {"exception": ex.args}
+
+
+    #una vez que se realizó la petición GET, se obtiene un apuntador a la información que se quiere
+    #y a partir de ahí se crea un diccionario con las dimensiones de la información requerida
+    try:
+        with connection.cursor() as cursor:
+            items = cursor.execute(query)
+
+            records = cursor.fetchall()
+            
+            print("records: \ntype: ")
+            print(type(records))
+            print(records)
+            print("records[0]: \ntype: ")
+            print(type(records[0]))
+            print("_____________\n_____________\n_____________")
+            print(records[0][-1])
+            print("_____________\n_____________\n_____________")
+
+            response = {"evento": str(records[0][-1]) }
+
+    except Exception as ex:
+        print("Exception: ", ex)
+        response = {"items": 0}
+
+    #se cierra la conexión y se regresa la respuesta "response"
+    finally:
+        connection.close()
+        return response
+
+
 @app.route("/seghm/get/<table>/<column_1>/<operation_1>/<value_1>/<column_2>/<operation_2>/<value_2>",methods=["GET"])
 def famx2GET(table, column_1, operation_1, value_1, column_2, operation_2, value_2):
     if column_1=='all':
@@ -1835,7 +1906,7 @@ def horaxhora(table, column):
         cursor = connection.cursor()
         cursor.execute(query)
         result = cursor.fetchall() 
-        #print("result",result)
+        print("result",result)
         if len(result) > 0:
             response = {}
             keys = list(result[0])
@@ -1863,7 +1934,10 @@ def horaxhora(table, column):
         connection.close()
         return response
 
-    ### Area de consulta de datos
+
+########                                #######
+########    Area de consulta de datos   #######
+########                                #######
 @app.route('/descargar/<db>/<table>/<task>')
 def descargar(db, table, task):
     query = 'SELECT * FROM ' +table+' WHERE '+task+';'
@@ -1883,7 +1957,7 @@ def descargar(db, table, task):
             hourEnd = []
             h =  result[0]
             valores_fila = ','.join( str(valor) for valor in h)
-            print(valores_fila)
+            #print(valores_fila)
             li = list(valores_fila.split(","))
             #print(li)
             li.remove('VISION')
@@ -1901,30 +1975,148 @@ def descargar(db, table, task):
                 c = l.capitalize()
                 capt.append(c)
                 
+            arreglo_intt = [] #Arreglo intentos torque
+            arreglo_ang = [] #Arreglo Angulo
+            arreglo_tor = [] #Arreglo Torque
             arreglo.append(capt)
             #arreglo.append(valores_fila)
+            # Extraer subencabezados en una lista
+            subencabezados = [subdict.keys() for subdict in torques_value.values()]
+
+            # Convertir la lista de diccionarios a una lista plana de subencabezados
+            subencabezados = [item for sublist in subencabezados for item in sublist]
+
+            subencabezados.insert(0,'HM')
+            subencabezados.insert(0,'ID')
+            arreglo_intt.append(subencabezados)
+            arreglo_ang.append(subencabezados)
+            arreglo_tor.append(subencabezados)
+            # print(len(subencabezados))
+            # print(subencabezados)
+
+
             if len(result) > 0:
                 # Procesar los resultados por fila
+                columnas = []
                 for fila in result:
                     del fila['VISION']
-                    del fila['TORQUE']
+                    #del fila['TORQUE']
                     del fila['ALTURA']
                     del fila['INTENTOS_VA']
-                    del fila['INTENTOS_T']
+                    #del fila['INTENTOS_T']
                     del fila['SCRAP']
                     del fila['SERIALES']
                     #del fila['NOTAS']
-                    del fila['ANGULO']
+                    # del fila['ANGULO']
 
                     dato = []
+                    dato_intt = []
+                    dato_tor = []
+                    dato_ang = []
+                    cajas =[]
+                    #print(fila)
+                    if fila["INTENTOS_T"]:
+                        fila_json = json.loads(fila["INTENTOS_T"])
+                        dato_intt.append(fila["ID"])
+                        dato_intt.append(fila["HM"])
+                        #print(fila["INTENTOS_T"])
+                        
+                        for i in torques_value:
+
+                            for j in torques_value[i]:
+                                #print(i)
+                                #print(j)
+                                if i in fila_json:
+                                    try:
+                                        valor = fila_json[i][j]
+                                        caja = i
+                                        #print("El valor existe:", valor)
+                                        cajas.append(caja)
+                                        dato_intt.append(valor)
+                                    except IndexError:
+                                        print("El índice j está fuera de rango para fila['INTENTOS_T'][i].")
+                                else: 
+                                    valor = None
+                                    caja = i 
+                                    cajas.append(caja)
+                                    dato_intt.append(valor)
+
+                            #print(dato_intt)
+                            #print(len(dato_intt))
+                    if fila["ANGULO"]:
+                        fila_json = json.loads(fila["ANGULO"])
+                        dato_ang.append(fila["ID"])
+                        dato_ang.append(fila["HM"])
+                        #print(fila["ANGULO"])
+                        
+                        for i in torques_value:
+
+                            for j in torques_value[i]:
+                                #print(i)
+                                #print(j)
+                                if i in fila_json:
+                                    try:
+                                        valor = fila_json[i][j]
+                                        caja = i
+                                        #print("El valor existe:", valor)
+                                        #cajas.append(caja)
+                                        dato_ang.append(valor)
+
+                                    except IndexError:
+                                        print("El índice j está fuera de rango para fila['ANGULO'][i].")
+                                else: 
+                                    valor = None
+                                    caja = i
+                                    #cajas.append(caja)
+                                    dato_ang.append(valor)
+                            #print(dato_ang)
+                            #print(len(dato_ang))
+                    if fila["TORQUE"]:
+                        fila_json = json.loads(fila["TORQUE"])
+                        dato_tor.append(fila["ID"])
+                        dato_tor.append(fila["HM"])
+                        #print(fila["TORQUE"])
+                        
+                        for i in torques_value:
+
+                            for j in torques_value[i]:
+                                #print(i)
+                                #print(j)
+                                if i in fila_json:
+                                    try:
+                                        valor = fila_json[i][j]
+                                        caja = i
+                                        #print("El valor existe:", valor)
+                                        #cajas.append(caja)
+                                        dato_tor.append(valor)
+
+                                    except IndexError:
+                                        print("El índice j está fuera de rango para fila['TORQUE'][i].")
+                                else: 
+                                    valor = None
+                                    caja = i
+                                    #cajas.append(caja)
+                                    dato_tor.append(valor)
+                            #print(dato_tor)
+                            #print(len(dato_tor))
+                                        
                     if fila["HM"] != 'HM000000000003':
                         arreglo.append(dato)
                         #print(fila)
                         for i in fila:
-                            if 'NOTAS' in i:
+                            if 'INTENTOS_T' in i or 'ANGULO' in i or 'TORQUE' in i:
+                                False
+                            elif 'NOTAS' in i:
                                 Notepad = json.loads(fila[i])
-                                #print(Notepad['TORQUE'][1])
-                                dato.append(Notepad['TORQUE'][1])
+                                #print(Notepad['TORQUE'][1]) 
+                                if 'TORQUE' in Notepad:
+                                    dato.append(Notepad['TORQUE'][1])
+
+                                elif 'VISION' in Notepad:
+                                    dato.append(Notepad['VISION'][1])
+
+                                else:                                   
+                                    dato.append(fila[i])
                             else: 
                                 #print(fila["FIN"])
                                 # Define las dos fechas como cadenas de texto
@@ -1935,7 +2127,11 @@ def descargar(db, table, task):
 
                                 dato.append(fila[i])
 
-                #print(arreglo)
+                    #arreglo_intt.append(cajas)
+                    arreglo_intt.append(dato_intt)
+                    arreglo_ang.append(dato_ang)
+                    arreglo_tor.append(dato_tor)
+                    #print(arreglo_intt)
 
             else:
                 response = {"items": items}
@@ -1953,14 +2149,73 @@ def descargar(db, table, task):
     sheet = workbook.active
     sheet.title = 'Historial'
 
+
+
+
+
     # Crea una nueva hoja en el libro
-    #sheet2 = workbook.create_sheet("Graficar") # insert at first position
-    #sheet2 = workbook["Graficar"]
+    sheet2 = workbook.create_sheet("IntentosT") # insertando tabla por numero de posicion de izquierda a derecha
+    sheet2 = workbook["IntentosT"]
+
+    sheet3 = workbook.create_sheet("Angulo") # insertando tabla por numero de posicion de izquierda a derecha
+    sheet3 = workbook["Angulo"]
+
+    sheet4 = workbook.create_sheet("Torque") # insertando tabla por numero de posicion de izquierda a derecha
+    sheet4 = workbook["Torque"]
+
+    sheet5 = workbook.create_sheet("Estadistica") # insertando tabla por numero de posicion de izquierda a derecha
+    sheet5 = workbook["Estadistica"]
 
     sheet['A1'] = '_____'
 
+
+    # ws = workbook.create_sheet("prueba") # insertando tabla por numero de posicion de izquierda a derecha
+    # ws = workbook["prueba"]
+    #     # Agregar datos y fórmulas a algunas celdas
+    # ws['A1'] = 10
+    # ws['B1'] = 20
+    # ws['C1'] = "=A1 + A2"  # Esta celda tendrá la fórmula de suma
+
+    # # Evaluar las fórmulas para obtener los valores calculados
+    # #ws['A3'].value = ws['A3'].calculate_value()
+
+    # # Crear un gráfico utilizando los datos
+    # chart = BarChart()
+    # data = Reference(ws, min_col=1, min_row=1, max_col=3, max_row=1)
+    # chart.add_data(data)
+    # ws.add_chart(chart, "C1")
+
+
+
+
+    #print(arreglo)
     for j in arreglo:
         sheet.append(j)
+
+    for k in arreglo_intt:
+        sheet2.append(k)
+
+    for k in arreglo_ang:
+        sheet3.append(k)
+    
+    for k in arreglo_tor:
+        sheet4.append(k)
+
+    sheet2.insert_rows(0,1)
+    sheet3.insert_rows(0,1)
+    sheet4.insert_rows(0,1)
+
+    repeticiones = {}
+    # Itera sobre los datos y asigna cada dato a una celda en la fila específica
+    for index, dato in enumerate(cajas, start=3):
+        if dato in repeticiones:
+            repeticiones[dato] += 1
+        else:
+            repeticiones[dato] = 1 
+        sheet2.cell(row=1, column=index).value = dato
+        sheet3.cell(row=1, column=index).value = dato
+        sheet4.cell(row=1, column=index).value = dato
+    #print(repeticiones.keys())
     alineacion_izquierda = Alignment(horizontal='left')
     
     sheet.insert_cols(idx=6,amount=1)
@@ -1988,6 +2243,9 @@ def descargar(db, table, task):
         sheet.cell(row=i, column=10, value=formulaD)
 
     lastfila = get_column_letter(sheet.max_column)+str(sheet.max_row) 
+    lastfila2 = get_column_letter(sheet2.max_column)+str(sheet2.max_row) 
+    lastfila3 = get_column_letter(sheet3.max_column)+str(sheet3.max_row) 
+    lastfila4 = get_column_letter(sheet4.max_column)+str(sheet4.max_row) 
 
 
 # ####FORMATOS
@@ -2003,6 +2261,45 @@ def descargar(db, table, task):
     columna = sheet['J']
     for celda in columna[2:sheet.max_row]:  # Excluye la primera fila si tiene encabezados
             celda.number_format = 'dd hh:mm:ss'
+
+# Iterar sobre todas las columnas y ajustar sus anchos
+    for column in sheet2.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                cell.alignment = alineacion_izquierda
+                if len(str(cell.value)) > max_length:
+                    max_length = len(cell.value)
+            except:
+                pass
+        adjusted_width = (max_length + 2) * 1.1
+        sheet2.column_dimensions[column_letter].width = adjusted_width
+        sheet3.column_dimensions[column_letter].width = adjusted_width
+        sheet4.column_dimensions[column_letter].width = adjusted_width
+    sheet2.column_dimensions['A'].width = 9
+    sheet3.column_dimensions['A'].width = 9
+    sheet4.column_dimensions['A'].width = 9
+
+    start_merge = 3
+    end_merge = 2
+    for tor in repeticiones.keys():
+        
+        if repeticiones[tor] > 1:
+
+            #print(repeticiones[tor])
+            end_merge += repeticiones[tor]
+            #print("Start",start_merge)
+            #print("End Merge",end_merge)
+            sheet2.merge_cells(start_row=1, start_column=start_merge, end_row=1, end_column=end_merge)
+            sheet3.merge_cells(start_row=1, start_column=start_merge, end_row=1, end_column=end_merge)
+            sheet4.merge_cells(start_row=1, start_column=start_merge, end_row=1, end_column=end_merge)
+            start_merge += repeticiones[tor]
+        else:
+            start_merge += 1
+            end_merge += 1
+        # Fusionar las celdas
+
 
 # Iterar sobre todas las columnas y ajustar sus anchos
     for column in sheet.columns:
@@ -2033,13 +2330,34 @@ def descargar(db, table, task):
 
 
     tab = Table(displayName="Table1", ref="A2:" + lastfila)
+    tab2 = Table(displayName="Intentos_t", ref="A2:" + lastfila2)
+    tab3 = Table(displayName="Angulo", ref="A2:" + lastfila3)
+    tab4 = Table(displayName="Torque", ref="A2:" + lastfila4)
 
     # Agregando Estilos de tabla
     style = TableStyleInfo(name="TableStyleMedium6", showFirstColumn=False,
                     showLastColumn=False, showRowStripes=True, showColumnStripes=True)
     tab.tableStyleInfo = style
 
+    # Agregando Estilos de tabla de Inentos Torque
+    style2 = TableStyleInfo(name="TableStyleMedium2", showFirstColumn=False,
+                    showLastColumn=False, showRowStripes=True, showColumnStripes=True)
+
+    # Agregando Estilos de tabla de Inentos Torque
+    style3 = TableStyleInfo(name="TableStyleMedium2", showFirstColumn=False,
+                    showLastColumn=False, showRowStripes=True, showColumnStripes=True)
+        # Agregando Estilos de tabla de Inentos Torque
+    style4 = TableStyleInfo(name="TableStyleMedium2", showFirstColumn=False,
+                    showLastColumn=False, showRowStripes=True, showColumnStripes=True)
+    tab2.tableStyleInfo = style2
+    tab3.tableStyleInfo = style3
+    tab4.tableStyleInfo = style4
+
+
     sheet.add_table(tab)
+    sheet2.add_table(tab2)
+    sheet3.add_table(tab3)
+    sheet4.add_table(tab4)
 
     # Formulario para calcular por columnas diferentes tareas
     sheet['N2'] = 'Promedio'
@@ -2057,11 +2375,213 @@ def descargar(db, table, task):
 
     sheet.add_table(tab2)
 
+
+
     # Establecer estilos de fuente y color
     first_table_font = Font(color="124B43")  # Azul Marino
     second_table_font = Font(color="0043BB")  # Un tono más claro de rojo
+    #Agregando titulos 
+    lastRow= str(sheet2.max_row)
+    relleno = PatternFill("solid", start_color="5cb800")## Relleno de celdas de color verde
+    # sheet5['B2:F2'].fill = "red"
+    #PDC-P
+    sheet5["B3"]="E1-P"
+    sheet5["B4"]=f'=SUM(IntentosT!C3:C{lastRow})'
 
+
+    #PDC-D
+    sheet5["C3"]="E1-D"   
+    sheet5["C4"]=f'=SUM(IntentosT!D3:D{lastRow})'
+
+    #PDC-R
+    sheet5["D3"]="E1-R"   
+    sheet5["D4"]=f"=SUM(IntentosT!E3:E{lastRow})"
+
+    #PDCR-MID
+    sheet5["E3"]="E1-RM"
+    sheet5["E4"]=f"=SUM(IntentosT!F3:F{lastRow})"
+
+    #PDC-RS
+    sheet5["F3"]="E1-RS"
+    sheet5["F4"]=f"=SUM(IntentosT!G3:G{lastRow})"
+
+
+    #MFB-P1
+    sheet5["B6"]="A41"
+    sheet5["B7"]=f"=SUM(IntentosT!H3:H{lastRow})"
+
+    sheet5["C6"]="A42"
+    sheet5["C7"]=f"=SUM(IntentosT!I3:I{lastRow})"
+
+    sheet5["D6"]="A43"
+    sheet5["D7"]=f"=SUM(IntentosT!J3:J{lastRow})"
+
+    sheet5["E6"]="A44"
+    sheet5["E7"]=f"=SUM(IntentosT!K3:K{lastRow})"
+
+    sheet5["F6"]="A45"
+    sheet5["F7"]=f"=SUM(IntentosT!L3:L{lastRow})"
+
+    sheet5["G6"]="A46"
+    sheet5["G7"]=f"=SUM(IntentosT!M3:M{lastRow})"
+
+    sheet5["H6"]="A47"
+    sheet5["H7"]=f"=SUM(IntentosT!N3:N{lastRow})"
     
+    #MFB-S
+    sheet5["B9"]="A51"
+    sheet5["B10"]=f"=SUM(IntentosT!O3:O{lastRow})"
+    
+    sheet5["C9"]="A52"
+    sheet5["C10"]=f"=SUM(IntentosT!P3:P{lastRow})"
+
+    sheet5["D9"]="A53"
+    sheet5["D10"]=f"=SUM(IntentosT!Q3:Q{lastRow})"
+    sheet5["E9"]="A54"
+    sheet5["E10"]=f"=SUM(IntentosT!R3:R{lastRow})"
+    sheet5["F9"]="A55"
+    sheet5["F10"]=f"=SUM(IntentosT!S3:S{lastRow})"
+    sheet5["G9"]="A56"
+    sheet5["G10"]=f"=SUM(IntentosT!T3:T{lastRow})"
+
+    #MFB-E
+    sheet5["B12"]="E1"
+    sheet5["B13"]=f"=SUM(IntentosT!U3:U{lastRow})"
+    sheet5["C12"]="A1"
+    sheet5["C13"]=f"=SUM(IntentosT!V3:V{lastRow})"
+    sheet5["D12"]="A2"
+    sheet5["D13"]=f"=SUM(IntentosT!W3:W{lastRow})"
+
+
+
+
+
+    #MPFB-P2
+    sheet5["B15"]="A20"
+    sheet5["B16"]=f"=SUM(IntentosT!X3:X{lastRow})"
+
+    sheet5["C15"]="A21"
+    sheet5["C16"]=f"=SUM(IntentosT!Y3:Y{lastRow})"
+
+    sheet5["D15"]="A22"
+    sheet5["D16"]=f"=SUM(IntentosT!Z3:Z{lastRow})"
+
+    sheet5["E15"]="A23"
+    sheet5["E16"]=f"=SUM(IntentosT!AA3:AA{lastRow})"
+
+    sheet5["F15"]="A24"
+    sheet5["F16"]=f"=SUM(IntentosT!AB3:AB{lastRow})"
+
+    sheet5["G15"]="A25"
+    sheet5["G16"]=f"=SUM(IntentosT!AC3:AC{lastRow})"
+
+    sheet5["H15"]="A26"
+    sheet5["H16"]=f"=SUM(IntentosT!AD3:AD{lastRow})"
+
+    sheet5["I15"]="A27"
+    sheet5["I16"]=f"=SUM(IntentosT!AE3:AE{lastRow})"
+
+    sheet5["J15"]="A28"
+    sheet5["J16"]=f"=SUM(IntentosT!AF3:AF{lastRow})"
+
+    sheet5["K15"]="A29"
+    sheet5["K16"]=f"=SUM(IntentosT!AG3:AG{lastRow})"
+
+    sheet5["L15"]="A30"
+    sheet5["L16"]=f"=SUM(IntentosT!AH3:AH{lastRow})"
+
+
+
+    #Battery
+    sheet5["B18"]="BT"
+    sheet5["B19"]=f"=SUM(IntentosT!AI3:AI{lastRow})"
+    #Battery 2
+    sheet5["C18"]="BT-2"
+    sheet5["C19"]=f"=SUM(IntentosT!AJ3:AJ{lastRow})"
+
+    # Obtener los datos de las celdas que quieres graficar
+    valores = []
+    categorias = []
+    chart1 = BarChart()
+
+    #PDC'S
+    data =  Reference(sheet5, min_col=2, min_row=3, max_row=4, max_col=6)
+    chart1.add_data(data,titles_from_data=True)
+
+    #MFB-P1
+    data =  Reference(sheet5, min_col=2, min_row=6, max_row=7, max_col=8)
+    cats =  Reference(sheet5, min_col=1, min_row=1, max_row=1, max_col=1)
+    chart1.add_data(data,titles_from_data=True)
+    chart1.set_categories(cats)
+
+    #MFB-S
+    data =  Reference(sheet5, min_col=2, min_row=9, max_row=10, max_col=7)
+    chart1.add_data(data,titles_from_data=True)
+    #chart1.set_categories(cats)
+
+    #MFB-E
+    data =  Reference(sheet5, min_col=2, min_row=12, max_row=13, max_col=4)
+    chart1.add_data(data,titles_from_data=True)
+    #chart1.set_categories(cats)
+
+    #MFB-P2
+    data =  Reference(sheet5, min_col=2, min_row=15, max_row=16, max_col=12)
+    chart1.add_data(data,titles_from_data=True)
+    #chart1.set_categories(cats)
+
+
+    #Battery's
+    data =  Reference(sheet5, min_col=2, min_row=18, max_row=19, max_col=3)
+    chart1.add_data(data,titles_from_data=True)
+    
+
+    chart1.title = 'Reintentos Torque'
+    chart1.height = 7.5 # default is 7.5
+    chart1.width = 25 # default is 15
+    # data = valores
+    # cats = categorias
+    sheet5.add_chart(chart1, "B21")
+    sheet5["C17"]="BATTERY-2"
+    sheet5["C17"].fill=relleno
+
+    sheet5["B17"]="BATTERY"
+    sheet5["B17"].fill=relleno
+
+    sheet5["B14"]="MFB-P2"
+    sheet5["B14"].fill=relleno
+    rango_celdas = 'B14:L14'
+    sheet5.merge_cells(rango_celdas)
+
+    sheet5["B11"]="MFB-E"
+    sheet5["B11"].fill=relleno
+    rango_celdas = 'B11:D11'
+    sheet5.merge_cells(rango_celdas)
+
+    sheet5["B8"]="MFB-S"
+    sheet5["B8"].fill=relleno
+    rango_celdas = 'B8:G8'
+    sheet5.merge_cells(rango_celdas)
+
+    sheet5["B5"]="MFB-P1"
+    sheet5["B5"].fill=relleno
+    # Definimos el rango de celdas donde queremos aplicar el color
+    rango_celdas = 'B5:H5'
+    sheet5.merge_cells(rango_celdas)
+
+    sheet5["F2"]="PDC-RS"
+    sheet5["F2"].fill = relleno
+
+    sheet5["E2"]="PDC-RMID"
+    sheet5["E2"].fill = relleno
+
+    sheet5["D2"]="PDC-R"   
+    sheet5["D2"].fill = relleno
+
+    sheet5["C2"]="PDC-D"   
+    sheet5["C2"].fill = relleno
+
+    sheet5["B2"]="PDC-P"
+    sheet5["B2"].fill = relleno
 
     # Guardar el libro de Excel en un objeto en memoria
     output = io.BytesIO()
@@ -2075,3 +2595,187 @@ def descargar(db, table, task):
         download_name='Fujikura Automotive México Piedras Negras.xlsx',
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
+
+
+@app.route('/descargarTorque/<tool>/<val1>/<val2>')
+def descargarTorque(tool, val1, val2):
+    query = '''
+    SELECT 
+    t.*, 
+    ROUND(JSON_EXTRACT(REGISTRO, '$.angle'), 2) as round_angle,
+    ROUND(JSON_EXTRACT(REGISTRO, '$.torque'), 2) as round_torque,
+    (ROUND(JSON_EXTRACT(REGISTRO, '$.angle'), 2) + ROUND(JSON_EXTRACT(REGISTRO, '$.torque'), 2)) as SUMA_angle_torque,
+    h.HM AS HM_pertenece,
+    
+    JSON_EXTRACT(h.ANGULO, '$.MFB-P2.A20') AS A20_angulo,
+    JSON_EXTRACT(h.TORQUE, '$.MFB-P2.A20') AS A20_torque,
+    ( JSON_EXTRACT(h.ANGULO, '$.MFB-P2.A20') + JSON_EXTRACT(h.TORQUE, '$.MFB-P2.A20') ) as SUMA_A20,
+    JSON_EXTRACT(h.INTENTOS_T, '$.MFB-P2.A20') AS A20_intentos,
+    
+    
+    JSON_EXTRACT(h.ANGULO, '$.MFB-P2.A25') AS A25_angulo,
+    JSON_EXTRACT(h.TORQUE, '$.MFB-P2.A25') AS A25_torque,
+    ( JSON_EXTRACT(h.ANGULO, '$.MFB-P2.A25') + JSON_EXTRACT(h.TORQUE, '$.MFB-P2.A25') ) as SUMA_A25,
+    JSON_EXTRACT(h.INTENTOS_T, '$.MFB-P2.A25') AS A25_intentos,
+    
+    JSON_EXTRACT(h.ANGULO, '$.MFB-P2.A30') AS A30_angulo,
+    JSON_EXTRACT(h.TORQUE, '$.MFB-P2.A30') AS A30_torque,
+    ( JSON_EXTRACT(h.ANGULO, '$.MFB-P2.A30') + JSON_EXTRACT(h.TORQUE, '$.MFB-P2.A30') ) as SUMA_A30,
+    JSON_EXTRACT(h.INTENTOS_T, '$.MFB-P2.A30') AS A30_intentos,
+    
+    JSON_EXTRACT(h.ANGULO, '$.PDC-RS.E1') AS PDCRS_angulo,
+    JSON_EXTRACT(h.TORQUE, '$.PDC-RS.E1') AS PDCRS_torque,
+    ( JSON_EXTRACT(h.ANGULO, '$.PDC-RS.E1') + JSON_EXTRACT(h.TORQUE, '$.PDC-RS.E1') ) as SUMA_PDCRS,
+    JSON_EXTRACT(h.INTENTOS_T, '$.PDC-RS.E1') AS PDCRS_intentos,
+    
+    JSON_EXTRACT(h.ANGULO, '$.PDC-RMID.E1') AS PDCRMID_angulo,
+    JSON_EXTRACT(h.TORQUE, '$.PDC-RMID.E1') AS PDCRMID_torque,
+    ( JSON_EXTRACT(h.ANGULO, '$.PDC-RMID.E1') + JSON_EXTRACT(h.TORQUE, '$.PDC-RMID.E1') ) as SUMA_PDCRMID,
+    JSON_EXTRACT(h.INTENTOS_T, '$.PDC-RMID.E1') AS PDCRMID_intentos,
+    
+    JSON_EXTRACT(h.ANGULO, '$.PDC-R.E1') AS PDCR_angulo,
+    JSON_EXTRACT(h.TORQUE, '$.PDC-R.E1') AS PDCR_torque,
+    ( JSON_EXTRACT(h.ANGULO, '$.PDC-R.E1') + JSON_EXTRACT(h.TORQUE, '$.PDC-R.E1') ) as SUMA_PDCR,
+    JSON_EXTRACT(h.INTENTOS_T, '$.PDC-R.E1') AS PDCR_intentos,
+    
+    JSON_EXTRACT(h.ANGULO, '$.MFB-P1.A41') AS A41_angulo,
+    JSON_EXTRACT(h.TORQUE, '$.MFB-P1.A41') AS A41_torque,
+    ( JSON_EXTRACT(h.ANGULO, '$.MFB-P1.A41') + JSON_EXTRACT(h.TORQUE, '$.MFB-P1.A41') ) as SUMA_A41,
+    JSON_EXTRACT(h.INTENTOS_T, '$.MFB-P1.A41') AS A41_intentos,
+    
+    JSON_EXTRACT(h.ANGULO, '$.MFB-P1.A46') AS A46_angulo,
+    JSON_EXTRACT(h.TORQUE, '$.MFB-P1.A46') AS A46_torque,
+    ( JSON_EXTRACT(h.ANGULO, '$.MFB-P1.A46') + JSON_EXTRACT(h.TORQUE, '$.MFB-P1.A46') ) as SUMA_A46,
+    JSON_EXTRACT(h.INTENTOS_T, '$.MFB-P1.A46') AS A46_intentos,
+    
+    JSON_EXTRACT(h.ANGULO, '$.MFB-P1.A47') AS A47_angulo,
+    JSON_EXTRACT(h.TORQUE, '$.MFB-P1.A47') AS A47_torque,
+    ( JSON_EXTRACT(h.ANGULO, '$.MFB-P1.A47') + JSON_EXTRACT(h.TORQUE, '$.MFB-P1.A47') ) as SUMA_A47,
+    JSON_EXTRACT(h.INTENTOS_T, '$.MFB-P1.A47') AS A46_intentos,
+    
+    JSON_EXTRACT(h.ANGULO, '$.MFB-E.A1') AS AMG_A1_angulo,
+    JSON_EXTRACT(h.TORQUE, '$.MFB-E.A1') AS AMG_A1_torque,
+    ( JSON_EXTRACT(h.ANGULO, '$.MFB-E.A1') + JSON_EXTRACT(h.TORQUE, '$.MFB-E.A1') ) as SUMA_AMG_A1,
+    JSON_EXTRACT(h.INTENTOS_T, '$.MFB-E.A1') AS AMG_A1_intentos,
+    
+    JSON_EXTRACT(h.ANGULO, '$.MFB-E.A2') AS AMG_A2_angulo,
+    JSON_EXTRACT(h.TORQUE, '$.MFB-E.A2') AS AMG_A2_torque,
+    ( JSON_EXTRACT(h.ANGULO, '$.MFB-E.A2') + JSON_EXTRACT(h.TORQUE, '$.MFB-E.A2') ) as SUMA_AMG_A2,
+    JSON_EXTRACT(h.INTENTOS_T, '$.MFB-E.A2') AS AMG_A2_intentos,
+    
+    JSON_EXTRACT(h.ANGULO, '$.MFB-E.E1') AS AMG_E1_angulo,
+    JSON_EXTRACT(h.TORQUE, '$.MFB-E.E1') AS AMG_E1_torque,
+    ( JSON_EXTRACT(h.ANGULO, '$.MFB-E.E1') + JSON_EXTRACT(h.TORQUE, '$.MFB-E.E1') ) as SUMA_AMG_E1,
+    JSON_EXTRACT(h.INTENTOS_T, '$.MFB-E.E1') AS AMG_E1_intentos,
+    
+    JSON_EXTRACT(h.ANGULO, '$.MFB-S.A51') AS A51_angulo,
+    JSON_EXTRACT(h.TORQUE, '$.MFB-S.A51') AS A51_torque,
+    ( JSON_EXTRACT(h.ANGULO, '$.MFB-S.A51') + JSON_EXTRACT(h.TORQUE, '$.MFB-S.A51') ) as SUMA_A51,
+    JSON_EXTRACT(h.INTENTOS_T, '$.MFB-S.A51') AS A51_intentos,
+    
+    JSON_EXTRACT(h.ANGULO, '$.MFB-S.A52') AS A52_angulo,
+    JSON_EXTRACT(h.TORQUE, '$.MFB-S.A52') AS A52_torque,
+    ( JSON_EXTRACT(h.ANGULO, '$.MFB-S.A52') + JSON_EXTRACT(h.TORQUE, '$.MFB-S.A52') ) as SUMA_A52,
+    JSON_EXTRACT(h.INTENTOS_T, '$.MFB-S.A52') AS A52_intentos  
+'''
+
+    # if val1.includes("HM"):
+    #     formWhere = query + f'''
+    # FROM 
+    #     {database}.torque_info t
+    # INNER JOIN 
+    #     {database}.historial h ON t.FECHA BETWEEN h.INICIO AND h.FIN
+
+    # WHERE h.HM = "{val1}" 
+    # AND t.HERRAMIENTA = "{tool}"
+    # ORDER BY t.ID DESC;
+    # '''
+    # else:
+    formWhere = query + f'''
+        FROM 
+            {database}.torque_info t
+        INNER JOIN 
+            {database}.historial h ON t.FECHA BETWEEN h.INICIO AND h.FIN
+
+        WHERE t.FECHA >= "{val1}" AND t.FECHA <= "{val2}"
+        AND t.HERRAMIENTA = "{tool}"
+        
+        ''' 
+    
+    try:
+        connection = pymysql.connect(host = host, user = user, passwd = password, database = database, cursorclass=pymysql.cursors.DictCursor)
+
+    except Exception as ex:
+        print("myJsonResponse connection Exception: ", ex)
+        return {"exception": ex.args}
+    try:
+        with connection.cursor() as cursor:
+                items = cursor.execute(formWhere)
+                result = cursor.fetchall()
+                print(formWhere)
+                print(result)
+                h =  result[0]
+                r = json.loads(result[0]["REGISTRO"])
+                rKeys = list(r.keys())
+                #print(result[0]["REGISTRO"])
+                print(rKeys)
+                arreglo = []
+                valores_fila = ','.join( str(valor) for valor in h)
+                li = list(valores_fila.split(","))
+                print(li)
+                
+                # Encontrar la ubicación de "REGISTRO"
+                ubicacion_registro = li.index('REGISTRO')
+
+                #li.remove('REGISTRO')
+
+                # Insertar los valores en la lista después de "REGISTRO"
+                li[ubicacion_registro + 1:ubicacion_registro + 1] = rKeys
+                
+                li.remove("REGISTRO")
+                print(li)
+
+
+                arreglo.append(li)
+                for fila in result:
+                        dato= []
+                        arreglo.append(dato)
+                        for i in fila:  
+                                if "REGISTRO" in i:
+
+                                    registro = json.loads(fila[i])
+                                    lista_de_registros = list(registro.values())
+                                    dato.extend(lista_de_registros)
+
+                                elif not "REGISTRO" in i:
+                                    dato.append(fila[i])
+
+
+                                # Define las dos fechas como cadenas de texto
+                                # Convierte las cadenas de texto en objetos datetime
+                                #fecha1 = datetime.strptime(fecha1_str, "%d-%m-%Y %H:%M:%S")
+                                #fecha2 = datetime.strptime(fecha2_str, "%d-%m-%Y %H:%M:%S")
+
+                #print(arreglo)
+                workbook = Workbook()
+                sheet = workbook.active
+                sheet.title = 'Torque_info'
+                for j in arreglo:
+                    sheet.append(j)
+                
+                    # Guardar el libro de Excel en un objeto en memoria
+                output = io.BytesIO()
+                workbook.save(output)
+                output.seek(0)
+
+                # Enviar el archivo como respuesta para descarga
+                return send_file(
+                    output,
+                    as_attachment=True,
+                    download_name='Fujikura Automotive México Piedras Negras.xlsx',
+                    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                )
+
+    except Exception as ex:
+        print("myJsonResponse connection Exception: ", ex)
+        return {"exception": ex.args}
