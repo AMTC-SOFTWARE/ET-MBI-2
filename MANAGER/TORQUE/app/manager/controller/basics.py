@@ -371,8 +371,8 @@ class StartCycle (QState):
             }
         publish.single(self.model.pub_topics["plc"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
-        self.model.cajas_habilitadas = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
-        self.model.raffi = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"MFB-S": 0,"MFB-E": 0}
+        self.model.cajas_habilitadas = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"BATTERY-3": 0,"MFB-S": 0,"MFB-E": 0}
+        self.model.raffi = {"PDC-P": 0,"PDC-D": 0,"MFB-P1": 0,"MFB-P2": 0,"PDC-R": 0,"PDC-RMID": 0,"BATTERY": 0,"BATTERY-2": 0,"BATTERY-3": 0,"MFB-S": 0,"MFB-E": 0}
         for i in self.model.raffi:
             raffi_clear = {f"raffi_{i}":False}
             publish.single(self.model.pub_topics["plc"],json.dumps(raffi_clear),hostname='127.0.0.1', qos = 2)
@@ -1681,8 +1681,7 @@ class CheckQr (QState):
                 pub_i = caja
 
                 #cajas que no requieren escanearse (se inician en blue)
-                #or caja == "BATTERY-3"
-                if caja == "BATTERY" or caja == "BATTERY-2":
+                if caja == "BATTERY" or caja == "BATTERY-2" or caja == "BATTERY-3":
                     command = {f"lbl_box{lbl_current_boxx}" : {"text": f"{pub_i}", "color": "blue"}}
 
                 #cajas que requieren escanearse (se inician en purple) #ESTO ES PARA SABER QUE LA LLEVA EL ARNÉS, PERO AÚN NO ESTÁN HABILITADAS POR EL PLC (por eso se requieren estos publish a los gui)

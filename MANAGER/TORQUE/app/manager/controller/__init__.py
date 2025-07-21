@@ -195,8 +195,9 @@ class Controller (QObject):
                                 #se avisa a la variable de cajas_habilitadas que ya se escaneó la caja
                                 self.model.cajas_habilitadas[copy_i] = 1
                                 print("cajas habilitadas: ",self.model.cajas_habilitadas)
-                            break
-                        
+                            else:
+                                print("QR NEGADO")
+                                break;
                     if not(ok_rework):
                         print("fff ok_rework")
                         command = {
@@ -218,7 +219,7 @@ class Controller (QObject):
                             #        qr_box = qr_box.replace("12975407830","12975407216")
 
                         # i para buscar en todas las cajas master_qr_boxes[i][0],  si ahí existe lo que escaneaste "qr_box" y aparte este es "true" entonces...
-                        if master_qr_boxes[i] in qr_box and master_qr_boxes[i]:
+                        if master_qr_boxes[i] in qr_box:
                             # si la caja i (PDCR por ejemplo) está en plc clamps y en database modularity
                             if not(i in self.model.input_data["plc"]["clamps"]) and i in self.model.input_data["database"]["modularity"]:
                                 ok = True

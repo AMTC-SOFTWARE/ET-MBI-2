@@ -89,11 +89,11 @@ class Model (object):
         }
         self.tapaAbiertaMFBS=False
         self.tapaAbiertaMFP1=False
-
+        
         self.qrAlturasTool1=False
         self.qrAlturasTool2=False
         self.qrAlturasTool3=False
-        
+
         self.alarma_activada=False
         self.alarma_emergencia=False
         self.paro_emergia=False
@@ -189,10 +189,23 @@ class Model (object):
         self.save_current_trq_candados = ""
         #variable para mostrar al inicio lo que ya está guardado
         self.palpador_iniciado = False
+
+        #variable para iniciar el estado de revisión del cover de la BATTERY-3
+        self.estado_cover = False
+        #variable para guardar la caja correspondiente que se liberará de las tareas al terminar los candados
+        self.save_box_cover = ""
+        #variable para guardar el torque correspondiente que se liberará de las tareas al terminar los candados
+        self.save_current_trq_cover = ""
+        #variable para confirmar el siguiente paso de la battery-3
+        self.battery3_cover = False
+        #variable para confirmar el pin de la battery-3
+        self.check_cover = False
+
+
         self.en_ciclo=False
 
         self.bypass_pdcr = ""
-        
+
         self.battery_3 = False
 
         self.contador_focus=0
@@ -262,7 +275,7 @@ class Model (object):
             "tool2":"",
             "tool3":""
             }
-
+        
         #variable para asegurar la lectura de una señal enviada por un torque de una herramienta
         self.asegurar_lectura = {
                                     "tool1":False,
@@ -292,6 +305,14 @@ class Model (object):
                      "MFB-S":[],
                      "MFB-E":[]}
             }
+
+        #variable para asegurar la lectura de una señal enviada por un torque de una herramienta
+        self.asegurar_lectura = {
+            "tool1":False,
+            "tool2":False,
+            "tool3":False
+        }
+
         #señal para dejar un delay entre cada candado
         self.nuevo_pin = False
 
@@ -375,10 +396,10 @@ class Model (object):
             'PDC-P': {'E1': [(361, 460), (396, 495)]}, 
             'PDC-R': {'E1': [(408, 330), (443, 358)],"s1":[(178, 415), (269, 377)],"s2":[(269, 377), (349, 413)],"s3":[(142, 322), (177, 413)],"s4":[(361, 411), (404, 324)],"s5":[(141, 238), (182, 322)],"s6":[(193, 274), (264, 318)],"s7":[(268, 275), (337, 318)],"s8":[(358, 324), (405, 233)],"s9":[(180, 221), (264, 264)],"s10":[(262, 222), (347, 263)]}, 
             'PDC-RMID': {'E1': [(408, 330), (443, 358)]}, 
-            'PDC-RS': {'E1': [(408, 330), (443, 358)]},
-            'BATTERY': {'BT': [(80, 290), (160, 350)]},
+            'PDC-RS': {'E1': [(408, 330), (443, 358)]}, 
+            'BATTERY': {'BT': [(85, 285), (155, 355)]}, 
             'BATTERY-2': {'BT': [(335, 210), (420, 275)]},  
-            'BATTERY-3': {'BT': [(85, 285), (155, 355)]} 
+            'BATTERY-3': {'BT': [(980, 780), (1270, 1050)]}
             }
         #with open("data/BB/BB", "rb") as f:
         #    self.BB= load(f)
@@ -389,6 +410,8 @@ class Model (object):
             "PDC-D": {
                 "E1": None},
             "BATTERY": {
+                "BT": None},
+            "BATTERY-2": {
                 "BT": None},
             "BATTERY-3": {
                 "BT": None},
@@ -437,6 +460,8 @@ class Model (object):
             "PDC-D": {
                 "E1": None},
             "BATTERY": {
+                "BT": None},
+            "BATTERY-2": {
                 "BT": None},
             "BATTERY-3": {
                 "BT": None},
@@ -489,7 +514,7 @@ class Model (object):
             "BATTERY-2": {
                 "BT": 0},
             "BATTERY-3": {
-                "BT": None},
+                "BT": 0},
             "MFB-P1": {
                 "A47": 0,
                 "A46": 0,
@@ -562,7 +587,7 @@ class Model (object):
             "BATTERY-2": {
                 "BT": ["tool2",10,"Battery Nut"]},
             "BATTERY-3": {
-                "BT": ["tool2",9,"Battery Nut"]},    
+                "BT": ["tool2",9,"Battery Nut"]},
             "MFB-P1": {
                 "A47": ["tool3",10,"8mm Nut"],
                 "A46": ["tool3",5,"8mm Nut"],

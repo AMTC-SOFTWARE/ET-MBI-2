@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QState, pyqtSignal, QObject, pyqtSlot
+from PyQt5.QtCore import QState, pyqtSignal, QObject, pyqtSlot, QEvent
 from paho.mqtt import publish
 from datetime import datetime
 from threading import Timer
@@ -186,6 +186,7 @@ class NewTool2 (QState):
     finish          = pyqtSignal()
     trigger         = pyqtSignal()
     triggerPalpador = pyqtSignal()
+    goCover         = pyqtSignal()
 
     def __init__(self, tool = "tool2", model = None, parent = None):
         super().__init__(parent)
@@ -195,6 +196,8 @@ class NewTool2 (QState):
         self.standby        = QState(parent = self)
         self.zone           = CheckZone(tool = self.tool, model = self.model, parent = self)
         self.chk_response   = CheckResponse(tool = self.tool, model = self.model, parent = self)
+        self.cover          = Cover(tool = self.tool, model = self.model, parent = self)
+        self.zone_cover     = CheckZoneCover(tool = self.tool, model = self.model, parent = self)
         self.NOK            = Error(tool = self.tool, model = self.model, parent = self)
         self.qintervention  = QualityIntervention(tool = self.tool, model = self.model, parent = self)
         self.qgafet         = gafetQuality(tool = self.tool, model = self.model, parent = self)
@@ -240,6 +243,16 @@ class NewTool2 (QState):
         #al recibir un torque con result NOK vas al estado de error
         self.chk_response.addTransition(self.chk_response.nok, self.NOK)
 
+        print("Revisando TRANSITION COVER")
+        self.zone.addTransition(self.zone.chk_cover, self.cover)
+        self.cover.addTransition(self.cover.continuar, self.zone_cover)
+        
+        self.zone_cover.addTransition(self.model.transitions.pin_cover, self.zone)
+
+        self.zone_cover.addTransition(self.zone_cover.end, self.zone)
+        print("Revisando TRANSITION ZONE COVER")
+
+        
         #cuando estás en el estado de la clase error, te manda a el estado de reversa si el reintento es menor al maximo de reintentos permitidos
         self.NOK.addTransition(self.NOK.reintento, self.backward)
         self.NOK.addTransition(self.NOK.quality, self.qintervention)
@@ -269,6 +282,7 @@ class NewTool2 (QState):
         self.addTransition(self.finish, self.standby)
 
         self.zone.ok.connect(self.finished)
+        self.zone.chk_cover.connect(self.coverbatt3)        
 
         self.setInitialState(self.standby)
 
@@ -279,6 +293,10 @@ class NewTool2 (QState):
     def finished(self):
         self.clean()
         self.finish.emit()
+
+    def coverbatt3(self):
+        self.clean()
+        self.goCover.emit()
 
 class NewTool3 (QState):
     finish      = pyqtSignal()
@@ -417,6 +435,7 @@ class CheckZone (QState):
     ok              = pyqtSignal()
     nok             = pyqtSignal()
     chk_candados    = pyqtSignal()
+    chk_cover       = pyqtSignal()
     enable_time     = pyqtSignal()
 
     chck_response   = pyqtSignal()
@@ -619,6 +638,11 @@ class CheckZone (QState):
                         print("se emite la señal para palpador")
                         self.chk_candados.emit()
                         return
+            elif self.model.estado_cover == True:
+                if self.tool == "tool2":
+                    print("se emite la señal para el COVER")
+                    self.chk_cover.emit()
+                    return
 
         #si el valor de current_trq es None (por el momento está vacío) o config_data está en True el flexible_mode
         if current_trq == None or self.model.config_data["flexible_mode"]:
@@ -773,6 +797,8 @@ class CheckZone (QState):
                 publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
 
             #si el raffi no está habilitado (su valor es 0)
+            print("current_trq[0]", current_trq[0])
+            print("self.model.raffi", self.model.raffi)
             if self.model.raffi[current_trq[0]] == 0:
 
                 #si la caja actual es igual a la solicitada de las tareas en cola...
@@ -817,7 +843,7 @@ class CheckZone (QState):
                         if self.model.qrAlturasTool2==True:
                             print("BYPASS ALTURAS T3 ok")
                             self.model.altura_zone["tool3"] = True
-                        
+
 
 
                         if (self.tool == "tool1") and (self.model.altura_zone[self.tool] == False) and (current_trq[0] != "PDC-P") and (current_trq[0] != "PDC-D"):
@@ -842,9 +868,10 @@ class CheckZone (QState):
                             if self.model.herramienta_bloqueada[self.tool]==True:
                                 tool_desbloqueada = self.tool+"_desbloqueada"
                                 publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : False}),hostname='127.0.0.1', qos = 2)
-                                print("se hizo false")
+                                print("tool_desbloqueada : False")
                                 sleep(0.4)
                                 publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}),hostname='127.0.0.1', qos = 2)
+                                print("tool_desbloqueada : True")
 
                             #if (current_trq[1] == "A21" or current_trq[1] == "A22" or current_trq[1] == "A23" or current_trq[1] == "A24" or current_trq[1] == "A20" or current_trq[1] == "A25" or current_trq[1] == "A30") and self.model.activar_tool[self.tool] == False:
                             if self.model.activar_tool[self.tool] == False: #se debe mantener para todas las cavidades
@@ -1154,7 +1181,6 @@ class CheckResponse (QState):
                     tolerancia = 8
                     if self.tool == "tool3":
                         tolerancia = 16.0
-                    #if box == "BATTERY" or box == "BATTERY-2":
                     if box == "BATTERY" or box == "BATTERY-2" or box == "BATTERY-3":
                         tolerancia = 6.5
                     tol_min = tolerancia - (10*tolerancia)/100
@@ -1214,6 +1240,15 @@ class CheckResponse (QState):
                             self.model.save_current_trq_candados = current_trq[1]
                             #para inicial el modo de revisión de candados
                             self.model.estado_candados = True
+                        elif "BATTERY-3" in box:
+                            print("||||||||||La caja Torqueada es una BATTERY-3: ",box)
+                            #para después quitar la queue
+                            self.model.save_box_cover = box
+                            self.model.save_current_trq_cover = current_trq[1]
+                            #para inicial el modo de revisión de cover
+                            self.model.estado_cover = True
+                            #Se libera o desclampea la caja del nido
+                            publish.single(self.model.pub_topics["plc"],json.dumps({box : False}),hostname='127.0.0.1', qos = 2)
                         else:
                             self.remove_task(box, current_trq)
                     else:
@@ -1221,7 +1256,7 @@ class CheckResponse (QState):
 
                     #se reinicia variable de posición OK en zona de altura para esta herramienta, después de un Torque OK
                     self.model.altura_zone[self.tool] = False
-                    
+
 
                     if self.model.qrAlturasTool1==True:
                         print("BYPASS ALTURAS T1 off")
@@ -1442,8 +1477,8 @@ class Check_data_alarm (QState):
         torque_alto_reversa=False
         torque_alto_fase=False
         try:
-            query="SELECT * FROM et_mbi_2.torque_info where HERRAMIENTA='"+tool+"' order by ID desc LIMIT 2;"""
-            #query="SELECT INICIO, FIN FROM et_mbi_2.historial WHERE RESULTADO = 1 order by ID desc LIMIT 1;"
+            query="SELECT * FROM et_mbi_3.torque_info where HERRAMIENTA='"+tool+"' order by ID desc LIMIT 2;"""
+            #query="SELECT INICIO, FIN FROM et_mbi_3.historial WHERE RESULTADO = 1 order by ID desc LIMIT 1;"
             endpoint = "http://{}/query/get/{}".format(self.model.server, query)
             resp_ultimos_torques = requests.get(endpoint).json()
             print("resp_ultimos_torques",resp_ultimos_torques)
@@ -1765,7 +1800,7 @@ class gafetQuality (QState):
             "DISABLE_MFB-E":False,
             "DISABLE_BATTERY":False,
             "DISABLE_BATTERY-2":False,
-            "DISABLE_BATTERY-3":False,
+            "DISABLE_BATTERY-3":False
             }
         print("Command Final: ",command)
         publish.single(self.model.pub_topics["plc"],json.dumps(command), qos = 2)
@@ -1822,9 +1857,10 @@ class Backward (QState):
             if self.model.herramienta_bloqueada[self.tool]==True:
                 tool_desbloqueada = self.tool+"_desbloqueada"
                 publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : False}),hostname='127.0.0.1', qos = 2)
-                print("se hizo false")
+                print("tool_desbloqueada : False")
                 sleep(0.4)
                 publish.single(self.model.pub_topics["plc"],json.dumps({tool_desbloqueada : True}),hostname='127.0.0.1', qos = 2)
+                print("tool_desbloqueada : True")
 
             if zone[1] == "0":
                 command = {
@@ -2506,6 +2542,144 @@ class Palpador (QState):
 
     def onExit(self, event):
         print("||||Salida de Palpador")
+
+class Cover(QState):
+    continuar = pyqtSignal()
+
+    def __init__(self, tool="tool2", model=None, parent=None):
+        super().__init__(parent)
+        print("Iniciando Cover")
+        self.model = model
+        self.tool = tool
+        self.pub_topic = self.model.pub_topics["torque"][self.tool]
+
+    def onEntry(self, event):
+        print("||||Dentro de Estado Cover!")
+        command = {
+            "lbl_instructions": {"text": "                                 ", "color": "black"},
+            "img_nuts": "blanco.jpg",
+            "lbl_nuts": {"text": "", "color": "black"},
+            "img_toolCurrent": "blanco.jpg",
+            "lbl_toolCurrent": {"text": "", "color": "black"},
+            "img_center": "boxes/BATTERY-3_cover.jpg",
+            "lbl_result": {"text": "", "color": "blue"},
+            "lbl_steps": {"text": "Coloque la cobertura de la caja e insertelo en la ranura", "color": "black"},
+        }
+        publish.single(self.model.pub_topics["gui"], json.dumps(command), hostname='127.0.0.1', qos=2)
+
+        # Emite la señal para continuar después de un pequeño delay
+        Timer(0.5, self.continuar.emit).start()
+
+    def onExit(self, event):
+        print("||||Salida de Cover")
+
+class CheckZoneCover (QState):
+
+     end  = pyqtSignal()
+
+     def __init__(self, tool = "tool2", model = None, parent = None):
+         print("Iniciando CheckZoneCover")
+         super().__init__(parent)
+         self.model = model
+         self.tool = tool
+         self.pub_topic = self.model.pub_topics["torque"][self.tool]
+
+     def onEntry(self, event):
+        print("||||Dentro de Estado CheckZoneCover!")
+
+        command = {
+            "lbl_instructions": {"text": "                                 ", "color": "black"},
+            "img_nuts": "blanco.jpg",
+            "lbl_nuts": {"text": "", "color": "black"},
+            "img_toolCurrent": "blanco.jpg",
+            "lbl_toolCurrent": {"text": "", "color": "black"},
+            "img_center": "boxes/BATTERY-3_cover.jpg",
+            "lbl_result": {"text": "", "color": "blue"},
+            "lbl_steps": {"text": "Coloque la cobertura de la caja e insertelo en la ranura", "color": "black"},
+        }
+        publish.single(self.model.pub_topics["gui"], json.dumps(command), hostname='127.0.0.1', qos=2)
+     
+        if self.model.check_cover == True:
+            print("Se activo el PIN de la battery-3")
+            self.finish()
+            Timer(0.7,self.end.emit).start()
+
+
+
+     def finish(self): 
+        
+        if self.model.estado_cover == True:
+
+            #regresar variables a False para finalizar con el palpador
+            self.model.estado_cover = False
+            self.model.check_cover = False
+            #regresa variable que permite escanear otra caja
+            ############################################## SE ELIMINA TAREA PENDIENTE DE ULTIMA TUERCA DE PDCR ########################################
+
+            #se asigna la variable con la colección, la caja PDCR,PDCRMID o PDCRSMALL y el último torque que no se retiró antes de entrar a palpador
+            modularity = self.model.input_data["database"]["modularity"]
+            box = self.model.save_box_cover
+            trq = self.model.save_current_trq_cover
+
+            print("modularity[box]:\n",modularity[box])
+            print("trq",trq)
+            print("(modularity[box].index(trq)",(modularity[box].index(trq)))
+
+            #se hace el pop del torque en modularity(la colección del arnés completo)
+            modularity[box].pop(modularity[box].index(trq))
+
+            #se hace el pop de la caja de la colección del arnés completo
+            modularity.pop(box)
+
+            print("se hace pop de la box\nmodularity:\n",modularity)
+
+            queue2 = self.model.torque_data["tool2"]["queue"]
+
+            print("queue tool2:\n",queue2)
+
+            #se hace el pop de la tarea de la herramienta
+            #(se busca el elemento i que contiene en i[0] a esa tarea y se elimina la tarea)
+            for i in range(len(queue2)):
+                print("i:",i)
+                if box == queue2[i][0]:
+                    print("Estamos Dentro")
+                    print("i posible: ",i)
+                    if trq == queue2[i][1]:
+                        print("i encontrada UwU: ",i)
+                        queue2.pop(i)
+                        break
+            
+            print("se hace pop de tarea\nself.queue tool2:\n",queue2)
+
+            #############################################################################################################################################
+            command = {
+                "lbl_instructions" : {"text": "", "color": "black"},
+                "lbl_nuts" : {"text":"", "color": "black"},
+                "lbl_toolCurrent" : {"text":"", "color": "black"},
+                "img_nuts" : "blanco.jpg",
+                "img_toolCurrent" : "blanco.jpg",
+                "img_center" : "logo.jpg",
+                "lbl_result" : {"text": f"Validación de Cover Finalizado", "color": "green"},
+                "lbl_steps" : {"text": "Escanea código QR de alguna caja (Excepto las BATTERY'S)", "color": "black"}
+                }
+            publish.single(self.model.torque_data[self.tool]["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            self.model.torque_data[self.tool]["enable"] = False
+            #se avisa a la variable de cajas_habilitadas que ya se terminó esa caja
+            self.model.cajas_habilitadas[box] = 3
+            print("|||||self.model.cajas_habilitadas: ",self.model.cajas_habilitadas)
+
+            #se vacía el current trq para que se agregue ahí la siguiente tarea para la herramienta
+            self.model.torque_data["tool2"]["current_trq"]  = None
+
+        else:
+
+            print("Pero el Hechicero ni se INMUTA")
+
+     def onExit(self, event):
+         print("||||Salida de Cover")
+
+
+
 
 class WaitingPin (QState):
 

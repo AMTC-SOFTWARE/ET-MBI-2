@@ -36,6 +36,7 @@ class MqttClient (QObject):
 
     #señal para indicar que el palpador ha sido presionado por un candado gg
     pin             =   pyqtSignal()
+    pin_cover       =   pyqtSignal()
 
     login           =   pyqtSignal()
     logout          =   pyqtSignal()
@@ -518,6 +519,16 @@ class MqttClient (QObject):
                 #            command = {"popOut":"¿Seguro que desea dar llave?\n Presione Esc. para salir, Espacio para continuar..."}
                 #            self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                 #            self.model.llave = True
+                if self.model.estado_cover == True:
+                    if "BATT3_COVER" in payload:
+                        if payload["BATT3_COVER"] == True:
+                            self.model.check_cover = True
+                            command = {
+                                "lbl_steps" : {"text": "Cubierta de batería 3 colocada", "color": "green"},
+                                }
+                            self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                            self.pin_cover.emit()
+
                 if "MFBP2_candado_limit" in payload:
                     
                     command = {
@@ -1530,9 +1541,9 @@ class MqttClient (QObject):
                     try:
                         endpoint = ("http://{}/api/get/usuarios/GAFET/=/{}/ACTIVE/=/1".format(self.model.server, usuario))
                         response = requests.get(endpoint).json()
-                        print(response)
-                        if (self.model.key_calidad_caja_repetida== True  or self.model.key_calidad_caja_sin_FET==True) and response["TYPE"] == "CALIDAD":
-                            master_qr_boxes = json.loads(self.model.input_data["database"]["pedido"]["QR_BOXES"])
+                        print('CONSULTANDO USUARIO',response)
+                        if (self.model.key_calidad_caja_repetida== True  or self.model.key_calidad_caja_sin_FET==True) and (response["TYPE"] == "CALIDAD" or response["TYPE"] == "SUPERUSUARIO"):
+                            master_qr_boxes = self.model.input_data["database"]["pedido"]["QR_BOXES"]
                             for box in master_qr_boxes:
                                 if master_qr_boxes[box][0] in self.model.qr_box_actual and master_qr_boxes[box][1]:
                                     if not(box in self.model.input_data["plc"]["clamps"]) and box in self.model.input_data["database"]["modularity"]:

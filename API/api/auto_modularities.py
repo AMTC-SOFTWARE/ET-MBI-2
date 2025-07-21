@@ -14,7 +14,6 @@ for root, dirs, files in os.walk(dir_path):
 #"F400": "ATO,15,BLUE
 """
 
-from model import model
 from copy import copy
 import requests
 import openpyxl
@@ -24,7 +23,7 @@ from model import model
 import gc
 
 datos_conexion=model()
-host,user,password,database,serverp2,dbp2,userp2,passwordp2=datos_conexion.datos_acceso()
+host,user,password,database,serverp2,dbp2,userp2,passwordp2,printerhost=datos_conexion.datos_acceso()
 
 modules = {}
 modules_t = {}
