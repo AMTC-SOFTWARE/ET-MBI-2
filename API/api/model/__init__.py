@@ -17,5 +17,7 @@ class model(object):
         self.passwordp2 = "pJ0rge2021"
         self.printerhost = ""
 
+        self.printerhost = "192.168.1.103"
+
     def datos_acceso(self):
         return self.host,self.user,self.password,self.database,self.serverp2,self.dbp2,self.userp2,self.passwordp2,self.printerhost
