@@ -15,6 +15,7 @@ class model(object):
         self.dbp2 = "agrucomb_prod"
         self.userp2 = "pnx_agrucomb_prod"
         self.passwordp2 = "pJ0rge2021"
+        self.printerhost = ""
 
     def datos_acceso(self):
-        return self.host,self.user,self.password,self.database,self.serverp2,self.dbp2,self.userp2,self.passwordp2
+        return self.host,self.user,self.password,self.database,self.serverp2,self.dbp2,self.userp2,self.passwordp2,self.printerhost

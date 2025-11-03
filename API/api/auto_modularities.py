@@ -29,18 +29,20 @@ modules = {}
 modules_t = {}
 
 fuses_color = {
-    "1":    "black",
-    "5":    "beige",
-    "7.5":  "cafe",
-    "10":   "rojo",
-    "15":   "azul",
-    "20":   "amarillo",
-    "25":   "natural",
-    "30":   "verde",
-    "40":   "naranja",
-    "50":   "rojo",
-    "60":   "azul"
-    }
+    #"1":    "negro", HMTEST ILX296270B1031517 EL.
+    "5":    {"N000000008698":"beige", "N000000008708" :"beige", "N000000004202":"beigeClear", "N000000006465":"beige"},
+    "7.5":  {"N000000008699":"cafe",  "N000000008709" :"cafe",  "N000000006466":"cafe"},
+    "10":   {"N000000008700":"rojo",  "N000000008710" :"rojo",  "N000000004204":"rojoClear"},
+    "15":   {"N000000008701":"azul",  "N000000008711" :"azul"},
+    "20":   {"N000000008702":"amarillo"},
+    "25":   {"N000000008703":"natural"},
+    "30":   {"N000000008704":"verde", "N000000007658":"verde"},
+    "40":   {"N000000007659":"naranja"},
+    "50":   {"N000000007660":"rojo"},
+    "60":   {"A0009821923"  :"1008695"},
+    "70":   {"A0025429419"  :"1010733"}
+    #"60":   "azul"
+}
 
 torques_value = {
   'PDC-P': {'E1': ""},
@@ -181,7 +183,8 @@ def makeModules(data):
                                         #print("VARIANTE PARA PDC-R DEL MÓDULO: ",box)
                                         if fuse == "X" or fuse == "T" or fuse == "U":
                                             fuse = "REL" + fuse
-                                    amp = currentSheet.cell(row = row, column = 7).value #se obtiene el valor de la celda, ej: 7.5A
+                                    amp = currentSheet.cell(row = row, column = 7).value #se obtiene el valor de la celda, ej: 7.
+                                    mercedes = currentSheet.cell(row = row, column = 4).value #se obtiene el valor de la celda, ej: 1012173
 
                                     if isinstance(amp,str):
                                         amp = amp.replace(" ","")#se eliminan posibles espacios existentes, si hay datos de lo contrario es None
@@ -198,7 +201,7 @@ def makeModules(data):
 
                                     if not(box in modules[module]):
                                         modules[module][box] = {}
-                                    modules[module][box][fuse] = amp[:-1]
+                                    modules[module][box][fuse] = [amp[:-1], mercedes] #se quita la A de amp para que quede solo el número ej: 7
                 del file
                 gc.collect()
                 os.remove(root+'\\'+ file_name)
@@ -250,14 +253,16 @@ def makeModules(data):
                 temp[key][box]  = {}
             for fuse in modules[module][box]:
                 try:
-                    amp     = modules[module][box][fuse]
+                    amp     = modules[module][box][fuse][0]
+                    mercedes     = modules[module][box][fuse][1]
                     color = ""
-                    if amp == "60":
-                        color = "1008695"
-                    elif amp == "70":
-                        color = "1010733"
-                    else:
-                        color   = fuses_color[amp]
+                    # if amp == "60":
+                    #     color = "1008695"
+                    # elif amp == "70":
+                    #     color = "1010733"
+                    # else:
+                    #     color   = fuses_color[amp]
+                    color   = fuses_color[amp][mercedes]
                     temp[key][box][fuse] = color
                 except Exception as ex:
                     print("\n Vision exception in [", module, "] [", box, "] [", fuse, "]")
