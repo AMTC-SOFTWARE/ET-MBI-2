@@ -349,5 +349,7 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 API/api/api.pyproj
-API/api/build
+/API/api/build/**
 MANAGER/TORQUE/app/app.pyproj
+/API/api/dist
+API/api/api.spec
