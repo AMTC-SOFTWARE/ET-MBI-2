@@ -1240,8 +1240,17 @@ class CheckResponse (QState):
                             self.model.save_current_trq_candados = current_trq[1]
                             #para inicial el modo de revisión de candados
                             self.model.estado_candados = True
-                        elif "BATTERY-3" in box:
-                            print("||||||||||La caja Torqueada es una BATTERY-3: ",box)
+                        elif box == "BATTERY" or box == "BATTERY-3":
+                            
+                            #Verificamos si tenemos algun COVER y si la caja torqueada es una BATTERY
+                            if len(self.model.input_data["database"]["covers"]) > 0 and box == "BATTERY":
+                                print(f'El cover actual es: {self.model.input_data["database"]["covers"]} \n')
+                                self.model.dataCOVERBAT = self.model.input_data["database"]["covers"][0]
+                            elif box == "BATTERY-3":
+                                self.model.dataCOVERBAT3 = "COVER-BATT3"
+                                
+                            print(f'La caja Torqueada es una {box} \n')
+                                
                             #para después quitar la queue
                             self.model.save_box_cover = box
                             self.model.save_current_trq_cover = current_trq[1]
@@ -2554,14 +2563,29 @@ class Cover(QState):
         self.pub_topic = self.model.pub_topics["torque"][self.tool]
 
     def onEntry(self, event):
-        print("||||Dentro de Estado Cover!")
+        print("##### Estado Actual: Cover #####\n")
+        print("Lista de covers: ",self.model.input_data["database"]["covers"])
+        
+        #Verificamos si tenemos COVERS para la BAT1, de lo contrario se trata de COVER para la BAT3
+        if len(self.model.input_data["database"]["covers"]) > 0:
+            for cover in self.model.input_data["database"]["covers"]:
+                if  cover == "COVER-3804":
+                    self.model.img_center_cover = "boxes/BATTERY-1_COVER-3804.png"
+                elif cover == "COVER-5819":
+                    self.model.img_center_cover = "boxes/BATTERY-1_COVER-5819.png"
+                else:
+                    print("Error de coincidencia",cover)
+        else:
+            print("Se trata de un cover para la BATTERY 3")
+            self.model.img_center_cover = "boxes/BATTERY-3_cover.jpg"
+        
         command = {
             "lbl_instructions": {"text": "                                 ", "color": "black"},
             "img_nuts": "blanco.jpg",
             "lbl_nuts": {"text": "", "color": "black"},
             "img_toolCurrent": "blanco.jpg",
             "lbl_toolCurrent": {"text": "", "color": "black"},
-            "img_center": "boxes/BATTERY-3_cover.jpg",
+            "img_center": self.model.img_center_cover,
             "lbl_result": {"text": "", "color": "blue"},
             "lbl_steps": {"text": "Coloque la cobertura de la caja e insertelo en la ranura", "color": "black"},
         }
@@ -2585,7 +2609,7 @@ class CheckZoneCover (QState):
          self.pub_topic = self.model.pub_topics["torque"][self.tool]
 
      def onEntry(self, event):
-        print("||||Dentro de Estado CheckZoneCover!")
+        print("##### Estado Actual: CheckZoneCover #####\n")
 
         command = {
             "lbl_instructions": {"text": "                                 ", "color": "black"},
@@ -2593,16 +2617,20 @@ class CheckZoneCover (QState):
             "lbl_nuts": {"text": "", "color": "black"},
             "img_toolCurrent": "blanco.jpg",
             "lbl_toolCurrent": {"text": "", "color": "black"},
-            "img_center": "boxes/BATTERY-3_cover.jpg",
+            "img_center": self.model.img_center_cover,
             "lbl_result": {"text": "", "color": "blue"},
             "lbl_steps": {"text": "Coloque la cobertura de la caja e insertelo en la ranura", "color": "black"},
         }
         publish.single(self.model.pub_topics["gui"], json.dumps(command), hostname='127.0.0.1', qos=2)
      
         if self.model.check_cover == True:
-            print("Se activo el PIN de la battery-3")
-            self.finish()
-            Timer(0.7,self.end.emit).start()
+             if len(self.model.input_data["database"]["covers"]) > 0:
+                print("Se activo el PIN de la Battery-1")
+             else:
+                print("Se activo el PIN de la battery-3")
+             
+             self.finish()
+             Timer(0.7,self.end.emit).start()
 
 
 
@@ -2630,11 +2658,15 @@ class CheckZoneCover (QState):
 
             #se hace el pop de la caja de la colección del arnés completo
             modularity.pop(box)
-
             print("se hace pop de la box\nmodularity:\n",modularity)
+            
+            cover = self.model.input_data["database"]["covers"]
+            print("COVER BT1: ",cover)
+            if len(cover) > 0:
+                cover.pop()
+                print("Se hace pop al COVER",cover)
 
             queue2 = self.model.torque_data["tool2"]["queue"]
-
             print("queue tool2:\n",queue2)
 
             #se hace el pop de la tarea de la herramienta

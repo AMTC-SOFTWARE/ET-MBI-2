@@ -126,7 +126,7 @@ class Startup(QState):
             print("Error en el conteo ", ex)
 
         QTimer.singleShot(10, self.stopTorque)
-        QTimer.singleShot(15, self.kioskMode)
+        #QTimer.singleShot(15, self.kioskMode)
         self.ok.emit()
 
     def stopTorque (self):
@@ -1253,7 +1253,7 @@ class CheckQr (QState):
                 publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                 publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                 Timer(0.05, self.build_contenido_candados).start()
-
+                
         except Exception as ex:
             self.model.cronometro_ciclo=False
             self.model.input_data["database"]["modularity"].clear()
@@ -1452,7 +1452,100 @@ class CheckQr (QState):
 
                 print("\n-------------------------------------TAREAS: CANDADOS -----------------------------------")
                 print(self.model.input_data["database"]["candados"])
+                Timer(0.05, self.build_contenido_covers).start()
                 #######################################################################################################################
+
+        except Exception as ex:
+            self.model.cronometro_ciclo=False
+            self.model.input_data["database"]["modularity"].clear()
+            self.model.torque_data["tool1"]["queue"].clear()
+            self.model.torque_data["tool2"]["queue"].clear()
+            self.model.torque_data["tool3"]["queue"].clear()
+            print("build_content exception: ", ex)
+            command = {
+                    "lbl_result" : {"text": "Error de Carga de Arnés", "color": "red", "font": "40pt"},
+                    "lbl_steps" : {"text": "Intentelo de Nuevo", "color": "black", "font": "22pt"}
+                    }
+            publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+            self.nok.emit()
+            return
+        
+    def build_contenido_covers(self):
+        print("\nbuild_contenido_covers")
+        try:
+                #se leen los Módulos de Visión cargados en la estación
+                modules_v = json.loads(self.model.pedido["MODULOS_TORQUE"])
+                modules_v = list(modules_v['INTERIOR'])
+                print("\n\t+++++++++++MODULARIDAD REFERENCIA+++++++++++\n",self.model.qr_codes["REF"])
+
+                ######################################################################## Consulta a la tabla modulos_configuracion #############################################################################
+                endpoint = "http://{}/api/get/{}/modulos_configuracion/TIPO/=/Pieza/_/_/_".format(self.model.server, self.model.dbEvent)
+                response = requests.get(endpoint).json()
+                #######################################################################################################################
+
+                #Si no se encuentra la tabla MODULOS, la tabla no existe en el evento actual de la modularidad escaneada.
+                if not("MODULO" in response):
+                    #Agregamos el COVER-3804 que es el que se coloca normalmente en la BATTERY 1
+                    self.model.input_data["database"]["covers"].append("COVER-3804")
+                else:
+                    modulo_cover = {} #Aqui creamos un diccionario para almacenar el modulo del cover encontrado en base a los modulos de vision y los modulos de configuracion
+
+                    cajas_cols = list(response.keys())
+                    cajas_cols.pop(cajas_cols.index("ID"))
+                    cajas_cols.pop(cajas_cols.index("MODULO"))
+                    cajas_cols.pop(cajas_cols.index("TIPO"))
+                
+                    #Se utiliza enumarte para obtener el indice y el modulo Ej 0, A0005465819
+                    for indice_modulo, modulo in enumerate(response['MODULO']):
+                        modulo = modulo.replace(" ", "")
+                        #Si el modulo esta dentro de los modulos de vision
+                        if modulo in modules_v:
+                            #Si el modulo no esta en el diccionario, lo agregamos
+                            if modulo not in modulo_cover:
+                                modulo_cover[modulo] = {}
+                            #Iteramos toda la lista de info_piezas el cual contiene CAJA_1, CAJA_2 etc
+                            for caja in cajas_cols:
+                                #Asignamos a la variable valor, la informacion de la response[caja][indice_modulo]
+                                valor = response[caja][indice_modulo]
+                                if valor not in ["", 0]:
+                                    if isinstance(valor, str):
+                                        try:
+                                            valor = json.loads(valor)
+                                        except:
+                                            continue
+
+                                    if isinstance(valor, dict):
+                                        modulo_cover[modulo][caja] = valor
+                                
+                    if len(modulo_cover.keys()) > 1:
+                        self.model.cronometro_ciclo=False
+                        command = {
+                                "lbl_result" : {"text": "Mas de 1 modulo COVER encontrado", "color": "red"},
+                                "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
+                                }
+                        publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                        publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
+                        self.nok.emit()
+                        return
+                
+                    for modulo, cajas in modulo_cover.items():
+                        for key, contenido in cajas.items():
+                            if isinstance(contenido, str):
+                                try:
+                                    contenido = json.loads(contenido)
+                                except Exception:
+                                    continue
+
+                            if contenido.get("posicion") == "BATTERY-1":
+                                for pieza in contenido.get("Pieza", []):
+                                    zona = pieza.get("zona", "")
+                                    if "COVER" in zona:
+                                        if zona not in self.model.input_data["database"]["covers"]:
+                                            self.model.input_data["database"]["covers"].append(zona)
+                    
+                print("\n-------------------------------------TAREAS: COVERS -----------------------------------")
+                print(self.model.input_data["database"]["covers"])
 
                 command = {
                     "lbl_result" : {"text": "Arnés Generado Correctamente", "color": "green"},
@@ -1468,7 +1561,7 @@ class CheckQr (QState):
             self.model.torque_data["tool1"]["queue"].clear()
             self.model.torque_data["tool2"]["queue"].clear()
             self.model.torque_data["tool3"]["queue"].clear()
-            print("build_content exception: ", ex)
+            print("build_covers exception: ", ex)
             command = {
                     "lbl_result" : {"text": "Error de Carga de Arnés", "color": "red", "font": "40pt"},
                     "lbl_steps" : {"text": "Intentelo de Nuevo", "color": "black", "font": "22pt"}
@@ -1657,7 +1750,7 @@ class CheckQr (QState):
 
             print("\ncajas de modularity: ")
             print(self.model.input_data["database"]["modularity"].keys())
-
+           
             for caja in self.model.input_data["database"]["modularity"]:
                 print("cajas dentro de modularity: ",caja)
 
@@ -1758,6 +1851,7 @@ class CheckQr (QState):
             print("se va a mandar start record+++++-----------+----+-------+-+-+-+-+-+---------")
             fecha_actual = self.model.get_currentTime()
             self.model.en_ciclo=True
+            #Inicia grabacion del ciclo
             command = {
                 "vision":"start_record",
                 "info":self.model.qr_codes["HM"]+" "+str(fecha_actual.strftime("%Y/%m/%d %H:%M:%S"))
@@ -2047,8 +2141,46 @@ class Finish (QState):
             "FIN": self.model.get_currentTime().strftime("%Y/%m/%d %H:%M:%S"),
             "USUARIO": self.model.local_data["user"]["type"] + ": " + self.model.local_data["user"]["name"],
             "NOTAS": {"TORQUE": ["OK"]},
+            "COMPLEMENTOS": {"COVER-BAT": ["NULL"], "COVER-BAT2": ["NULL"], "COVER-BAT3": ["NULL"]},
             "SCRAP": self.model.local_data["nuts_scrap"]
-            }
+        }
+        
+        #Agregamos la columna complementos a la tabla HISTORIAL
+        data = {"table_name": "historial", 
+               "column_name": "COMPLEMENTOS"}
+        
+        endpoint = f"http://{self.model.server}/api/post/newColumn"
+        resp = requests.post(endpoint, json=data)
+
+        """
+            #Codigos de respuesta
+            409 -> La columna ya existe
+            201 -> Columna creada
+        """
+        
+        #Si recibimos algun codigo de respuesta valido, entonces agregamos a COMPLEMENTOS el COVER que corresponde
+        if resp.status_code in (201, 409):
+            
+            if self.model.dataCOVERBAT:
+                historial["COMPLEMENTOS"]["COVER-BAT"][0] = self.model.dataCOVERBAT
+
+            if self.model.dataCOVERBAT3:
+                historial["COMPLEMENTOS"]["COVER-BAT3"][0] = self.model.dataCOVERBAT3
+        else:
+            #Caso contrario agregamos a historial[NOTAS] el COVER
+            historial["NOTAS"]["COVER-BAT"] = ["NULL"]
+            historial["NOTAS"]["COVER-BAT2"] = ["NULL"]
+            historial["NOTAS"]["COVER-BAT3"] = ["NULL"]
+            
+            if self.model.dataCOVERBAT:
+                historial["NOTAS"]["COVER-BAT"][0] = self.model.dataCOVERBAT
+
+            if self.model.dataCOVERBAT3:
+                historial["NOTAS"]["COVER-BAT3"][0] = self.model.dataCOVERBAT3
+
+            #Eliminar COMPLEMENTOS para evitar errores
+            historial.pop("COMPLEMENTOS", None)
+
         print("|||||||||||| HISTORIAL INICIO: ",historial["INICIO"])
         print("|||||||||||| HISTORIAL FIN: ",historial["FIN"])
 

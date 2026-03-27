@@ -529,6 +529,40 @@ class MqttClient (QObject):
                             self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
                             self.pin_cover.emit()
 
+                    if "COVER-3804" in payload:
+                        if payload["COVER-3804"] == True:
+                            if self.model.dataCOVERBAT == "COVER-3804":
+                                self.model.check_cover = True
+                                command = {
+                                    "lbl_steps" : {"text": "COVER-3804 colocado", "color": "green"},
+                                    }
+                                self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                self.pin_cover.emit()
+                            else:
+                                print("COVER INCORRECTO 3804")
+                                command = {
+                                    "lbl_steps" : {"text": "COVER-3804 incorrecto", "color": "red"},
+                                    }
+                                self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                
+                            
+                    if "COVER-5819" in payload:
+                        if payload["COVER-5819"] == True:
+                            if self.model.dataCOVERBAT == "COVER-5819":
+                                self.model.check_cover = True
+                                command = {
+                                    "lbl_steps" : {"text": "COVER-5819 colocado", "color": "green"},
+                                    }
+                                self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                self.pin_cover.emit()
+                            else:
+                                print("COVER INCORRECTO 5819")
+                                command = {
+                                    "lbl_steps" : {"text": "COVER-5819 incorrecto", "color": "red"},
+                                    }
+                                self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                            
+
                 if "MFBP2_candado_limit" in payload:
                     
                     command = {

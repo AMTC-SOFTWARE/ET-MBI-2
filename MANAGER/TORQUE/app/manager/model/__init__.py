@@ -200,7 +200,9 @@ class Model (object):
         self.battery3_cover = False
         #variable para confirmar el pin de la battery-3
         self.check_cover = False
-
+        self.img_center_cover = "" #Variable para almacenar la imagen del COVER para la BATTERY
+        self.dataCOVERBAT = ""
+        self.dataCOVERBAT3 = ""
 
         self.en_ciclo=False
 
@@ -696,6 +698,7 @@ class Model (object):
                 "modularity": {},
                 "fuses": [],
                 "candados": [],
+                "covers": [],
                 "pedido": {},
                 "qr_retrabajo": {}
                 },

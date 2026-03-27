@@ -751,6 +751,61 @@ def bkup():
         print("DB BKUP Exception: ",ex)
     return items
 
+#CREACION DE NUEVA COLUMNA
+@app.route("/api/post/newColumn", methods=["POST"])
+def newColumn():
+    data = request.get_json(force=True)
+
+    table = data.get("table_name")
+    column = data.get("column_name")
+
+    if not table or not column:
+        return {"error": "Datos no recibidos"}, 400
+
+    try:
+        connection = pymysql.connect(
+            host=host, user=user, passwd=password, db=database
+        )
+
+        with connection.cursor() as cursor:
+
+            #Aqui verificamos si la tabla existe
+            cursor.execute("""
+                SELECT COUNT(*)
+                FROM information_schema.tables
+                WHERE table_schema = %s AND table_name = %s
+            """, (database, table))
+
+            if cursor.fetchone()[0] == 0:
+                return {"error": f"La tabla '{table}' no existe"}, 404
+
+            #Verificar si la columna ya existe
+            cursor.execute("""
+                SELECT COUNT(*)
+                FROM information_schema.columns
+                WHERE table_schema = %s
+                AND table_name = %s
+                AND column_name = %s
+            """, (database, table, column))
+
+            if cursor.fetchone()[0] > 0:
+                return {"error": f"La columna '{column}' ya existe"}, 409
+
+            #Crear la columna
+            sql = f"ALTER TABLE `{table}` ADD COLUMN `{column}` VARCHAR(555)"
+            cursor.execute(sql)
+            connection.commit()
+
+        connection.close()
+
+        return {
+            "message": "Columna agregada correctamente",
+            "query": sql
+        }, 201
+
+    except Exception as ex:
+        return {"exception": str(ex)}, 500
+
 ################################################## Crear Base de Datos (Evento)  ####################################################
 @app.route("/api/post/newEvent",methods=["POST"])
 def newEvent():
