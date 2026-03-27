@@ -1,5 +1,5 @@
 from werkzeug.utils import secure_filename
-from flask import Flask, request,  send_file, make_response
+from flask import Flask,  jsonify, request,  send_file, make_response
 from openpyxl import Workbook
 from openpyxl.chart.label import DataLabel, DataLabelList
 from openpyxl.chart.series import SeriesLabel
@@ -16,6 +16,7 @@ import pymysql
 import json
 import os
 import io
+import re, time
 from os.path import exists  #para saber si existe una carpeta o archivo
 from shutil import rmtree   #para eliminar carpeta con archivos dentro: rmtree("carpeta_con_archivos")
 from os import remove       #para eliminar archivo único: remove("archivo.txt")
@@ -24,6 +25,7 @@ import requests
 from paho.mqtt import publish
 import pyodbc
 import auto_modularities
+import config_modules
 from auto_modularities import torques_value
 from model import model
 
@@ -34,6 +36,15 @@ app = Flask(__name__)
 CORS(app)
 app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), '..\\')
 
+#Whitelists
+ALLOWED_TABLES = {"modulos_configuracion_staging"}  # Puedes ampliar aquí cuando quieras más dinamismo
+#ALLOWED_DATABASES = {"appdb", "analytics"}         # Ajusta según tus bases permitidas
+NAME_RE = re.compile(r"^[A-Za-z0-9_-]+$")
+
+def quote_ident(name: str) -> str:
+    if not NAME_RE.fullmatch(name):
+        raise ValueError("Identificador inválido")
+    return f"`{name.replace('`', '``')}`"
 
 @app.route("/server_famx/hora_servidor",methods=["GET"])
 def servidorHora():
@@ -246,6 +257,7 @@ def updateModules():
                 print("The new directory is created!", path)
 
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], "modules", filename))
+            config_modules.stagingModules(data)
             auto_modularities.refreshModules(data)
             excelnew = {
                 'DBEVENT': data,
@@ -551,6 +563,89 @@ def update(table, ID):
         connection.close()
         return response
 
+
+@app.route("/api/archive-and-empty/<table>/<DBEVENT>", methods=["POST"])
+def archive_and_empty(table, DBEVENT):
+    # TODO: Autenticación/autorización aquí
+
+    # Validar tabla por whitelist
+    if table not in ALLOWED_TABLES:
+        return jsonify({"error": "Tabla no permitida"}), 400
+
+    # # Validar base de datos por whitelist (si quieres permitir elegir BD por URL)
+    # if DBEVENT not in ALLOWED_DATABASES:
+    #     return jsonify({"error": "Base de datos no permitida"}), 400
+
+    # if not request.is_json:
+    #     return jsonify({"error": "Content-Type debe ser application/json"}), 415
+    # data = request.get_json(silent=True) or {}
+
+    # # Sufijo opcional para el nombre del archivo/tabla de backup
+    # suffix = data.get("suffix")
+
+    # timestamp = time.strftime("%Y%m%d_%H%M%S")
+    # arch_name = f"{table}_archive_{timestamp}" + (f"_{suffix}" if suffix and NAME_RE.fullmatch(suffix) else "")
+    paTransferir = table
+    if "staging" in table:
+        paTransferir = table.split("_staging")[0]
+
+    arch_name = f"{paTransferir}"
+
+   # validar identificadores con quote_ident y capturar error de validación
+    try:
+        q_src = quote_ident(table)
+        q_dst = quote_ident(arch_name)
+    except Exception as ex:
+        print("quote_ident Exception:", ex)
+        return jsonify({"error": "Identificador inválido", "exception": str(ex)}), 400
+
+    conn = None
+
+    try:
+        conn = pymysql.connect(
+            host=host,
+            user=user,
+            passwd=password,
+            database=DBEVENT,        # usar la BD seleccionada (validada por whitelist)
+            autocommit=False         # transaccional
+        )
+    except Exception:
+        return jsonify({"error": "Error de conexión a la base de datos"}), 500
+
+    try:
+        with conn.cursor() as cur:
+            # 1) Vaciar tabla destino 
+            cur.execute(f"TRUNCATE TABLE {q_dst}")
+
+            # 2) Crear tabla destino (estructura igual a la de staging)
+            cur.execute(f"CREATE TABLE IF NOT EXISTS {q_dst} LIKE {q_src}")
+
+            # 3) Copiar datos
+            rows_copied = cur.execute(f"INSERT INTO {q_dst} SELECT * FROM {q_src}")
+
+            # 1) Vaciar la original
+            cur.execute(f"TRUNCATE TABLE {q_src}")
+
+        conn.commit()
+        return jsonify({
+            "status": "ok",
+            "archived_to": arch_name,
+            "emptied": table,
+            "database": DBEVENT,
+            "rows_copied": int(rows_copied)
+        }), 200
+    except Exception as ex:
+        conn.rollback()
+        print("copy Exception:", ex)
+
+        return jsonify({"error": "Fallo en archivado/vaciado"}), 500
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
 @app.route("/api/get/pdcr/variantes",methods=["GET"])
 def variantes():
     pdcrVariantes = {
@@ -827,6 +922,8 @@ def newEvent():
     historial["USUARIO"] = data["USUARIO"]
     historial["DATETIME"] = data["DATETIME"]
     historial["DBEVENT"] = event_name
+    
+    escaped_event_name = f"`{event_name}`"
 
     activo["ACTIVE"] = data["ACTIVE"]
     activo["DBEVENT"] = event_name
@@ -837,8 +934,9 @@ def newEvent():
         return {"exception": ex.args}
     try:
         with connection.cursor() as cursor:
-            items = cursor.execute("create database "+event_name)
-            sql = "use "+event_name
+            items = cursor.execute("create database "+escaped_event_name)
+            sql = "use "+escaped_event_name
+            
             cursor.execute(sql)
             definicionesTable = """CREATE TABLE definiciones (
             ID int primary key AUTO_INCREMENT, 
@@ -870,6 +968,54 @@ def newEvent():
             CAJA_16 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL
             )"""
             cursor.execute(fusiblesTable)
+            #Tabla modulos_configurcion
+            configTable = """CREATE TABLE modulos_configuracion (
+            ID int primary key AUTO_INCREMENT, 
+            MODULO text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, 
+            TIPO text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, 
+            CAJA_1  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_2  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_3  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_4  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_5  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_6  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_7  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_8  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_9  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_10 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_11 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_12 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_13 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_14 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_15 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_16 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL
+            )"""
+            cursor.execute(configTable)
+            
+            #Tabla modulos_configurcion_staging
+            configTableStaging = """CREATE TABLE modulos_configuracion_staging (
+            ID int primary key AUTO_INCREMENT, 
+            MODULO text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, 
+            TIPO text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, 
+            CAJA_1  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_2  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_3  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_4  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_5  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_6  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_7  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_8  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_9  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_10 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_11 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_12 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_13 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_14 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_15 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_16 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL
+            )"""
+            cursor.execute(configTableStaging)
+            
             alturaTable = """CREATE TABLE modulos_alturas (
             ID int primary key AUTO_INCREMENT, 
             MODULO text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, 
@@ -1068,7 +1214,7 @@ def previewEvent(ILX,db):
     flag_s = False
     endpoint = f"http://{host}:5000/api/get/{db}/pedidos/PEDIDO/=/{ILX}/ACTIVE/=/1"
     response = requests.get(endpoint).json()
-    #print("RESPONSE ",response)
+    print("RESPONSE ",response)
     #print("RESPONSE ",response["MODULOS_VISION"])
     response_json = json.loads(response["MODULOS_VISION"])
     #print("RESPONSE JSON ",response_json)
@@ -1109,11 +1255,12 @@ def previewEvent(ILX,db):
             'BATTERY-2':{},
             'BATTERY-3':{}
             },
+        'pieza': {},    
         'variante': {}
     }
     cajas = modularity["vision"].keys()
     cajas_torque = modularity["torque"].keys()
-    #print("CAJAS: ",cajas)
+    print("CAJAS: ",cajas)
     for module in modules:
         if module in pdcrVariantes["large"]:
             flag_l = True
@@ -1122,6 +1269,37 @@ def previewEvent(ILX,db):
         if module in pdcrVariantes["small"]:
             flag_s = True
         #print("Module i de la Lista: "+module)
+        #METODO TEMPORAL PARA OBTENER LA PIEZA DE CADA MÓDULO
+        #PROXIMAMENTE REALIZAR UN METODO DE CONSULTA PARA TODOS Y RESERVARLOS EN SUS DIFERENTES TIPOS
+        endpoint_config= f"http://{host}:5000/api/get/{db}/modulos_configuracion/MODULO/=/{module}/TIPO/=/Pieza"
+        resultado_config = requests.get(endpoint_config).json()
+        
+        print("Endpoint de Configuración: ",resultado_config)
+        if "items" not in resultado_config:
+            pieza = resultado_config
+            print("Pieza del módulo: ",pieza)
+            for j in resultado_config:
+                if j == "ID" or j == "MODULO" or j == "TIPO":
+                    pass
+                else:
+                    if resultado_config[j] == '':
+                        continue
+                    resultado_config_json = json.loads(resultado_config[j])
+
+                    # for box in cajas:
+                    tipo = resultado_config["TIPO"]
+                    #Posicion es el nombre comun de la caja
+                    posicion = resultado_config_json["posicion"]
+                    
+                    contenido = resultado_config_json[tipo]
+                    for k in contenido:
+                        zona = k['zona']
+                        propiedad = k['propiedad']
+                        modularity["pieza"][posicion] = {zona : [propiedad, module]}
+                    # if resultado_config_json[box][k] != "vacio":
+                    #     pieza = resultado_config_json[box][k]
+                    #     print("Pieza del módulo: ",pieza)
+                        
         endpoint_Module= f"http://{host}:5000/api/get/{db}/modulos_fusibles/MODULO/=/{module}/_/=/_"
         #print("Endpoint del módulo"+endpoint_Module)
         resultado = requests.get(endpoint_Module).json()

@@ -92,7 +92,7 @@ def makeModules(data):
 
                             if isinstance(module,str):
                                 module = module.replace(" ","")#se eliminan posibles espacios existentes, solo en str, porque puede haber valores None
-                            print("Modulo: ",module)
+                            #print("Modulo: ",module)
 
                             if not(module in modules_t):
                                 modules_t[module] = {}
@@ -658,6 +658,8 @@ def makeDeterminantes(data,usuario):
                 file = openpyxl.load_workbook(filename = dir_path + file_name, data_only=True)
                 sheets = file.sheetnames
                 for sheet in sheets:
+                    if "PIEZAS" in sheet:
+                        continue
                     currentSheet = file[sheet]
                     columnas = ["PDC-RS","PDC-RMID","PDC-R"]
                     for variante in columnas:
