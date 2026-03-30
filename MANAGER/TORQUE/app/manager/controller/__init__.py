@@ -108,6 +108,8 @@ class Controller (QObject):
             #Busca entre las cajas "P" D O R y te DEJA ESCANEAR, si no es alguna de estas verifica si esta en modo candado si esta en modo candado no te deja escanear ...
             permite_escanear=False
             master_qr_boxes = self.model.input_data["database"]["pedido"]["QR_BOXES"]
+            print(master_qr_boxes)
+            pass
             for box in master_qr_boxes:
             #    #si se trata de la caja MFB-P2, inicia esta bandera en False, solo se activa si es una caja nueva de derecha
             #    bandera_mfbp2_derecha_nueva = False
@@ -209,7 +211,7 @@ class Controller (QObject):
                     for i in master_qr_boxes:
                         #si se trata de la caja MFB-P2, inicia esta bandera en False, solo se activa si es una caja nueva de derecha
                         #bandera_mfbp2_derecha_nueva = False
-                        print("aqui esta la caja master_qr_boxes i",i)
+                        #print(f'Box dentro de master_qr_boxes {i}')
                         if i == "MFB-P2":
                             print("si entró ")
                             #si trae en los qr master el qr p   erteneciente a la caja de derecha
@@ -220,12 +222,16 @@ class Controller (QObject):
 
                         # i para buscar en todas las cajas master_qr_boxes[i][0],  si ahí existe lo que escaneaste "qr_box" y aparte este es "true" entonces...
                         if master_qr_boxes[i] in qr_box:
+                            print(f'Box {i} que coincice con el QR escaneado\n')
                             # si la caja i (PDCR por ejemplo) está en plc clamps y en database modularity
                             if not(i in self.model.input_data["plc"]["clamps"]) and i in self.model.input_data["database"]["modularity"]:
                                 ok = True
+                                #Cajas repetidas y comparacion cajas PDC-D Y PDC-P CON FET habilitadas
                                 if self.model.config_data["cajas_repetidas"]==True and self.model.config_data["comparacion_cajasDP"]==True:
-                                    print("cajas_repetidas:True,comparacion_cajasDP:True")
-                                    print("caja i:",i)
+                                    print(f'\nCajas repetidas habilitada? {self.model.config_data["cajas_repetidas"]}')
+                                    print(f'Comparacion cajas PDC-D/PDC-P CON FET? {self.model.config_data["comparacion_cajasDP"]}')
+                                    print("##############################################################################################\n")
+                                    
                                     if i== "PDC-D":
                                         
                                         respuesta_FET=self.caja_match_FET_consulta(i,qr_box,self.model.qr_codes["HM"])
@@ -318,10 +324,12 @@ class Controller (QObject):
 
                                     
                                     else:
+                                        print(f'Else, no es la caja PDC-D/PDC-P')
                                         self.model.qr_box_actual=qr_box
                                         caja_repetida=self.check_duplicate_qr(qr_box,i)
-                                        print("caja repetida, ",caja_repetida)
-                                        print("caja",i)
+                                        print(f'Respuesta de caja_repetida: {caja_repetida}\n')
+                                        pass
+                                        
                                         if caja_repetida and qr_box not in self.model.qr_validado and self.model.arnes_misma_caja==False:
                                                                                 
                                             self.model.key_calidad_caja_repetida=True
@@ -355,16 +363,34 @@ class Controller (QObject):
 
                                             Timer(15, self.boxTimeout, args = (i, qr_box)).start()
                                         elif caja_repetida==False:
-                                            
+                                            print(f'\nCaja repetida {caja_repetida}\n')
+                                            caja_error = False
                                             #serial de la caja
                                             print("------QR ACEPTADO: "+str(qr_box))
                                             print("------Colocar Caja "+ str(i) +" para clampear: ")
                                             if i == "PDC-RS":
                                                 self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"PDC-RMID": True}), qos = 2)
+                                            if i == "MFB-P1":
+                                                print(f'Revisando la caja {i}\n')
+                                                revision = qr_box[24:27] #Ej. 129754020012515500720501[ 004 ]020000000
+                                                print("[DEBUG] qr_box",revision)
+                                                if revision == "004":
+                                                    self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"MFB-P1": True}), qos = 2)
+                                                else:
+                                                    caja_error = True
                                             else:
                                                 self.client.client.publish(self.model.pub_topics["plc"],json.dumps({i: True}), qos = 2)
-                                                print("zonas en else")
-                                            self.enviar_mensaje_gui(i,condicion="ok",gui="automatico",error="ninguno")
+                                                
+                                            if caja_error:
+                                                command = {
+                                                        "lbl_steps" : {"text": "El código escaneado no pertenece a ninguna caja del arnés", "color": "red"}
+                                                }
+                                                self.client.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                                self.client.client.publish(self.model.pub_topics["gui_2"],json.dumps(command), qos = 2)
+                                            else:
+                                                self.enviar_mensaje_gui(i,condicion="ok",gui="automatico",error="ninguno")
+                                                
+                                                
                                             
                                             
                                             #caja adecuada:
