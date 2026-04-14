@@ -154,7 +154,7 @@ def stagingModules(data):
 
                             if isinstance(module,str):
                                 module = module.replace(" ","")#se eliminan posibles espacios existentes, solo en str, porque puede haber valores None
-                            print("Modulo: ",module)
+                            print("Modulo: ",module, "Config")
 
                             
 

@@ -1495,11 +1495,17 @@ class CheckQr (QState):
                     cajas_cols.pop(cajas_cols.index("ID"))
                     cajas_cols.pop(cajas_cols.index("MODULO"))
                     cajas_cols.pop(cajas_cols.index("TIPO"))
-                
+
+
+                    #Revisa si existe un valor (response["MODULO"] = A0005465819 "string" ) o valores (response['MODULO'] = [A0005465819, A2965402319] "list")
+                    module_count = response["MODULO"] if isinstance(response['MODULO'], list) else [response["MODULO"]] 
+                    jsB_posicion =''
+
                     #Se utiliza enumarte para obtener el indice y el modulo Ej 0, A0005465819
-                    for indice_modulo, modulo in enumerate(response['MODULO']):
+                    for indice_modulo, modulo in enumerate(module_count):
                         modulo = modulo.replace(" ", "")
-                        #Si el modulo esta dentro de los modulos de vision
+                        #Si el modulo esta dentro de los modulos de torque
+                        print("modulo", modulo)
                         if modulo in modules_v:
                             #Si el modulo no esta en el diccionario, lo agregamos
                             if modulo not in modulo_cover:
@@ -1507,16 +1513,26 @@ class CheckQr (QState):
                             #Iteramos toda la lista de info_piezas el cual contiene CAJA_1, CAJA_2 etc
                             for caja in cajas_cols:
                                 #Asignamos a la variable valor, la informacion de la response[caja][indice_modulo]
-                                valor = response[caja][indice_modulo]
-                                if valor not in ["", 0]:
-                                    if isinstance(valor, str):
-                                        try:
-                                            valor = json.loads(valor)
-                                        except:
-                                            continue
+                                # print("response[caja]", response[caja])
+                                if response[caja] != '':
+                               
+                                    jsonBox = json.loads( response[caja])
+                                    jsB_posicion = jsonBox['posicion']
+                                    #Tenemos certeza que la propiedad Pieza esta presente desde que se hizo la peticion de modulos TIPO Pieza
+                                    # jsB_pieza = jsonBox['Pieza'][0]
+                                    # jsB_propiedad = jsB_pieza['propiedad']
+                                    # jsB_zona = jsB_pieza['zona']
 
-                                    if isinstance(valor, dict):
-                                        modulo_cover[modulo][caja] = valor
+                                    valor = jsonBox['Pieza'][0]
+                                    if valor not in ["", 0]:
+                                        if isinstance(valor, str):
+                                            try:
+                                                valor = json.loads(valor)
+                                            except:
+                                                continue
+
+                                        if isinstance(valor, dict):
+                                            modulo_cover[modulo][caja] = valor
                                 
                     if len(modulo_cover.keys()) > 1:
                         self.model.cronometro_ciclo=False
@@ -1530,19 +1546,22 @@ class CheckQr (QState):
                         return
                 
                     for modulo, cajas in modulo_cover.items():
+                        #print("[DEBUG FLAG1]", modulo)
                         for key, contenido in cajas.items():
-                            if isinstance(contenido, str):
-                                try:
-                                    contenido = json.loads(contenido)
-                                except Exception:
-                                    continue
+                            #print("[DEBUG FLAG2]", key)
+                            #print("[DEBUG FLAG3]", contenido)
+                            # if isinstance(contenido, str):
+                            #     try:
+                            #         contenido = json.loads(contenido)
+                            #     except Exception:
+                            #         continue
 
-                            if contenido.get("posicion") == "BATTERY-1":
-                                for pieza in contenido.get("Pieza", []):
-                                    zona = pieza.get("zona", "")
-                                    if "COVER" in zona:
-                                        if zona not in self.model.input_data["database"]["covers"]:
-                                            self.model.input_data["database"]["covers"].append(zona)
+                            if jsB_posicion == "BATTERY-1":
+                            # for pieza in contenido.get("Pieza", []):
+                                zona = contenido['zona']
+                                if "COVER" in zona:
+                                    if zona not in self.model.input_data["database"]["covers"]:
+                                        self.model.input_data["database"]["covers"].append(zona)
                     
                 print("\n-------------------------------------TAREAS: COVERS -----------------------------------")
                 print(self.model.input_data["database"]["covers"])
