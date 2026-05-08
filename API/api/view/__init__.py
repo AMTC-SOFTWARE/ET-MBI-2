@@ -950,15 +950,15 @@ def newEvent():
             fusiblesTable = """CREATE TABLE modulos_fusibles (
             ID int primary key AUTO_INCREMENT, 
             MODULO text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, 
-            CAJA_1 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_2 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_3 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_4 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_5 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_6 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_7 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_8 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_9 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_1  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_2  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_3  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_4  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_5  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_6  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_7  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_8  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_9  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
             CAJA_10 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
             CAJA_11 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
             CAJA_12 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
@@ -1019,15 +1019,15 @@ def newEvent():
             alturaTable = """CREATE TABLE modulos_alturas (
             ID int primary key AUTO_INCREMENT, 
             MODULO text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, 
-            CAJA_1 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_2 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_3 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_4 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_5 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_6 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_7 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_8 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_9 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_1  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_2  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_3  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_4  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_5  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_6  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_7  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_8  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_9  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
             CAJA_10 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
             CAJA_11 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
             CAJA_12 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
@@ -1040,15 +1040,15 @@ def newEvent():
             torquesTable = """CREATE TABLE modulos_torques (
             ID int primary key AUTO_INCREMENT, 
             MODULO text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, 
-            CAJA_1 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_2 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_3 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_4 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_5 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_6 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_7 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_8 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-            CAJA_9 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_1  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_2  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_3  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_4  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_5  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_6  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_7  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_8  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            CAJA_9  longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
             CAJA_10 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
             CAJA_11 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
             CAJA_12 longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
@@ -1150,14 +1150,15 @@ def eventos():
                     respActivo = requests.get(endpoint).json()
                     #print("Respuesta de Historial: ",respHistorial)
                     #print("Respuesta de Historial Archivo: ",respHistorial["ARCHIVO"])
-                    #print("Respuesta de Activo: ",respActivo)
+                    print("Respuesta de Activo: ",respActivo)
                     #print("Respuesta de Activo: ",respActivo["ACTIVE"])
+                    IsActiveOrActivo = "ACTIVE" if "ACTIVE" in respActivo else "ACTIVO"
                     if type(respHistorial["ARCHIVO"]) == list:
                         #print("Es una lista!")
-                        lista["eventos"][i[0]] = [respHistorial["ARCHIVO"][-1],respActivo["ACTIVE"]]
+                        lista["eventos"][i[0]] = [respHistorial["ARCHIVO"][-1],respActivo[IsActiveOrActivo]]
                     else:
                         #print("No es una lista, es posible que sea solo un elemento o esté vacío")
-                        lista["eventos"][i[0]] = [respHistorial["ARCHIVO"],respActivo["ACTIVE"]]
+                        lista["eventos"][i[0]] = [respHistorial["ARCHIVO"],respActivo[IsActiveOrActivo]]
             #print("Lista de bases de datos: ",x)
             print("Lista de eventos final: ",lista)
         connection.commit()

@@ -58,6 +58,7 @@ class Startup(QState):
 
         try:
             #se oculta la GDI automáticamente:
+            # print("NO OLVIDES DESCOMENTAR OCULTAR GDI si andas Haciendo pruebas")
             publish.single("GDI",json.dumps({"Esconder" : "Ocultando GDI..."}),hostname='127.0.0.1', qos = 2)
         except Exception as ex:
             print("Error al ocultar GDI ", ex)
@@ -1480,7 +1481,7 @@ class CheckQr (QState):
                 print("\n\t+++++++++++MODULARIDAD REFERENCIA+++++++++++\n",self.model.qr_codes["REF"])
 
                 ######################################################################## Consulta a la tabla modulos_configuracion #############################################################################
-                endpoint = "http://{}/api/get/{}/modulos_configuracion/TIPO/=/Pieza/_/_/_".format(self.model.server, self.model.dbEvent)
+                endpoint = "http://{}/api/get/{}/modulos_configuracion/TIPO/=/Cover/_/_/_".format(self.model.server, self.model.dbEvent)
                 response = requests.get(endpoint).json()
                 #######################################################################################################################
 
@@ -1523,7 +1524,7 @@ class CheckQr (QState):
                                     # jsB_propiedad = jsB_pieza['propiedad']
                                     # jsB_zona = jsB_pieza['zona']
 
-                                    valor = jsonBox['Pieza'][0]
+                                    valor = jsonBox['Cover'][0]
                                     if valor not in ["", 0]:
                                         if isinstance(valor, str):
                                             try:
