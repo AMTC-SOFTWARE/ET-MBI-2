@@ -58,7 +58,7 @@ class Startup(QState):
 
         try:
             #se oculta la GDI automáticamente:
-            # print("NO OLVIDES DESCOMENTAR OCULTAR GDI si andas Haciendo pruebas")
+            #print("NO OLVIDES DESCOMENTAR OCULTAR GDI si andas Haciendo pruebas")
             publish.single("GDI",json.dumps({"Esconder" : "Ocultando GDI..."}),hostname='127.0.0.1', qos = 2)
         except Exception as ex:
             print("Error al ocultar GDI ", ex)
@@ -97,6 +97,8 @@ class Startup(QState):
             "img_nuts" : "blanco.jpg",
             "lcdNumber": {"value": "0", "visible": True},
             "lbl_nuts"  : {"text": "", "color": "black"},
+            "img_piece": "blanco.jpg",
+            "lbl_piece": {"text": "", "color": "black"},
             "img_toolCurrent" : "blanco.jpg",
             "lbl_toolCurrent"  : {"text": "", "color": "black"},
             "position" : {"text": "POSICIÓN 1", "color": "black"},
@@ -414,6 +416,8 @@ class StartCycle (QState):
             "lbl_toolCurrent" : {"text": "", "color": "orange"},
             "position" : {"text": "POSICIÓN 1", "color": "black"},
             "img_center" : "logo.jpg",
+            "img_piece": "blanco.jpg",
+            "lbl_piece": {"text": "", "color": "black"},
             "allow_close": False,
             "cycle_started": False,
             "statusBar": "clear",
@@ -1114,6 +1118,8 @@ class CheckQr (QState):
                                 continue
                             #si la caja si tiene contenido...
                             # Metodo para bypassear la caja PDC-p
+                            #or caja == "MFB-P1" or caja == "MFB-P2"
+                            # if caja == "PDC-P" or caja == "PDC-RS" or caja == "PDC-RMID" or caja == "PDC-R" or caja == "PDC-D" or caja == "MFB-P1"  :
                             if caja == "PDC-P" and self.model.config_data["sinTorquePDCP"] == True:
                                 continue
                             else:

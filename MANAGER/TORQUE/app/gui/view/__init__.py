@@ -55,6 +55,7 @@ class MainWindow (QMainWindow):
         self.ui.lbl_result.setText("")
         self.ui.lbl_steps.setText("")
         self.ui.lbl_nuts.setText("")
+        self.ui.lbl_piece.setText("")
         self.ui.lbl_toolCurrent.setText("")
         self.ui.lbl_user.setText("")
         self.ui.lbl_info1.setText("")
@@ -697,6 +698,10 @@ class MainWindow (QMainWindow):
                 self.ui.lbl_nuts.setText(message["lbl_nuts"]["text"])
                 if "color" in message["lbl_nuts"]:
                     self.ui.lbl_nuts.setStyleSheet("color: " + message["lbl_nuts"]["color"])
+            if "lbl_piece" in message:
+                self.ui.lbl_piece.setText(message["lbl_piece"]["text"])
+                if "color" in message["lbl_piece"]:
+                    self.ui.lbl_piece.setStyleSheet("color: " + message["lbl_piece"]["color"])
             ###
             if "lbl_toolCurrent" in message:
                 self.ui.lbl_toolCurrent.setText(message["lbl_toolCurrent"]["text"])
@@ -812,6 +817,19 @@ class MainWindow (QMainWindow):
                             self.ui.img_nuts.setStyleSheet("color: green")
                         else:
                             self.ui.img_nuts.setStyleSheet("color: white")
+            if "img_piece" in message:
+                if message["img_piece"] != "":
+                    if exists(self.model.imgsPath + message["img_piece"]):
+                        #self.ui.img_piece.setPixmap(QPixmap(self.model.imgsPath + message["img_piece"]).scaled(110, 110, Qt.KeepAspectRatio))
+                        pix = QPixmap(self.model.imgsPath + message["img_piece"])
+                        self.ui.img_piece.setPixmap(pix)
+
+                        if message["img_piece"] != "blanco.jpg":
+                            self.ui.img_piece.setFrameShape(QFrame.Box)
+                            self.ui.img_piece.setLineWidth(4)
+                            self.ui.img_piece.setStyleSheet("color: green")
+                        else:
+                            self.ui.img_piece.setStyleSheet("color: white")
             #####
             if "img_toolCurrent" in message:
                 if message["img_toolCurrent"] != "":

@@ -359,6 +359,27 @@ class MqttClient (QObject):
                         #QTimer.singleShot(1000, self.closePopout)
                         self.closePopout()
 
+                # if "s1_pdcpconectores" in payload:
+                #         if self.model.validacion_conectores_pdcp == False:
+
+                #             if payload["s1_pdcpconectores"] == True:
+                #                 command = {
+                #                 "lbl_result" : {"text": "Conectores detectados antes de validar", "color": "red"},
+                #                 "lbl_steps" : {"text": "Remueva la caja de la zona", "color": "black"},
+                #                 "lineEdit" : False
+                #                 }
+                #             else:
+                #                 command = {
+                #                 "lbl_result" : {"text": "", "color": "green"},
+                #                 "lbl_steps" : {"text": "zona libre", "color": "black"},
+                #                 "lineEdit" : True
+                #                 }
+                #         else:
+                #             command = {
+                #                 "lineEdit" : True
+                #                 }
+                #         self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+
             if message.topic == self.model.sub_topics["gui"]:
                 if "ID" in payload:
                     self.model.input_data["gui"]["ID"] = payload["ID"]
@@ -537,6 +558,7 @@ class MqttClient (QObject):
                                     "lbl_steps" : {"text": "COVER-3804 colocado", "color": "green"},
                                     }
                                 self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                self.model.cajas_habilitadas["BATTERY"] = 3
                                 self.pin_cover.emit()
                             else:
                                 print("COVER INCORRECTO 3804")
@@ -554,6 +576,7 @@ class MqttClient (QObject):
                                     "lbl_steps" : {"text": "COVER-5819 colocado", "color": "green"},
                                     }
                                 self.client.publish(self.model.pub_topics["gui"],json.dumps(command), qos = 2)
+                                self.model.cajas_habilitadas["BATTERY"] = 3
                                 self.pin_cover.emit()
                             else:
                                 print("COVER INCORRECTO 5819")
