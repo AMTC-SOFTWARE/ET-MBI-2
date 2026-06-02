@@ -374,8 +374,8 @@ class Controller (QObject):
                                                 print(f'Revisando la caja {i}\n')
                                                 revision = qr_box[24:27] #Ej. 129754020012515500720501[ 004 ]020000000
                                                 print("[DEBUG] qr_box",revision)
-                                                #AQUI CODIGO DE REVISION 004
-                                                if revision == "004":
+                                                #AQUI CODIGO DE REVISION 005
+                                                if revision == "005":
                                                     self.client.client.publish(self.model.pub_topics["plc"],json.dumps({"MFB-P1": True}), qos = 2)
                                                 else:
                                                     caja_error = True
