@@ -794,6 +794,7 @@ class Model (object):
 
         self.input_data["database"]["modularity"].clear()
         self.input_data["database"]["pedido"].clear()
+        self.input_data["database"]["covers"].clear() #Limpiar tareas de COVER
         self.input_data["database"]["fuses"].clear()
         self.input_data["database"]["candados"].clear()
         self.input_data["database"]["qr_retrabajo"].clear()

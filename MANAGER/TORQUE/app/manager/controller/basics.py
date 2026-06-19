@@ -1481,6 +1481,7 @@ class CheckQr (QState):
     def build_contenido_covers(self):
         print("\nbuild_contenido_covers")
         try:
+                print("Cover actual antes de agregar: ",self.input_data["database"]["covers"])
                 #se leen los Módulos de Visión cargados en la estación
                 modules_v = json.loads(self.model.pedido["MODULOS_TORQUE"])
                 modules_v = list(modules_v['INTERIOR'])
