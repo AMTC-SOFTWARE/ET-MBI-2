@@ -919,7 +919,7 @@ class CheckQr (QState):
                     self.model.cronometro_ciclo=False
                     print("Datamatrix Redundante")
                     command = {
-                        "lbl_result" : {"text": "Datamatrix redundante", "color": "red"},
+                        "lbl_result" : {"text": "Modularidad redundante", "color": "red"},
                         "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
                         }
                     publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
@@ -939,8 +939,8 @@ class CheckQr (QState):
                 self.model.cronometro_ciclo=False
                 print("La Modularidad NO pertenece a ningún evento")
                 command = {
-                    "lbl_result" : {"text": "Datamatrix No Registrado", "color": "red"},
-                    "lbl_steps" : {"text": "Inténtalo de nuevo", "color": "black"}
+                    "lbl_result" : {"text": "Modularidad no registrada", "color": "red"},
+                    "lbl_steps" : {"text": "Favor de cargar el .dat", "color": "black"}
                     }
                 publish.single(self.model.pub_topics["gui"],json.dumps(command),hostname='127.0.0.1', qos = 2)
                 publish.single(self.model.pub_topics["gui_2"],json.dumps(command),hostname='127.0.0.1', qos = 2)
@@ -1481,7 +1481,7 @@ class CheckQr (QState):
     def build_contenido_covers(self):
         print("\nbuild_contenido_covers")
         try:
-                print("Cover actual antes de agregar: ",self.input_data["database"]["covers"])
+                print("Cover actual antes de agregar: ",self.model.input_data["database"]["covers"])
                 #se leen los Módulos de Visión cargados en la estación
                 modules_v = json.loads(self.model.pedido["MODULOS_TORQUE"])
                 modules_v = list(modules_v['INTERIOR'])
